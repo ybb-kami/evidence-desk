@@ -5,7 +5,7 @@ import unicodedata
 from app import Bad, ID
 import engine
 from byline import author_number
-from paper_facts import extract_facts
+from paper_facts import extract_facts, hardware_clauses, hardware_parts
 
 
 def beta_values(text):
@@ -172,9 +172,9 @@ def answer_question(store, request, *, on_delta=None, generator=None):
     """Split explicitly coordinated questions while preserving every field's source."""
     from question_parts import combine, split_question
     full = lookup(store, request, dense=store.dense)
-    parts = split_question(request["question"])
+    parts = hardware_clauses(split_question(request["question"]))
     from direct_coverage import covers_parts
-    if len(parts) == 1 or covers_parts(full, parts):
+    if len(parts) == 1 or (full.get("training_hardware") and hardware_parts(parts)) or covers_parts(full, parts):
         return _answer_one(store,request,full,on_delta=on_delta,generator=generator)
     results=[]
     for part in parts:
