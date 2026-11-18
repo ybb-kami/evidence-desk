@@ -12,6 +12,7 @@
   "reserved_graph_rendered_edges": 3,
   "nile_sha256": "d0452bea38c61e796a4eeb950bf91d20fb5c7f13d5822eadf5990fe54f9c8d07",
   "nile_chart_vertices_verified": 100,
+  "scientific_notation_vertices_verified": 3,
   "nile_axis_units": [
     "年",
     "10⁸ m³"
@@ -22,7 +23,6 @@
     "invalid",
     "duplicate",
     "irregular",
-    "scientific_notation",
     "flowchart_point_limit",
     "malformed_mermaid"
   ]

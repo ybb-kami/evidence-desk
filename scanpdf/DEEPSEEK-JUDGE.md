@@ -1,13 +1,13 @@
 # 证据台评委版运行交接
 
-青海大学袁瑞，个人赛，报名编号 `26CZB0001406`。参赛材料为技术 PDF、可编辑源稿和普通话演示视频。当前代码由私有分支 `feature/research-assistant-rag` 提供。
+青海大学袁瑞，个人赛，报名编号 `26CZB0001406`。参赛材料为技术 PDF、可编辑源稿和普通话演示视频。本次优化代码位于私有分支 `improve/grounded-retrieval`。
 
 ## 在独立目录启动
 
 在新目录克隆该分支，在仓库根目录使用 Linux、Python 3.12、Tesseract 及英文语言包。扫描中文时另装简体中文语言包。以下命令安装解析与检索依赖。多语向量检索可用 `.venv/bin/python -m scanpdf.semantic.install` 安装固定模型。工作台使用自己的本地文库。完整 39 份资料接近文库容量上限，评委交互上传可使用单独文库或只预装演示子集。
 
 ```sh
-git clone --branch feature/research-assistant-rag https://github.com/ybb-kami/evidence-desk.git evidence-judge
+git clone --branch improve/grounded-retrieval https://github.com/ybb-kami/evidence-desk.git evidence-judge
 cd evidence-judge
 git rev-parse HEAD
 python3.12 -m venv .venv

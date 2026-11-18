@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 from book_exercises import locate_exercise
 from engine import parse_pdf
@@ -45,6 +47,26 @@ class BookExercisesTest(unittest.TestCase):
         self.assertEqual(source(second), "Exercise 7.2: Prove the bound.")
         self.assertEqual(second["start"], merged.index("Exercise 7.2"))
         self.assertEqual(locate_exercise(book, "Exercises 7.1–7.2")["exercise"]["status"], "ambiguous")
+
+    def test_location_does_not_answer_a_content_question_or_expose_a_neighbor_to_the_reader(self):
+        from followup import _answer_one
+        book = doc((1, 1, "Exercises"),
+                   (1, 2, "Exercise 1.1 Find the sample serial number.\nExercise 1.2 Identify the probe."))
+        request = {"question": "Which probe does Exercise 1.2 identify?"}
+        found = locate_exercise(book, request["question"])
+        self.assertIsNone(found["answer"])
+        self.assertTrue(found["exercise"]["read_statement"])
+        model = Mock()
+        model.answer.return_value = {"status": "disabled"}
+        reader = Mock()
+        reader.candidates.return_value = ([], "disabled", "")
+        result = _answer_one(SimpleNamespace(local_generator=model, passage_reader=reader), request, found)
+        hit, = model.answer.call_args.args[1]
+        self.assertNotIn("serial number", hit["text"])
+        self.assertEqual(hit["text"].index("Identify"), found["hits"][0]["text"].index("Identify"))
+        self.assertIsNone(result["answer"])
+        self.assertEqual(result["hits"], found["hits"])
+        self.assertIn("physical page 1", result["gap"])
 
     def test_page_continuation_keeps_verbatim_math_and_stops_at_next_heading(self):
         book = doc((1, 1, "Exercises"), (1, 2, "Exercise 2.1 Find the zero of the following polynomial:"),

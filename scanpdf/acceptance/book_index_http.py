@@ -79,7 +79,8 @@ def run(source, browser=None):
         anchored = cite(port, scoped, "ViT, 229", 540, "526")
         assert anchored["printed_pages"] == ["229"], anchored
         unknown = ask("书末索引将VGG Zeta形变指向哪些印刷页？")
-        assert not unknown["answer"] and unknown["gap"] and unknown["hits"] == [], unknown
+        assert not unknown["answer"] and unknown["gap"] and unknown["index_status"] == "unresolved", unknown
+        assert "book_index" not in unknown and "retrieval" in unknown, unknown
         ordinary = ask("What is the reparameterization trick?")
         assert ordinary.get("answer_method") != "book_index" and "book_index" not in ordinary, ordinary
         original = call(port, "/api/search", {"ids": [sha], "query": "reparameterization trick"})["hits"]

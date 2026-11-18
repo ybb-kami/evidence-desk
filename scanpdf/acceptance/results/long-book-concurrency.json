@@ -1,0 +1,816 @@
+{
+  "tested_at_utc": "2026-11-18T13:36:54+00:00",
+  "head": "29e6af1eb417f37c5e4e2da962b97bd0b4846f97",
+  "parallel_clients": 4,
+  "mode": "temporary loopback workbench, external models disabled",
+  "inputs": {
+    "UnderstandingDeepLearning_02_09_26_C.pdf": {
+      "physical_pages": 541,
+      "sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+      "indexed_blocks": 6890,
+      "bytes": 22344992,
+      "import_ms": 4307.82
+    },
+    "1706.03762v1.pdf": {
+      "physical_pages": 15,
+      "sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "indexed_blocks": 443,
+      "bytes": 2128686,
+      "import_ms": 630.12
+    }
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "wall_ms": 1608.39,
+      "clients": [
+        {
+          "client": "book-index",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 354.9482,
+              "evidence": {
+                "doc_id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+                "physical_page": 541,
+                "page_label": "527",
+                "block": 3,
+                "printed_page_references": [
+                  "281–286",
+                  "300"
+                ],
+                "question": "What printed pages does the back-of-book index list for \"Wasserstein GAN\"?",
+                "answer": "The index entry ‘Wasserstein GAN’ lists printed page references 281–286, 300. The entry is on PDF physical page 541 (page label 527).",
+                "answer_method": "book_index",
+                "returned_hits": 1
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 447.7643,
+              "evidence": {
+                "source_url": "/api/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=541&block=3&part=1&start=47&end=76",
+                "pdf_url": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=541",
+                "quote": "Wasserstein GAN, 281–286, 300",
+                "boxes": [
+                  [
+                    94.914,
+                    504.2222,
+                    213.1408,
+                    512.1922
+                  ]
+                ],
+                "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 397.6693,
+              "evidence": {
+                "physical_page_fragment": "page=541",
+                "bytes": 22344992,
+                "sha256_verified": true
+              }
+            },
+            "reject_wrong_pdf": {
+              "state": "passed",
+              "ms": 38.8777,
+              "evidence": {
+                "wrong_document_http": 404,
+                "error": "该版本中没有这个物理页。"
+              }
+            }
+          }
+        },
+        {
+          "client": "paper-question",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 721.0576,
+              "evidence": {
+                "doc_id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+                "physical_page": 2,
+                "page_label": "2",
+                "block": 12,
+                "question": "How many layers are in the encoder stack?",
+                "answer": "6",
+                "answer_method": "direct_measurement",
+                "returned_hits": 5
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 131.0207,
+              "evidence": {
+                "source_url": "/api/source?id=0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476&page=2&block=12&part=1&start=0&end=70",
+                "pdf_url": "/pdf/0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476#page=2",
+                "quote": "Encoder:\nThe encoder is composed of a stack of N = 6 identical layers.",
+                "boxes": [
+                  [
+                    108.0,
+                    601.3035,
+                    147.2925,
+                    611.2661
+                  ],
+                  [
+                    157.255,
+                    601.1639,
+                    419.7029,
+                    611.381
+                  ]
+                ],
+                "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 87.1773,
+              "evidence": {
+                "physical_page_fragment": "page=2",
+                "bytes": 2128686,
+                "sha256_verified": true
+              }
+            }
+          }
+        },
+        {
+          "client": "book-reader",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 360.8074,
+              "evidence": {
+                "doc_id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+                "physical_page": 271,
+                "page_label": "257",
+                "block": 7,
+                "physical_pages_checked": [
+                  1,
+                  271,
+                  541
+                ]
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 428.5488,
+              "evidence": {
+                "source_url": "/api/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=271&block=7&part=1&start=0&end=38",
+                "pdf_url": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=271",
+                "quote": "This is known as diagonal enhancement.",
+                "boxes": [
+                  [
+                    94.914,
+                    282.9248,
+                    274.0697,
+                    292.8878
+                  ]
+                ],
+                "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 391.9122,
+              "evidence": {
+                "physical_page_fragment": "page=271",
+                "bytes": 22344992,
+                "sha256_verified": true
+              }
+            }
+          }
+        },
+        {
+          "client": "paper-reader",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 69.0908,
+              "evidence": {
+                "doc_id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+                "physical_page": 3,
+                "page_label": "3",
+                "block": 4,
+                "physical_pages_checked": [
+                  1,
+                  3,
+                  15
+                ]
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 107.0055,
+              "evidence": {
+                "source_url": "/api/source?id=0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476&page=3&block=4&part=1&start=42&end=100",
+                "pdf_url": "/pdf/0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476#page=3",
+                "quote": "mapping a query and a set of key-value pairs to an output,",
+                "boxes": [
+                  [
+                    274.7775,
+                    521.387,
+                    505.2489,
+                    531.3397
+                  ]
+                ],
+                "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 85.4617,
+              "evidence": {
+                "physical_page_fragment": "page=3",
+                "bytes": 2128686,
+                "sha256_verified": true
+              }
+            }
+          }
+        }
+      ],
+      "server_memory_kib": {
+        "VmHWM": 356884,
+        "VmRSS": 356884
+      }
+    },
+    {
+      "round": 2,
+      "wall_ms": 1666.3,
+      "clients": [
+        {
+          "client": "book-index",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 529.3451,
+              "evidence": {
+                "doc_id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+                "physical_page": 541,
+                "page_label": "527",
+                "block": 3,
+                "printed_page_references": [
+                  "281–286",
+                  "300"
+                ],
+                "question": "What printed pages does the back-of-book index list for \"Wasserstein GAN\"?",
+                "answer": "The index entry ‘Wasserstein GAN’ lists printed page references 281–286, 300. The entry is on PDF physical page 541 (page label 527).",
+                "answer_method": "book_index",
+                "returned_hits": 1
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 668.2694,
+              "evidence": {
+                "source_url": "/api/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=541&block=3&part=1&start=47&end=76",
+                "pdf_url": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=541",
+                "quote": "Wasserstein GAN, 281–286, 300",
+                "boxes": [
+                  [
+                    94.914,
+                    504.2222,
+                    213.1408,
+                    512.1922
+                  ]
+                ],
+                "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 146.803,
+              "evidence": {
+                "physical_page_fragment": "page=541",
+                "bytes": 22344992,
+                "sha256_verified": true
+              }
+            },
+            "reject_wrong_pdf": {
+              "state": "passed",
+              "ms": 7.3545,
+              "evidence": {
+                "wrong_document_http": 404,
+                "error": "该版本中没有这个物理页。"
+              }
+            }
+          }
+        },
+        {
+          "client": "paper-question",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 840.3635,
+              "evidence": {
+                "doc_id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+                "physical_page": 2,
+                "page_label": "2",
+                "block": 12,
+                "question": "How many layers are in the encoder stack?",
+                "answer": "6",
+                "answer_method": "direct_measurement",
+                "returned_hits": 5
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 647.3451,
+              "evidence": {
+                "source_url": "/api/source?id=0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476&page=2&block=12&part=1&start=0&end=70",
+                "pdf_url": "/pdf/0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476#page=2",
+                "quote": "Encoder:\nThe encoder is composed of a stack of N = 6 identical layers.",
+                "boxes": [
+                  [
+                    108.0,
+                    601.3035,
+                    147.2925,
+                    611.2661
+                  ],
+                  [
+                    157.255,
+                    601.1639,
+                    419.7029,
+                    611.381
+                  ]
+                ],
+                "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 16.0186,
+              "evidence": {
+                "physical_page_fragment": "page=2",
+                "bytes": 2128686,
+                "sha256_verified": true
+              }
+            }
+          }
+        },
+        {
+          "client": "book-reader",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 689.3093,
+              "evidence": {
+                "doc_id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+                "physical_page": 271,
+                "page_label": "257",
+                "block": 7,
+                "physical_pages_checked": [
+                  1,
+                  271,
+                  541
+                ]
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 665.4666,
+              "evidence": {
+                "source_url": "/api/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=271&block=7&part=1&start=0&end=38",
+                "pdf_url": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=271",
+                "quote": "This is known as diagonal enhancement.",
+                "boxes": [
+                  [
+                    94.914,
+                    282.9248,
+                    274.0697,
+                    292.8878
+                  ]
+                ],
+                "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 120.7313,
+              "evidence": {
+                "physical_page_fragment": "page=271",
+                "bytes": 22344992,
+                "sha256_verified": true
+              }
+            }
+          }
+        },
+        {
+          "client": "paper-reader",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 25.3402,
+              "evidence": {
+                "doc_id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+                "physical_page": 3,
+                "page_label": "3",
+                "block": 4,
+                "physical_pages_checked": [
+                  1,
+                  3,
+                  15
+                ]
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 608.7364,
+              "evidence": {
+                "source_url": "/api/source?id=0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476&page=3&block=4&part=1&start=42&end=100",
+                "pdf_url": "/pdf/0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476#page=3",
+                "quote": "mapping a query and a set of key-value pairs to an output,",
+                "boxes": [
+                  [
+                    274.7775,
+                    521.387,
+                    505.2489,
+                    531.3397
+                  ]
+                ],
+                "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 15.5167,
+              "evidence": {
+                "physical_page_fragment": "page=3",
+                "bytes": 2128686,
+                "sha256_verified": true
+              }
+            }
+          }
+        }
+      ],
+      "server_memory_kib": {
+        "VmHWM": 369380,
+        "VmRSS": 369380
+      }
+    },
+    {
+      "round": 3,
+      "wall_ms": 1901.65,
+      "clients": [
+        {
+          "client": "book-index",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 239.1454,
+              "evidence": {
+                "doc_id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+                "physical_page": 541,
+                "page_label": "527",
+                "block": 3,
+                "printed_page_references": [
+                  "281–286",
+                  "300"
+                ],
+                "question": "What printed pages does the back-of-book index list for \"Wasserstein GAN\"?",
+                "answer": "The index entry ‘Wasserstein GAN’ lists printed page references 281–286, 300. The entry is on PDF physical page 541 (page label 527).",
+                "answer_method": "book_index",
+                "returned_hits": 1
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 523.0072,
+              "evidence": {
+                "source_url": "/api/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=541&block=3&part=1&start=47&end=76",
+                "pdf_url": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=541",
+                "quote": "Wasserstein GAN, 281–286, 300",
+                "boxes": [
+                  [
+                    94.914,
+                    504.2222,
+                    213.1408,
+                    512.1922
+                  ]
+                ],
+                "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 524.1547,
+              "evidence": {
+                "physical_page_fragment": "page=541",
+                "bytes": 22344992,
+                "sha256_verified": true
+              }
+            },
+            "reject_wrong_pdf": {
+              "state": "passed",
+              "ms": 30.2636,
+              "evidence": {
+                "wrong_document_http": 404,
+                "error": "该版本中没有这个物理页。"
+              }
+            }
+          }
+        },
+        {
+          "client": "paper-question",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 781.0805,
+              "evidence": {
+                "doc_id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+                "physical_page": 2,
+                "page_label": "2",
+                "block": 12,
+                "question": "How many layers are in the encoder stack?",
+                "answer": "6",
+                "answer_method": "direct_measurement",
+                "returned_hits": 5
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 427.2844,
+              "evidence": {
+                "source_url": "/api/source?id=0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476&page=2&block=12&part=1&start=0&end=70",
+                "pdf_url": "/pdf/0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476#page=2",
+                "quote": "Encoder:\nThe encoder is composed of a stack of N = 6 identical layers.",
+                "boxes": [
+                  [
+                    108.0,
+                    601.3035,
+                    147.2925,
+                    611.2661
+                  ],
+                  [
+                    157.255,
+                    601.1639,
+                    419.7029,
+                    611.381
+                  ]
+                ],
+                "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 14.6741,
+              "evidence": {
+                "physical_page_fragment": "page=2",
+                "bytes": 2128686,
+                "sha256_verified": true
+              }
+            }
+          }
+        },
+        {
+          "client": "book-reader",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 547.0412,
+              "evidence": {
+                "doc_id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+                "physical_page": 271,
+                "page_label": "257",
+                "block": 7,
+                "physical_pages_checked": [
+                  1,
+                  271,
+                  541
+                ]
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 521.3587,
+              "evidence": {
+                "source_url": "/api/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=271&block=7&part=1&start=0&end=38",
+                "pdf_url": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=271",
+                "quote": "This is known as diagonal enhancement.",
+                "boxes": [
+                  [
+                    94.914,
+                    282.9248,
+                    274.0697,
+                    292.8878
+                  ]
+                ],
+                "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 495.403,
+              "evidence": {
+                "physical_page_fragment": "page=271",
+                "bytes": 22344992,
+                "sha256_verified": true
+              }
+            }
+          }
+        },
+        {
+          "client": "paper-reader",
+          "operations": {
+            "read": {
+              "state": "passed",
+              "ms": 9.6163,
+              "evidence": {
+                "doc_id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+                "physical_page": 3,
+                "page_label": "3",
+                "block": 4,
+                "physical_pages_checked": [
+                  1,
+                  3,
+                  15
+                ]
+              }
+            },
+            "locate": {
+              "state": "passed",
+              "ms": 468.827,
+              "evidence": {
+                "source_url": "/api/source?id=0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476&page=3&block=4&part=1&start=42&end=100",
+                "pdf_url": "/pdf/0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476#page=3",
+                "quote": "mapping a query and a set of key-value pairs to an output,",
+                "boxes": [
+                  [
+                    274.7775,
+                    521.387,
+                    505.2489,
+                    531.3397
+                  ]
+                ],
+                "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+              }
+            },
+            "open_pdf": {
+              "state": "passed",
+              "ms": 16.5676,
+              "evidence": {
+                "physical_page_fragment": "page=3",
+                "bytes": 2128686,
+                "sha256_verified": true
+              }
+            }
+          }
+        }
+      ],
+      "server_memory_kib": {
+        "VmHWM": 376260,
+        "VmRSS": 329404
+      }
+    }
+  ],
+  "sources_sha256": {
+    "app.py": "f7b528730f7765fc242a32bd685be0d8562229255caf4a214a79f8f8eab8ef75",
+    "engine.py": "5d7ffc08e51f57190c4105f247dc51d92d4287297e306b31a97f9128473a62f4",
+    "reader.py": "f5017a190eedd058d7c4bd840ff70fed55daae93be0d210c06936aa0aecf7ece",
+    "scanpdf/workbench.py": "e2965e47e7a8e1a521946ef2be61ad43cca69501aeb0ce36d3ece393dadf905e",
+    "scanpdf/followup.py": "16b4575e297b633bd766a617e1cfec8e118f0b6f8f5b16165a73d128ff3154e7",
+    "scanpdf/book_index.py": "077cace46ae6b792ae9c9ad2b18835cc69fd04fcece5d100a3612173a5481743",
+    "scanpdf/direct_measurement.py": "26ace0d90acc869a7ce9bc8a14135b24fe8c77b55d3ffdbb4f39fb15add98d2d",
+    "scanpdf/claim_support.py": "220dc502c97c00b8df2342d99d9fb554dec41c65246c645b689c8a4ab96aecd0",
+    "scanpdf/source_locator.py": "5905d3888515cbd4eb3801584dd5ff1344f63ba3e10a8613e9984be1dff9fb11",
+    "scanpdf/rag_search.py": "1d9e8129a47ef09024102801d1967da9352739fb998dff8b13b83bc982e7b4cd",
+    "scanpdf/acceptance/long_book_concurrency.py": "641a6cf02e807ad626c72858b5762a8498cd3d599f5e3f55cc68581aa11c5ff5"
+  },
+  "scope": "One disposable library with four HTTP clients. Timings include response verification and exclude import.",
+  "summary": {
+    "book-index/read": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 354.9482,
+        "p95_ms": 529.3451
+      }
+    },
+    "book-index/locate": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 523.0072,
+        "p95_ms": 668.2694
+      }
+    },
+    "book-index/open_pdf": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 397.6693,
+        "p95_ms": 524.1547
+      }
+    },
+    "book-index/reject_wrong_pdf": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 30.2636,
+        "p95_ms": 38.8777
+      }
+    },
+    "paper-question/read": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 781.0805,
+        "p95_ms": 840.3635
+      }
+    },
+    "paper-question/locate": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 427.2844,
+        "p95_ms": 647.3451
+      }
+    },
+    "paper-question/open_pdf": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 16.0186,
+        "p95_ms": 87.1773
+      }
+    },
+    "book-reader/read": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 547.0412,
+        "p95_ms": 689.3093
+      }
+    },
+    "book-reader/locate": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 521.3587,
+        "p95_ms": 665.4666
+      }
+    },
+    "book-reader/open_pdf": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 391.9122,
+        "p95_ms": 495.403
+      }
+    },
+    "paper-reader/read": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 25.3402,
+        "p95_ms": 69.0908
+      }
+    },
+    "paper-reader/locate": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 468.827,
+        "p95_ms": 608.7364
+      }
+    },
+    "paper-reader/open_pdf": {
+      "counts": {
+        "passed": 3
+      },
+      "passed_latency": {
+        "observations": 3,
+        "p50_ms": 16.5676,
+        "p95_ms": 85.4617
+      }
+    }
+  },
+  "operation_counts": {
+    "passed": 39
+  },
+  "passed": true
+}

@@ -73,10 +73,16 @@ def lookup(store, request, *, dense=None):
         chunk = next((c for c in doc["chunks"] if [c["page"], c["block"], c["part"]] == anchor), None)
         if chunk is None:
             raise Bad(404, "未找到所选证据段落。")
+    query = re.sub(r"^(?:其中|这段(?:话)?中|该段中)\s*", "", question.strip())
     from book_index import answer as book_index_answer
     from book_exercises import locate_exercise
     index_entry = book_index_answer(doc, question, chunk)
     if index_entry is not None:
+        if index_entry.get("index_status") == "unresolved":
+            from rag_search import ranked_passages
+            scoped = dict(doc, chunks=[chunk]) if chunk is not None else doc
+            candidates, retrieval = ranked_passages(scoped, query, engine.find_evidence([scoped], query), dense)
+            index_entry.update(hits=candidates, retrieval=retrieval)
         return index_entry
     exercise = locate_exercise(doc if chunk is None else dict(doc, chunks=[chunk]), question)
     if exercise is not None:
@@ -100,7 +106,6 @@ def lookup(store, request, *, dense=None):
         return dict(native_table, answer_method="native_table")
     if anchor is not None:
         doc = dict(doc, chunks=[chunk])
-    query = re.sub(r"^(?:其中|这段(?:话)?中|该段中)\s*", "", question.strip())
     if adam_pair_question(query, chunk):
         return dict(adam_evidence(doc), answer_method="source_fields")
     hits = engine.find_evidence([doc], query)
@@ -124,6 +129,20 @@ def lookup(store, request, *, dense=None):
                     "所选范围未找到足以回答这个问题的原文。")}
 
 def _answer_one(store, request, result, *, on_delta=None, generator=None):
+    if result.get("exercise", {}).get("read_statement"):
+        original = result["hits"]
+        # Preserve character offsets while hiding text from neighboring exercises.
+        scoped = [dict(h, text=" " * h["start"] + h["text"][h["start"]:h["end"]]) for h in original]
+        read = _read_passages(store, request, {"hits": scoped, "answer": None},
+                              on_delta=on_delta, generator=generator)
+        read.update(hits=original, exercise=result["exercise"])
+        if not read.get("answer"):
+            read["gap"] = result["gap"] + " " + read.get("gap", "")
+        return read
+    return _read_passages(store, request, result, on_delta=on_delta, generator=generator)
+
+
+def _read_passages(store, request, result, *, on_delta=None, generator=None):
     if result.get("answer_method"):
         return result
     if not result["hits"] and not result.get("answer"):
@@ -182,7 +201,8 @@ def answer_question(store, request, *, on_delta=None, generator=None):
     full = lookup(store, request, dense=store.dense)
     parts = hardware_clauses(split_question(request["question"]))
     from direct_coverage import covers_parts
-    if len(parts) == 1 or (full.get("training_hardware") and hardware_parts(parts)) or covers_parts(full, parts):
+    if (len(parts) == 1 or full.get("exercise", {}).get("read_statement")
+            or (full.get("training_hardware") and hardware_parts(parts)) or covers_parts(full, parts)):
         return _answer_one(store,request,full,on_delta=on_delta,generator=generator)
     results=[]
     for part in parts:

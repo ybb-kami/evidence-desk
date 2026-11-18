@@ -59,14 +59,16 @@ def _parse(raw):
         return None
 
 
-def generate(question, hits, *, transport=None, model=provider.MODEL):
+def generate(question, hits, *, transport=None, model=provider.MODEL, bounded=False):
     key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
     if not key or transport is None:
         return {"status": "not_configured", "claims": []}
     if not re.fullmatch(r"[!-~]{1,512}", key):
         raise RuntimeError("模型配置无效。")
     by_label = {f"E{i}": hit for i, hit in enumerate(hits[:MAX_PASSAGES], 1) if hit["text"].strip()}
-    excerpts = {label: hit["text"][:MAX_CHARS] for label, hit in by_label.items()}
+    starts = {label: hit["start"] if bounded else 0 for label, hit in by_label.items()}
+    excerpts = {label: hit["text"][starts[label]:hit["end"] if bounded else None][:MAX_CHARS]
+                for label, hit in by_label.items()}
     if not excerpts:
         return {"status": "insufficient_evidence", "claims": []}
     if key in question or any(key in text for text in excerpts.values()):
@@ -102,12 +104,14 @@ def generate(question, hits, *, transport=None, model=provider.MODEL):
                 or not _numbers(text).issubset(_numbers(quote)) or not supports_units(text, quote)):
             break
         hit = by_label[label]
+        offset += starts[label]
         if check(question, "", hits, {"text": text, "span": quote, "hit_index": int(label[1:]) - 1,
                                       "answer_start": offset, "answer_end": offset + len(quote)}):
             break
         checked.append({
             "text": text.strip(), "quote": quote, "id": hit["id"], "page": hit["page"],
             "block": hit["block"], "part": hit.get("part", 1), "source": hit.get("source", "native"),
+            "start": offset, "end": offset + len(quote),
         })
     if len(checked) != len(claims):
         return {"status": "validation_failed", "claims": [], "model": model}
@@ -128,11 +132,12 @@ def route(handler):
     # Preserve scope restrictions when multiple source entries match or a
     # located exercise statement cannot substantiate the requested solution.
     structured = "table_cells" in result or result.get("answer_method") in {"book_index", "exercise_locator"}
-    if structured and not result.get("answer"):
+    if structured and not result.get("answer") and not result.get("exercise", {}).get("read_statement"):
         return handler.payload(200, {"status": "insufficient_evidence", "claims": []})
     try:
         flash = handler.flash_model()
-        draft = generate(request["question"], result["hits"], transport=flash.legacy_transport, model=flash.model)
+        draft = generate(request["question"], result["hits"], transport=flash.legacy_transport, model=flash.model,
+                         bounded=result.get("answer_method") in {"book_index", "exercise_locator"})
     except BudgetExceeded:
         raise app.Bad(429, "无法为本次 DeepSeek 请求预留预算。") from None
     except RuntimeError:

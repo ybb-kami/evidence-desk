@@ -40,6 +40,11 @@ _DIMENSIONS = re.compile(r"\b(?:in|at)\s+(\d{1,7}(?:(?:\s*,\s*(?:and\s+)?|\s+and
                          r"\s+(?:different\s+)?dimensions\b"
                          r"|(?:在|取)\s*(\d{1,7}(?:\s*(?:、|,|，|和|与)\s*\d{1,7}){1,7})\s*(?:个\s*)?维(?:度)?", re.I)
 _PHYSICAL_PAGE = re.compile(r"\b(?:physical|PDF)\s+page\s+([1-9]\d{0,4})(?!\d|\.\d)|物理页\s*([1-9]\d{0,4})(?!\d|\.\d)", re.I)
+_LOCATION_ONLY = re.compile(
+    r"(?:(?:please|the|original|full|physical|printed|PDF|page|pages|book|textbook|of|in|on|for|where|"
+    r"is|does|start|begin|find|locate|show|quote|give|me|statement|text|which)\b|"
+    r"请|查找|找到|定位|显示|给出|教材|课本|书中|第|的|原文|题干|全文|位于|从|在|哪一页|哪页|哪里|"
+    r"哪儿|物理页|开始|[\d\s?？。.,，:：])*", re.I)
 _LETTERED = re.compile(r"^(?:\([a-z\d]+\)|[（][a-z\d]+[）]|[a-z][.)]\s|hint[:：]|提示[:：])", re.I)
 _MATH_MARK = re.compile(r"[=∑∫√÷±≤≥Γπ∈∂]|\(\d+\.\d+\)\s*$")
 _MAX_HITS = 8
@@ -269,6 +274,12 @@ def locate_exercise(doc, question):
         answer = (f"题干要求在 {'、'.join(values)} 维采样。" if zh
                   else f"The exercise specifies sampling in {', '.join(values)} dimensions.")
         return dict(result, answer=answer, hits=supported, gap=None)
+    remainder = _QUERY.sub(" ", unicodedata.normalize("NFKC", question))
+    if not _LOCATION_ONLY.fullmatch(remainder):
+        exercise["read_statement"] = True
+        gap = (f"已找到习题 {number}（物理第 {page} 页），所问内容仍需由题干原文核实。" if zh else
+               f"Exercise {number} starts on physical page {page}. The requested detail still needs support from its statement.")
+        return dict(result, answer=None, gap=gap)
     if zh:
         answer = f"习题 {number} 的题干从物理页 {page} 开始。下方可核对题干原文。"
     else:

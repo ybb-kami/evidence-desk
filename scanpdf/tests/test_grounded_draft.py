@@ -38,6 +38,19 @@ class GroundedDraftTests(unittest.TestCase):
         self.assertNotIn(self.key.encode(), payload)
         self.assertEqual(set(json.loads(json.loads(payload)["messages"][1]["content"])), {"question", "excerpts"})
 
+    def test_neighboring_statement_is_hidden_and_quote_offsets_point_into_original_block(self):
+        prefix = "Exercise 1.3: Contrast the nearby case.\n"
+        suffix = "\nExercise 1.5: Use a different budget."
+        hit = dict(self.hits[0], text=prefix + self.source + suffix,
+                   start=len(prefix), end=len(prefix) + len(self.source))
+        claim = {"source": "E1", "text": "The baseline reached 71.4%.", "quote": self.source}
+        sender = Mock(return_value=self.response([claim]))
+        result = draft.generate("How did the baseline perform?", [hit], transport=sender, bounded=True)
+        cited, = result["claims"]
+        self.assertEqual((cited["start"], cited["end"]), (hit["start"], hit["end"]))
+        transmitted = json.loads(json.loads(sender.call_args.args[0])["messages"][1]["content"])
+        self.assertEqual(transmitted["excerpts"]["E1"], self.source)
+
     def test_missing_source_fabricated_number_and_nonverbatim_quote(self):
         claim = {"source": "E1", "text": "The baseline reached 71.4%.", "quote": self.source}
         for change in [{"source": "E2"}, {"text": "The baseline reached 73%."}, {"quote": "The baseline reached 71.4%."}]:

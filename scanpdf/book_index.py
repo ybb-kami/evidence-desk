@@ -5,10 +5,17 @@ import re
 import unicodedata
 
 
-_INDEX = re.compile(r"\bindex\b|索引", re.I)
+_INDEX_REQUEST = re.compile(
+    r"\b(?:back[- ]of[- ](?:the[- ])?book|book(?:['’]s)?|printed|subject|general|alphabetical|term|name|author)\s+index\b"
+    r"|\bindex\s+(?:entr(?:y|ies)\s+(?:for|under)|lists?|cites?|gives?|shows?|mentions?|points?|refers?|records?|corresponds?)\b"
+    r"|\b(?:listed|cited|referenced|shown|recorded|find|look up)\b[^?。]{0,80}\b(?:in|by|under)\s+(?:the\s+)?index\b"
+    r"|(?:书[末后尾]|末页|末尾|本书|全书|教材)\s*(?:的\s*)?索引"
+    r"|(?:按(?:照)?|查(?:阅|看|找)?)\s*索引|索引\s*(?:词条|条目|列(?:出|在)|把|将|指[向到]|标注)"
+    r"|索引\s*(?:里|中|内)[^?。]{0,100}(?:列(?:出|在)|指[向到]|标注|印刷页|纸本页|页码)", re.I
+)
 _LOCATORS = re.compile(
     r"\b(?:page(?:s|\s+numbers?|\s+references?)?|folio(?:s)?|index\s+entr(?:y|ies)|where)\b|"
-    r"页码|第几页|(?:哪(?:一|几|些|个)?|什么)(?:个|的|印刷|纸本|纸质|书本|实体|物理|[0-9])*(?:页|页码)|指向|索引词条", re.I
+    r"页码|页号|第几页|(?:哪(?:一|几|些|个)?|什么)(?:个|的|印刷|纸本|纸质|书本|实体|物理|[0-9])*(?:页|页码)|指向|索引词条", re.I
 )
 _TOPIC = re.compile(r"^(?:(?:please\s+)?(?:explain|define)\b|why\b|how (?:does|do)\b[^?]{0,100}\bworks?\b|"
                     r"(?:请)?(?:解释|定义)|为什么)|(?:是什么|含义|原理)[?？。]*$", re.I)
@@ -43,9 +50,9 @@ def _term_key(text):
 
 def _request(question):
     # None delegates other questions. An empty term marks an explicit request
-    # whose scope is unclear, so it must not turn into an ordinary topic search.
+    # whose results can only be offered as candidates for manual inspection.
     text = " ".join(unicodedata.normalize("NFKC", question).split()).strip(" ?？。!")
-    if not (_INDEX.search(text) and _LOCATORS.search(text)) or _TOPIC.search(text):
+    if not (_INDEX_REQUEST.search(text) and _LOCATORS.search(text)) or _TOPIC.search(text):
         return None
     quoted = [next(group for group in match.groups() if group is not None) for match in _QUOTED.finditer(text)]
     if quoted:
@@ -120,15 +127,18 @@ def answer(doc, question, anchor=None):
     wording = _term_key(question).replace(_term_key(term), "", 1) if term else question
     zh = bool(re.search(r"[\u3400-\u9fff]", wording))
     result = {"answer_method": "book_index", "answer": None, "gap": None, "hits": []}
-    if not term:
-        return dict(result, gap="请提供一个完整的索引词条。" if zh else "Specify one complete index entry label.")
-    key = _term_key(term)
-    labels = doc.get("page_labels", ())
     final_page_only = _LAST_PAGE.search(question)
-    scope = {page: rows for page, rows in _index_pages(doc) if not final_page_only or page == doc["pages"]}
+    pages = _index_pages(doc) if term or anchor is not None else ()
+    scope = {page: rows for page, rows in pages if not final_page_only or page == doc["pages"]}
     if anchor is not None and anchor["page"] not in scope:
         return dict(result, gap=("所选证据段落不属于本次可核对的书末索引范围。" if zh else
                                  "The selected passage is outside the book index scope for this question."))
+    if not term:
+        return dict(result, index_status="unresolved",
+                    gap=("要核对确切印刷页码，请一次指定一个完整的索引词条。" if zh else
+                         "Specify one complete index entry label to verify its printed page references."))
+    key = _term_key(term)
+    labels = doc.get("page_labels", ())
     matches = {}
     for page, records in scope.items():
         label = labels[page - 1] if 0 < page <= len(labels) else str(page)
@@ -147,7 +157,7 @@ def answer(doc, question, anchor=None):
             return dict(result, gap=gap, hits=[match[0] for match in list(matches.values())[:5]])
         gap = (f"在可核对的索引范围内没有找到「{term}」的完整词条和印刷页码。" if zh else
                f"No exact entry with printed page references for ‘{term}’ was found in the available index.")
-        return dict(result, gap=gap)
+        return dict(result, gap=gap, index_status="unresolved")
     hit, source_term, refs = next(iter(matches.values()))
     page, label = hit["page"], hit["page_label"]
     if zh:

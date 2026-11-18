@@ -112,7 +112,7 @@ function modelDraft(turn,question,id,current){
           const article=node('article','');
           const link=node('a','物理页 '+claim.page+' · 文本块 '+claim.block);
           link.href='/pdf/'+claim.id+'#page='+claim.page; link.target='_blank'; link.rel='noopener';
-          article.append(node('p',claim.text),link,locator(claim),node('blockquote',claim.quote));
+          article.append(node('p',claim.text),link,locator(claim,claim.start,claim.end),node('blockquote',claim.quote));
           output.append(article);
         }
       }else if(data.status==='not_configured'){
