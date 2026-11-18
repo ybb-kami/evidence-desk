@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from future_work import classify_later
 from synthesis import _model_sources, abstract_sentence, evidence_set, generated_paragraphs, handle
 
 
@@ -79,6 +80,38 @@ class SynthesisTests(unittest.TestCase):
         self.assertEqual((sources[candidate['excerpt']]['page'], sources[candidate['excerpt']]['text']), (2, matched))
         self.assertEqual((sources[candidate['citation']]['page'], sources[candidate['citation']]['text']), (3, reference))
         self.assertEqual(sources[candidate['excerpt']]['doc'], later['id'])
+
+    def test_future_work_proposals_keep_versions_and_distinct_conditions(self):
+        proposal = 'Our future work will profile decoder memory fragmentation on the Atlas test split using 8 GPUs.'
+        duplicate = proposal.replace('memory fragmentation', 'MEMORY\nfragmentation')
+        related = proposal.replace('profile', 'quantify')
+        changed = related.replace('using 8 GPUs', 'using 16 GPUs')
+        documents = [paper(i, text=text, day=f'{i} Jan 2020')
+                     for i, text in enumerate((proposal, duplicate, related, changed), 1)]
+        result = evidence_set(documents, dense=SimpleNamespace(available=lambda: False))
+        layer = result['proposals']
+        self.assertEqual((len(layer['groups']), layer['normalized_duplicates'], layer['vector']), (3, 1, 'unavailable'))
+        shared = next(group for group in layer['groups'] if len(group['members']) == 2)
+        self.assertEqual({entry['doc'] for entry in shared['members']}, {doc['id'] for doc in documents[:2]})
+        sources = {source['ref']: source for source in result['sources']}
+        self.assertEqual({sources[entry['ref']]['text'] for entry in shared['members']}, {proposal, duplicate})
+        self.assertEqual({entry['date']['date'] for entry in shared['members']}, {'2020-01-01', '2020-01-02'})
+        self.assertTrue(all(entry['by_author'] and entry['state'] == 'unverified' for entry in shared['members']))
+        self.assertTrue(any(row['relation'] == 'conditions_differ' for row in layer['candidates']))
+        self.assertTrue(any(row['relation'] == 'review' for row in layer['candidates']))
+
+    def test_later_experiment_requires_shared_explicit_scope(self):
+        proposal = 'Our future work will profile decoder memory fragmentation on the Atlas test split using 8 GPUs.'
+        observed = 'We measured decoder memory fragmentation on the Atlas test split using 8 GPUs.'
+        self.assertEqual(classify_later(proposal, observed), 'reported_same_scope')
+        self.assertEqual(classify_later(proposal, observed.replace('8 GPUs', '16 GPUs')), 'topic_candidate')
+        self.assertEqual(classify_later(proposal, observed.replace('memory fragmentation', 'cache throughput')),
+                         'topic_candidate')
+        reference = '[1] A. Author. The initial study. arXiv:2001.00001.'
+        result = evidence_set([paper(1, text=proposal), paper(2, text=observed, reference=reference, day='4 Feb 2023')])
+        match, = result['follow_ups']
+        self.assertEqual((match['state'], match['same_scope']), ('reported_same_scope', 1))
+        self.assertEqual(match['candidates'][0]['kind'], 'reported_same_scope')
 
     @patch('synthesis.provider.configured', return_value=True)
     @patch('synthesis.generated_paragraphs', side_effect=RuntimeError('offline'))

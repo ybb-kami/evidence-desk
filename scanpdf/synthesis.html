@@ -25,6 +25,14 @@ summary{cursor:pointer;font-weight:650}
 li{margin:.35rem 0}
 nav{display:flex;gap:.45rem 1rem;flex-wrap:wrap}
 #review .gap{color:#614530}
+.graph-frame{overflow:auto;max-height:44rem;background:#f7faf6;border:1px solid #bac9c3;border-radius:.4rem}
+.graph-map{position:relative;margin:auto}
+.graph-map canvas{position:absolute;inset:0}
+.graph-map button{position:absolute;transform:translate(-50%,-50%);border:1px solid #247366;border-radius:50%;margin:0;padding:0;background:#fff;color:#15594e;cursor:pointer;font-weight:650}
+.graph-map button[aria-pressed=true]{background:#17665a;color:#fff;box-shadow:0 0 0 3px #b7e1d6}
+.graph-selection a{display:inline-block;margin:.1rem .8rem .1rem 0}
+.proposal-evidence{margin:.6rem 0}
+.vector-choice{display:inline-block;margin:.3rem .6rem}
 :target{scroll-margin-top:1rem;outline:2px solid #267d70;outline-offset:.22rem}
 </style>
 <main>
@@ -37,6 +45,7 @@ nav{display:flex;gap:.45rem 1rem;flex-wrap:wrap}
   </fieldset>
   <button id="local">整理本地证据</button>
   <button id="remote" hidden>使用 DeepSeek 起草</button>
+  <label class="vector-choice"><input id="future-vector" type="checkbox">用本机向量辅助比对未来工作</label>
   <p id="status" role="status"></p>
   <section id="review" aria-live="polite"></section>
 </main>
@@ -105,9 +114,87 @@ function showPapers(area, data, groups) {
     row.id = 'paper-' + paper.id;
   }
 }
+function graphMap(content, data, works, sources) {
+  const diameter = Math.max(540, Math.ceil(data.nodes.length * 43 / Math.PI) + 120);
+  const radius = diameter / 2 - 55;
+  const frame = node('div', undefined, 'graph-frame');
+  frame.tabIndex = 0;
+  frame.setAttribute('aria-label', '可滚动的库内引用图');
+  const map = node('div', undefined, 'graph-map');
+  map.style.width = map.style.height = `${diameter}px`;
+  const canvas = node('canvas');
+  canvas.width = canvas.height = diameter;
+  canvas.setAttribute('aria-hidden', 'true');
+  map.append(canvas);
+  frame.append(map);
+  content.append(frame);
+  const inspector = node('article', undefined, 'graph-selection');
+  inspector.id = 'graph-selection';
+  inspector.setAttribute('aria-live', 'polite');
+  content.append(inspector);
+  const positions = new Map();
+  const ctx = canvas.getContext('2d');
+  const highest = data.nodes[0]?.pagerank || 1;
+  function draw(selected) {
+    ctx.clearRect(0, 0, diameter, diameter);
+    for (const edge of data.links) {
+      const from = positions.get(edge.source), to = positions.get(edge.target);
+      const angle = Math.atan2(to.y - from.y, to.x - from.x);
+      const arrowX = to.x - Math.cos(angle) * to.size / 2;
+      const arrowY = to.y - Math.sin(angle) * to.size / 2;
+      const linked = selected === edge.source || selected === edge.target;
+      ctx.strokeStyle = ctx.fillStyle = linked ? '#197568' : '#93aaa1';
+      ctx.lineWidth = linked ? 2 : 1;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(arrowX, arrowY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(arrowX, arrowY);
+      ctx.lineTo(arrowX - 7 * Math.cos(angle - .45), arrowY - 7 * Math.sin(angle - .45));
+      ctx.lineTo(arrowX - 7 * Math.cos(angle + .45), arrowY - 7 * Math.sin(angle + .45));
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  function choose(work) {
+    for (const [id, item] of positions) item.button.setAttribute('aria-pressed', String(id === work.id));
+    draw(work.id);
+    inspector.replaceChildren(node('h3', work.title || work.name),
+      node('p', `PageRank ${work.pagerank.toFixed(4)} · 被引 ${work.indegree} · 引用 ${work.outdegree}`),
+      link('文献档案', 'paper-' + work.documents[0].id));
+    const edges = data.links.filter(edge => edge.source === work.id || edge.target === work.id);
+    for (const edge of edges) {
+      const other = works.get(edge.source === work.id ? edge.target : edge.source);
+      const role = edge.source === work.id ? '引用' : '被引用于';
+      const entry = link(`${role} ${other.title || other.name}`, edge.ref);
+      entry.title = sources.get(edge.ref).text;
+      inspector.append(entry);
+    }
+    if (!edges.length) inspector.append(node('p', '在本次选集内暂无已匹配引文。', 'gap'));
+  }
+  data.nodes.forEach((work, index) => {
+    const angle = 2 * Math.PI * index / data.nodes.length - Math.PI / 2;
+    const x = diameter / 2 + radius * Math.cos(angle), y = diameter / 2 + radius * Math.sin(angle);
+    const size = 26 + 16 * Math.sqrt(work.pagerank / highest);
+    const button = node('button', String(index + 1));
+    button.type = 'button';
+    button.dataset.graphWork = work.id;
+    button.setAttribute('aria-label', work.title || work.name);
+    button.title = work.title || work.name;
+    button.style.left = `${x}px`;
+    button.style.top = `${y}px`;
+    button.style.width = button.style.height = `${size}px`;
+    button.onclick = () => choose(work);
+    positions.set(work.id, {x, y, size, button});
+    map.append(button);
+  });
+  if (data.nodes.length) choose(data.nodes[0]);
+}
 function showGraph(area, data, works, groups, sources) {
   const content = section(area, 'citation-graph', '库内引用分组');
-  content.append(node('p', '图谱仅使用所选文献。箭头从引用者指向被引用者；直接或间接相连的作品归在同组。PageRank 表示当前选集中的引用位置。'));
+  content.append(node('p', '箭头从引用者指向被引用者。节点按选集 PageRank 排序，点击节点查看引文及其原始出处。'));
+  graphMap(content, data, works, sources);
   for (const [index, group] of data.groups.entries()) {
     const detail = node('details');
     const {id, label} = groups.get(group.works[0]);
@@ -131,16 +218,71 @@ function showGraph(area, data, works, groups, sources) {
     content.append(detail);
   }
 }
+const laterStates = {reported_same_scope:'后文报告同条件实测', topic_candidate:'后文主题候选',
+  checked_no_match:'已查找，仍待查证', unverified:'尚未查证'};
+function showProposals(area, data, sources) {
+  const layer = data.proposals;
+  const content = section(area, 'future-proposals', '未来工作措辞归并');
+  if (!layer.groups.length) { content.append(node('p', '所选文献中暂无明确的未来工作摘录。', 'gap')); return; }
+  const total = layer.groups.reduce((count, group) => count + group.members.length, 0);
+  content.append(node('p', `${total} 条摘录归入 ${layer.groups.length} 组，其中 ${layer.normalized_duplicates} 条与已有措辞规范化后相同。每份 PDF 最多取两条。`));
+  const vector = layer.vector;
+  if (vector !== 'not_requested') {
+    const message = vector === 'ready' ? '本机 E5 已参与查找相近候选。'
+      : vector === 'scope_limit' ? `超出 ${layer.vector_limit} 组，本次按主题词筛查相近候选。`
+      : '本机向量暂不可用，本次按主题词筛查相近候选。';
+    content.append(node('p', message));
+  }
+  const proposed = new Map(layer.groups.map(group => [group.id, group]));
+  if (layer.candidates.length) {
+    const list = node('details');
+    list.append(node('summary', `相近候选 ${layer.candidate_count} 对`));
+    const hints = {polarity_differs:'表述极性不同', conditions_differ:'明示条件不同',
+      conditions_incomplete:'提及的条件详略不同', review:'需核对研究对象、条件与结论'};
+    const pairs = node('ul');
+    for (const pair of layer.candidates) {
+      const item = node('li');
+      for (const ref of pair.refs) {
+        const proposal = proposed.get(ref);
+        item.append(link(`${sources.get(ref).title} ${ref}`, 'proposal-' + proposal.id), ' · ');
+      }
+      item.append(pair.method === 'e5' ? '本机向量相近' : `共享主题词 ${pair.terms.join('、')}`, ` · ${hints[pair.relation]}`);
+      pairs.append(item);
+    }
+    list.append(pairs);
+    if (layer.candidate_count > layer.candidates.length) list.append(node('small', `显示 ${layer.candidates.length} 对候选。`));
+    content.append(list);
+  }
+  for (const group of layer.groups) {
+    const detail = node('details');
+    detail.id = 'proposal-' + group.id;
+    const label = sources.get(group.id).title;
+    detail.append(node('summary', `${label} · ${group.members.length} 条摘录 · ${group.works} 部作品`));
+    if (group.conditions.length) detail.append(node('p', `明示条件 ${group.conditions.join('、')}`));
+    for (const member of group.members) {
+      const source = sources.get(member.ref);
+      const row = node('div', undefined, 'proposal-evidence');
+      row.append(node('strong', member.by_author ? '作者提出' : '文中未来工作措辞'),
+        node('blockquote', source.text), link(`原文 ${member.ref} · 物理页 ${source.page}`, member.ref), ' · ',
+        link(laterStates[member.state], 'later-' + member.ref), ' · ');
+      row.append(member.date ? dateLink(member.date) : node('small', '日期未定'),
+        node('small', ` · PageRank ${member.pagerank.toFixed(4)}`));
+      detail.append(row);
+    }
+    content.append(detail);
+  }
+}
 function showFuture(area, data, sources) {
   const content = section(area, 'future-review', '未来工作与后续证据');
-  content.append(node('p', '按可定位日期排列，arXiv 日期对应所选版本。仅检查当前选集中日期更晚、已有可回查引用的作品，再按英文主题词与词组筛查其正文。候选摘录需要人工判断是否解决了原问题。'));
+  content.append(node('p', 'arXiv 日期对应所选版本。仅查选集中较晚的已匹配引用，按英文主题词和词组筛查正文。未匹配的项目仍待查证。'));
   if (!data.follow_ups.length) content.append(node('p', '目前没有找到明确含未来工作措辞的摘录。', 'gap'));
   for (const row of data.follow_ups) {
     const source = sources.get(row.direction);
     const detail = node('details');
     detail.dataset.direction = row.direction;
+    detail.id = 'later-' + row.direction;
     const year = row.date ? row.date.year : '日期未定';
-    const state = row.matches ? `后续匹配 ${row.matches} 条` : '暂无后续主题证据';
+    const state = laterStates[row.state];
     detail.append(node('summary', `${year} · ${source.title} · ${state}`),
       node('blockquote', source.text), link(`原文 ${source.ref}`, source.ref));
     if (row.date) detail.append(' · ', dateLink(row.date));
@@ -157,12 +299,12 @@ function showFuture(area, data, sources) {
         const item = node('li');
         item.append(dateLink(match.date), ' · ', link(later.title + ' 原文', later.ref), ' · ',
           link('参考文献条目', match.citation), node('blockquote', later.text),
-          node('small', '匹配词：' + match.terms.join('、')));
+          node('small', `${laterStates[match.kind]} · 匹配词 ${match.terms.join('、')}`));
         candidates.append(item);
       }
       detail.append(candidates);
     }
-    if (row.matches > row.candidates.length) detail.append(node('small', '此处列出日期最早的三条候选。'));
+    if (row.matches > row.candidates.length) detail.append(node('small', '最多显示三条，优先列出同条件实测。'));
     content.append(detail);
   }
 }
@@ -174,7 +316,7 @@ function show(data) {
   const navigation = node('nav');
   navigation.setAttribute('aria-label', '综述结果');
   navigation.append(link('逐份文献', 'coverage'), link('库内引用分组', 'citation-graph'),
-    link('未来工作与后续证据', 'future-review'), link('原文摘录', 'excerpts'));
+    link('未来工作措辞归并', 'future-proposals'), link('未来工作与后续证据', 'future-review'), link('原文摘录', 'excerpts'));
   area.append(navigation);
   const messages = {unconfigured:'此服务尚未启用 DeepSeek。',
     unavailable:'本次未取得 DeepSeek 草稿，页面提供本地证据。',
@@ -199,6 +341,7 @@ function show(data) {
   const sources = new Map(data.sources.map(source => [source.ref, source]));
   showPapers(area, data, groups);
   showGraph(area, data, works, groups, sources);
+  showProposals(area, data, sources);
   showFuture(area, data, sources);
   const excerpts = section(area, 'excerpts', '原文摘录');
   for (const category of ['摘要', '引用', '未来工作', '后续正文', '日期']) {
@@ -237,6 +380,7 @@ get('all').onchange = () => {
   invalidate();
 };
 get('papers').onchange = invalidate;
+get('future-vector').onchange = invalidate;
 async function run(mode) {
   const ids = [...get('papers').querySelectorAll('input:checked')].map(box => box.value);
   if (ids.length < 2) {get('status').textContent = '请选择至少两份文献。';return;}
@@ -248,7 +392,7 @@ async function run(mode) {
   get('status').textContent = '正在整理…';
   try {
     const reply = await fetch('/api/synthesis', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ids,mode,consent})});
+      body:JSON.stringify({ids,mode,consent,...(get('future-vector').checked ? {semantic:true} : {})})});
     const data = await reply.json();
     if (current !== revision) return;
     if (!reply.ok) throw Error(data.error || '综述生成失败。');

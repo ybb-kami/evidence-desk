@@ -20,6 +20,8 @@ PACKAGES = {
     "scanpdf/bilingual": (".py", ".html", ".css", ".js"),
     "scanpdf/discovery": (".py", ".html", ".js"),
     "scanpdf/local_llm": (".py",),
+    "scanpdf/preload": (".py",),
+    "scanpdf/reproducibility": (".py", ".html", ".js"),
     "scanpdf/qa_reader": (".py",),
     "scanpdf/scanpdf": (".py",),
     "scanpdf/semantic": (".py",),

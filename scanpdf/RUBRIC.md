@@ -31,6 +31,14 @@
 
 实测显示扫描表格检索补齐了这十题的指定页。差距集中在扩展论文和长书。对方公开配置列有 NVIDIA Nemotron 3.5 Embed 8B 与 Rerank 8B，新 PDF 演示另有 Gemini 生成及云向量记录。证据台使用 int8 multilingual-e5-small 与 BM25，并在独立试验中接入 MobileBERT 抽取、Qwen3-1.7B 本地生成。模型规模、索引单位、硬件和题集来源均不同。上述页码数据不足以评定两份作品的总分或整系统答案质量。[对方模型配置](https://github.com/CuiMiles/ResearchTrace/blob/52d11950da4f3da1dcb830d6212665eb89c0394f/configs/retrieval-models.json) · [对方新 PDF 模型回放](https://github.com/CuiMiles/ResearchTrace/blob/52d11950da4f3da1dcb830d6212665eb89c0394f/evidence/completion-20261116/new-pdf-auto-index-public.json)
 
+## 已有的应用级证据
+
+- **任务编排和外部工具**。可视化 Copilot 在浏览器内展示了 Qwen 的真实 `tool_calls`。一个任务查本地引文，另一个经逐次授权调用 JOSS 出版方。证据不足且仍有未索引页时，执行器追加扫描覆盖核查。本机答复按实际模型 content 增量显示为待核文本，校验通过后才生成带引用结果。[流程与逐事件实测](COPILOT.md)
+- **部署前可复现性**。基础及可选公式 Docker 镜像均实际构建并在回环地址启动，命名卷重启后 PDF 指纹相同。官方预置目录的本机测试跑了 39/39 份及第一份文库的重复导入。全量装入后原件空间余量为 2,375,569 字节，7 篇演示子集留出约 90 MiB。[镜像](container/README.md) · [预置工具与容量结果](preload/README.md)
+- **证据与最终答案的差距**。此前封存的 24 道可答题与 6 道缺口题已用两版完整本机管线回放。两版均为物理页命中@8 的 22/24、完整逐字支持@8 的 7/24、有充分依据的完整终答 1/24、针对性拒答 0/6。`c94c628` 本轮没有生成不可用，较早版有 11 次；共享主机负载不同。六模块的功能验收与这些未专门适配的问题在此分开计量。[盲评口径与冻结结果](acceptance/BLIND.md)
+- **读写和图谱**。固定的 22 份资料生成 22 个节点和 34 条内部引文，点击一条边能打开原 PDF 对应页。原文给出的未来工作保留各自出处和条件。CSV 同一数据在浏览器生成真实 SVG、矢量 TikZ PDF 和 Mermaid 渲染；对缺失或不等距数据保留原始观测。[图谱与综述](acceptance/synthesis_twenty.md) · [变量图表](acceptance/CSV-TRENDS.md)
+- **科研代码出处**。论文中的 GitHub 引用可以从原文页、块定位。BERT 的离线同步工具经确认取到公开仓库默认分支 HEAD，核了固定提交五个文件的内容哈希；页面注明获取时刻和只读快照，另列实时 REST 失败。本轮核对代码材料，没有复现论文训练指标。[仓库证据](reproducibility/README.md)
+
 ## 比赛环境与交付
 
 - §3.1 要求完整 Web 前端和 Agent 后端。评委能否在同一地址从新 PDF 走到可点开的原文，是部署验收的一项独立操作。

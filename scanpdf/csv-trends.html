@@ -57,6 +57,7 @@
     <h2 id="trend-result-heading">图与原行映射</h2>
     <figure>
       <div id="trend-preview" class="preview" tabindex="0" aria-label="图形预览"></div>
+      <p id="trend-preview-hint" class="subtle" hidden>图形可左右滑动。用键盘时，聚焦图形后按左右方向键。</p>
       <figcaption id="trend-caption" class="wrap"></figcaption>
     </figure>
     <div class="controls">
@@ -106,7 +107,16 @@
   const byId = id => document.getElementById(id);
   const input = name => byId('trend-' + name);
   const csv = globalThis.EvidenceDeskCSV, trends = globalThis.EvidenceDeskCSVTrends;
+  const previewArea = input('preview');
   let dataset, source, active, groups = [], readVersion = 0, viewVersion = 0;
+
+  function showPreviewHint() {
+    const overflowing = previewArea.scrollWidth > previewArea.clientWidth;
+    input('preview-hint').hidden = !overflowing;
+    if (overflowing) previewArea.setAttribute('aria-describedby', 'trend-preview-hint');
+    else previewArea.removeAttribute('aria-describedby');
+  }
+  new ResizeObserver(showPreviewHint).observe(previewArea);
 
   function clearResult() {
     viewVersion++;
@@ -171,6 +181,11 @@
       if (input('connect').disabled) input('connect').checked = false;
     }
   });
+  input('controls').addEventListener('invalid', event => {
+    if (event.target !== input('controls').querySelector(':invalid')) return;
+    const messages = {'trend-x':'请选择横轴列。', 'trend-kind':'请选择横轴类型。', 'trend-y':'请选择目标数值列。'};
+    if (messages[event.target.id]) input('status').textContent = messages[event.target.id];
+  }, true);
   function showRows(rows) {
     const status = {missing_group:'缺分组',outside_group:'在所选范围外',invalid_coordinate:'坐标缺失或无效'};
     input('rows').replaceChildren(...rows.slice(0,40).map(row => {
@@ -225,6 +240,7 @@
       active = {stats,rendered};
       input('svg').disabled = input('png').disabled = !rendered;
       input('result').hidden = false;
+      showPreviewHint();
     } catch (error) {
       input('status').textContent = error.message;
     }

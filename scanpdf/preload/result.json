@@ -1,0 +1,543 @@
+{
+  "manifest_sha256": "a4fac4d247a36a22765ba3714e628bff9011518a791a91cc30c5b0fed105e63f",
+  "first": {
+    "states": {
+      "imported": 39
+    },
+    "capacity": {
+      "active_docs": 39,
+      "archived_docs": 0,
+      "document_limit": 50,
+      "remaining_document_slots": 11,
+      "pdf_bytes": 131842159,
+      "pdf_budget_bytes": 134217728,
+      "remaining_pdf_bytes": 2375569,
+      "record_characters": 8351395,
+      "record_budget_characters": 12582912,
+      "remaining_record_characters": 4231517,
+      "scan_cache_bytes": 0,
+      "scan_cache_budget_bytes": 12582912,
+      "remaining_scan_cache_bytes": 12582912,
+      "single_upload_pdf_limit_bytes": 25165824,
+      "max_next_upload_original_bytes": 2375569
+    },
+    "elapsed_seconds": 13.3495,
+    "peak_rss_kib": 193988
+  },
+  "rerun": {
+    "states": {
+      "existing_active": 39
+    },
+    "elapsed_seconds": 0.4418,
+    "peak_rss_kib": 74532
+  },
+  "demo": {
+    "states": {
+      "imported": 7
+    },
+    "capacity": {
+      "active_docs": 7,
+      "archived_docs": 0,
+      "document_limit": 50,
+      "remaining_document_slots": 43,
+      "pdf_bytes": 39456399,
+      "pdf_budget_bytes": 134217728,
+      "remaining_pdf_bytes": 94761329,
+      "record_characters": 2359210,
+      "record_budget_characters": 12582912,
+      "remaining_record_characters": 10223702,
+      "scan_cache_bytes": 0,
+      "scan_cache_budget_bytes": 12582912,
+      "remaining_scan_cache_bytes": 12582912,
+      "single_upload_pdf_limit_bytes": 25165824,
+      "max_next_upload_original_bytes": 25165824
+    },
+    "elapsed_seconds": 2.8949,
+    "peak_rss_kib": 169696
+  },
+  "fault_recovery": {
+    "first": {
+      "imported": 2,
+      "rejected": 1
+    },
+    "repaired": {
+      "existing_active": 2,
+      "imported": 1
+    }
+  },
+  "book_anchors": [
+    {
+      "topic": "chapter prose",
+      "physical_page": 440,
+      "page_label": "426",
+      "block": 3,
+      "part": 1,
+      "original_page": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=440",
+      "image_sha256": "f64d5c9e28e57def44635ce31bc5f6b7a01477116e331029e6b552deeb1bfd08",
+      "source_boxes": [
+        [
+          133.768,
+          163.0028,
+          515.3419,
+          172.9658
+        ],
+        [
+          133.768,
+          174.9578,
+          515.3397,
+          184.9208
+        ],
+        [
+          133.768,
+          186.9128,
+          515.361,
+          196.8758
+        ],
+        [
+          133.768,
+          198.8678,
+          465.0976,
+          208.8308
+        ],
+        [
+          148.712,
+          213.1788,
+          515.3393,
+          223.1418
+        ],
+        [
+          133.768,
+          225.1338,
+          515.3472,
+          235.0968
+        ],
+        [
+          133.768,
+          237.0888,
+          515.351,
+          247.0518
+        ],
+        [
+          133.768,
+          249.0439,
+          515.3351,
+          259.0069
+        ],
+        [
+          133.768,
+          260.9998,
+          515.3511,
+          270.9629
+        ],
+        [
+          133.768,
+          272.9548,
+          515.3374,
+          282.9178
+        ],
+        [
+          133.768,
+          284.9098,
+          515.3511,
+          294.8728
+        ],
+        [
+          51.198,
+          292.0472,
+          100.2294,
+          300.0172
+        ],
+        [
+          133.768,
+          296.8648,
+          515.351,
+          306.8279
+        ],
+        [
+          133.768,
+          308.8198,
+          344.5851,
+          318.7828
+        ],
+        [
+          148.712,
+          323.1308,
+          515.3523,
+          333.0938
+        ],
+        [
+          133.768,
+          335.0858,
+          515.3539,
+          345.0488
+        ],
+        [
+          133.768,
+          347.0408,
+          515.351,
+          357.0038
+        ],
+        [
+          133.768,
+          358.9958,
+          515.351,
+          368.9588
+        ],
+        [
+          133.768,
+          370.9508,
+          497.8161,
+          380.9138
+        ]
+      ],
+      "render_seconds": 0.0927
+    },
+    {
+      "topic": "appendix prose",
+      "physical_page": 476,
+      "page_label": "462",
+      "block": 8,
+      "part": 1,
+      "original_page": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=476",
+      "image_sha256": "b43eb10ec0c2e01c1d964388341253cbe581307532da185b1139969a10041e83",
+      "source_boxes": [
+        [
+          133.768,
+          220.6868,
+          515.3412,
+          230.8936
+        ],
+        [
+          133.768,
+          232.6418,
+          515.3419,
+          242.8486
+        ],
+        [
+          133.768,
+          244.5968,
+          473.5763,
+          254.5598
+        ]
+      ],
+      "render_seconds": 0.0854
+    },
+    {
+      "topic": "final-page index entry only",
+      "physical_page": 541,
+      "page_label": "527",
+      "block": 2,
+      "part": 1,
+      "original_page": "/pdf/f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32#page=541",
+      "image_sha256": "7cf83a0c7680f7ccc033ed67d701e4fe0e11a9cd24df6f69bc53e89466c82150",
+      "source_boxes": [
+        [
+          114.839,
+          140.6992,
+          173.6186,
+          148.6692
+        ],
+        [
+          114.839,
+          150.2262,
+          161.1686,
+          158.1962
+        ],
+        [
+          114.839,
+          159.7532,
+          192.4675,
+          167.7232
+        ],
+        [
+          114.839,
+          169.2812,
+          161.1688,
+          177.2512
+        ],
+        [
+          114.839,
+          178.8082,
+          213.8752,
+          186.7782
+        ],
+        [
+          114.839,
+          188.3352,
+          174.4467,
+          196.3051
+        ],
+        [
+          114.839,
+          197.8632,
+          171.2747,
+          205.8332
+        ],
+        [
+          114.839,
+          207.3902,
+          248.9509,
+          215.3601
+        ],
+        [
+          114.839,
+          216.9182,
+          207.8012,
+          224.8882
+        ],
+        [
+          114.839,
+          226.4451,
+          248.8948,
+          234.4151
+        ],
+        [
+          114.839,
+          235.9721,
+          228.428,
+          243.9421
+        ],
+        [
+          114.839,
+          245.5001,
+          196.9464,
+          253.4701
+        ],
+        [
+          114.839,
+          255.0271,
+          168.9157,
+          262.9971
+        ],
+        [
+          114.839,
+          264.5541,
+          197.0104,
+          272.5241
+        ],
+        [
+          114.839,
+          274.0821,
+          226.1801,
+          282.0521
+        ],
+        [
+          114.839,
+          283.6091,
+          221.8851,
+          291.5791
+        ],
+        [
+          114.839,
+          293.1371,
+          239.9533,
+          301.1071
+        ],
+        [
+          114.839,
+          302.6641,
+          172.8297,
+          310.6341
+        ],
+        [
+          114.839,
+          312.1911,
+          212.7752,
+          320.1611
+        ],
+        [
+          94.914,
+          321.7191,
+          165.0185,
+          329.6891
+        ],
+        [
+          94.914,
+          331.2461,
+          153.231,
+          339.2161
+        ],
+        [
+          114.839,
+          340.7741,
+          176.6867,
+          348.7441
+        ],
+        [
+          114.839,
+          350.3011,
+          151.9959,
+          358.2711
+        ],
+        [
+          94.914,
+          359.8281,
+          149.9867,
+          367.7981
+        ],
+        [
+          94.914,
+          369.3561,
+          132.1819,
+          377.3261
+        ],
+        [
+          94.914,
+          378.8831,
+          148.2658,
+          386.8531
+        ],
+        [
+          94.914,
+          388.4102,
+          162.2844,
+          396.3802
+        ],
+        [
+          114.839,
+          397.9382,
+          158.2118,
+          405.9082
+        ],
+        [
+          114.839,
+          407.4652,
+          173.5627,
+          415.4352
+        ],
+        [
+          114.839,
+          416.9932,
+          172.4867,
+          424.9632
+        ],
+        [
+          114.839,
+          426.5202,
+          153.159,
+          434.4902
+        ],
+        [
+          114.839,
+          436.0472,
+          147.516,
+          444.0172
+        ],
+        [
+          94.914,
+          445.5752,
+          196.5872,
+          453.5452
+        ],
+        [
+          94.914,
+          455.1022,
+          127.591,
+          463.0722
+        ],
+        [
+          94.914,
+          464.6292,
+          191.2242,
+          472.5992
+        ]
+      ],
+      "render_seconds": 0.0837
+    }
+  ],
+  "scanned_page": {
+    "physical_page": 8,
+    "source": "/pdf/64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d#page=8",
+    "table": "p8-r1",
+    "numeric_cells": [
+      {
+        "column_name": "EN-DE",
+        "column": 2,
+        "text": "28.4",
+        "row": 12,
+        "bbox_pt": [
+          282.0,
+          228.6,
+          324.3,
+          243.0
+        ],
+        "reference_point_pt": [
+          303.658,
+          235.145
+        ]
+      },
+      {
+        "column_name": "EN-FR",
+        "column": 3,
+        "text": "41.0",
+        "row": 12,
+        "bbox_pt": [
+          324.3,
+          228.6,
+          371.1,
+          243.0
+        ],
+        "reference_point_pt": [
+          344.943,
+          235.145
+        ]
+      }
+    ],
+    "scan_seconds": 3.7992,
+    "image_sha256": "0c28bee28807dc634d6e1c8fd28011b0353cec6ef34485bb954f0ca519bcbc48",
+    "pending_after": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "concurrency": {
+    "maximum_clients": 4,
+    "elapsed_seconds": 0.3462,
+    "before_server_peak_rss_kib": 96316,
+    "after_server_peak_rss_kib": 161532,
+    "originals_retained": 39,
+    "new_uploads": 2,
+    "operations": [
+      {
+        "operation": "read_original_541_page_book",
+        "elapsed_seconds": 0.1827
+      },
+      {
+        "operation": "render_book_physical_page_541",
+        "elapsed_seconds": 0.2321
+      },
+      {
+        "operation": "upload_user_document_a",
+        "elapsed_seconds": 0.3443
+      },
+      {
+        "operation": "upload_user_document_b",
+        "elapsed_seconds": 0.2664
+      }
+    ]
+  },
+  "version_choice": {
+    "v7": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+    "v1": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+    "archived_alias_kept_name": "1706.03762v1.pdf",
+    "v1_restored": true
+  },
+  "upload_boundary": {
+    "remaining_original_bytes": 2373933,
+    "one_byte_over_rejected": true
+  },
+  "workbench_baseline_rss_kib": 96316,
+  "workbench_peak_rss_kib": 247216
+}

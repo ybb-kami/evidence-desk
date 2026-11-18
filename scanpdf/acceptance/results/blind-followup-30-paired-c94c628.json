@@ -1,0 +1,673 @@
+{
+  "schema_version": 1,
+  "gold_sha256": "ea9e21d2b823e5b199637a066c446d365d70c41cdb163b27b1042076733eea3f",
+  "questions": 30,
+  "answerable": 24,
+  "no_single_answer": 6,
+  "endpoint": "POST /api/followup",
+  "paired": {
+    "physical_page_at_8": {
+      "still_passed": 22,
+      "gained": 0,
+      "lost": 0,
+      "still_failed": 2
+    },
+    "complete_verbatim_evidence_at_8": {
+      "still_passed": 7,
+      "gained": 0,
+      "lost": 0,
+      "still_failed": 17
+    },
+    "correct_final_answer": {
+      "still_passed": 1,
+      "gained": 0,
+      "lost": 0,
+      "still_failed": 23
+    },
+    "targeted_refusal": {
+      "still_passed": 0,
+      "gained": 0,
+      "lost": 0,
+      "still_failed": 6
+    },
+    "unsupported_negative_answer": {
+      "still_passed": 1,
+      "gained": 0,
+      "lost": 0,
+      "still_failed": 5
+    }
+  },
+  "shared_setup": {
+    "one_fresh_workbench_store_per_run": true,
+    "same_source_bytes_and_question_order": true,
+    "identical_gpu_offload_layers": 0,
+    "llama_cpp": "b7940",
+    "model": "Qwen3-1.7B Q4_K_M",
+    "same_ongoing_loopback_generator_process": true,
+    "generator_http_port": 39348,
+    "generator_threads": 4,
+    "generator_context": 4096,
+    "parallel_slots": 1,
+    "DeepSeek": false,
+    "added_holdout_used": false
+  },
+  "host_runtime": {
+    "original_note": "Other host workloads were active during this earlier run. An in-run 1-minute load of 11.41 was observed.",
+    "paired_note": "Other benchmark workloads stopped before this run. The paired accuracy results remain one pass per code version.",
+    "followup_run_start": {
+      "started_at_utc": "2026-11-18T12:09:39.353095+00:00",
+      "host_load_average": [
+        "1.11",
+        "4.01",
+        "6.86"
+      ],
+      "cpu_quota": "400000 100000",
+      "generator_profile": "same running llama.cpp and GGUF service as initial candidate, 4 CPU threads, 4096 context, parallel 1. Host cleared for paired run"
+    }
+  },
+  "before": {
+    "gold_sha256": "ea9e21d2b823e5b199637a066c446d365d70c41cdb163b27b1042076733eea3f",
+    "code_sha256": "34253a587dd4fc62fe133c01f79b610d617efb307cb59c5c2f480abee5fa873d",
+    "git_head": "5203688cf7d8b1f3340b63eeada92167855455bc",
+    "endpoint": "POST /api/followup",
+    "imports": 6,
+    "aggregate": {
+      "questions": 30,
+      "answerable": 24,
+      "positive_nonempty_answer": 3,
+      "positive_explicit_gap": 21,
+      "positive_page_at_1": 15,
+      "positive_any_atom_at_1": 9,
+      "positive_full_atoms_at_1": 3,
+      "positive_page_at_3": 20,
+      "positive_any_atom_at_3": 13,
+      "positive_full_atoms_at_3": 4,
+      "positive_page_at_8": 22,
+      "positive_any_atom_at_8": 18,
+      "positive_full_atoms_at_8": 7,
+      "positive_correct_answers": 1,
+      "positive_correct_with_full_atoms_at_8": 1,
+      "positive_partial_answers": 0,
+      "positive_unsupported_answers": 2,
+      "no_single_answer": 6,
+      "negative_nonempty_answer": 1,
+      "negative_explicit_gap": 5,
+      "negative_ui_generic_no_match": 0,
+      "negative_silent_with_hits": 0,
+      "negative_targeted_refusal": 0,
+      "negative_generic_refusal": 5,
+      "negative_silent": 0,
+      "negative_unsupported_answers": 1
+    },
+    "latency_seconds": {
+      "median": 68.6474,
+      "p90": 84.2469,
+      "max": 88.4444
+    },
+    "groups": {
+      "lang": {
+        "en": {
+          "questions": 14,
+          "answerable": 12,
+          "positive_nonempty_answer": 3,
+          "positive_explicit_gap": 9,
+          "positive_page_at_1": 10,
+          "positive_any_atom_at_1": 6,
+          "positive_full_atoms_at_1": 3,
+          "positive_page_at_3": 12,
+          "positive_any_atom_at_3": 8,
+          "positive_full_atoms_at_3": 4,
+          "positive_page_at_8": 12,
+          "positive_any_atom_at_8": 11,
+          "positive_full_atoms_at_8": 5,
+          "positive_correct_answers": 1,
+          "positive_correct_with_full_atoms_at_8": 1,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 2,
+          "no_single_answer": 2,
+          "negative_nonempty_answer": 0,
+          "negative_explicit_gap": 2,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 2,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 0
+        },
+        "zh": {
+          "questions": 16,
+          "answerable": 12,
+          "positive_nonempty_answer": 0,
+          "positive_explicit_gap": 12,
+          "positive_page_at_1": 5,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 8,
+          "positive_any_atom_at_3": 5,
+          "positive_full_atoms_at_3": 0,
+          "positive_page_at_8": 10,
+          "positive_any_atom_at_8": 7,
+          "positive_full_atoms_at_8": 2,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 0,
+          "no_single_answer": 4,
+          "negative_nonempty_answer": 1,
+          "negative_explicit_gap": 3,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 3,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 1
+        }
+      },
+      "subset": {
+        "absent": {
+          "questions": 5,
+          "no_single_answer": 5,
+          "negative_nonempty_answer": 0,
+          "negative_explicit_gap": 5,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 5,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 0
+        },
+        "ambiguous": {
+          "questions": 1,
+          "no_single_answer": 1,
+          "negative_nonempty_answer": 1,
+          "negative_explicit_gap": 0,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 0,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 1
+        },
+        "prose": {
+          "questions": 9,
+          "answerable": 9,
+          "positive_nonempty_answer": 3,
+          "positive_explicit_gap": 6,
+          "positive_page_at_1": 5,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 3,
+          "positive_page_at_3": 7,
+          "positive_any_atom_at_3": 3,
+          "positive_full_atoms_at_3": 3,
+          "positive_page_at_8": 7,
+          "positive_any_atom_at_8": 5,
+          "positive_full_atoms_at_8": 5,
+          "positive_correct_answers": 1,
+          "positive_correct_with_full_atoms_at_8": 1,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 2
+        },
+        "same-page": {
+          "questions": 8,
+          "answerable": 8,
+          "positive_nonempty_answer": 0,
+          "positive_explicit_gap": 8,
+          "positive_page_at_1": 6,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 7,
+          "positive_any_atom_at_3": 6,
+          "positive_full_atoms_at_3": 1,
+          "positive_page_at_8": 8,
+          "positive_any_atom_at_8": 7,
+          "positive_full_atoms_at_8": 2,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 0
+        },
+        "table": {
+          "questions": 7,
+          "answerable": 7,
+          "positive_nonempty_answer": 0,
+          "positive_explicit_gap": 7,
+          "positive_page_at_1": 4,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 6,
+          "positive_any_atom_at_3": 4,
+          "positive_full_atoms_at_3": 0,
+          "positive_page_at_8": 7,
+          "positive_any_atom_at_8": 6,
+          "positive_full_atoms_at_8": 0,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 0
+        }
+      },
+      "form": {
+        "direct": {
+          "questions": 4,
+          "answerable": 4,
+          "positive_nonempty_answer": 0,
+          "positive_explicit_gap": 4,
+          "positive_page_at_1": 3,
+          "positive_any_atom_at_1": 2,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 3,
+          "positive_any_atom_at_3": 3,
+          "positive_full_atoms_at_3": 0,
+          "positive_page_at_8": 4,
+          "positive_any_atom_at_8": 4,
+          "positive_full_atoms_at_8": 0,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 0
+        },
+        "natural": {
+          "questions": 16,
+          "answerable": 10,
+          "positive_nonempty_answer": 1,
+          "positive_explicit_gap": 9,
+          "positive_page_at_1": 8,
+          "positive_any_atom_at_1": 5,
+          "positive_full_atoms_at_1": 1,
+          "positive_page_at_3": 10,
+          "positive_any_atom_at_3": 8,
+          "positive_full_atoms_at_3": 2,
+          "positive_page_at_8": 10,
+          "positive_any_atom_at_8": 9,
+          "positive_full_atoms_at_8": 3,
+          "positive_correct_answers": 1,
+          "positive_correct_with_full_atoms_at_8": 1,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 0,
+          "no_single_answer": 6,
+          "negative_nonempty_answer": 1,
+          "negative_explicit_gap": 5,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 5,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 1
+        },
+        "paraphrase": {
+          "questions": 10,
+          "answerable": 10,
+          "positive_nonempty_answer": 2,
+          "positive_explicit_gap": 8,
+          "positive_page_at_1": 4,
+          "positive_any_atom_at_1": 2,
+          "positive_full_atoms_at_1": 2,
+          "positive_page_at_3": 7,
+          "positive_any_atom_at_3": 2,
+          "positive_full_atoms_at_3": 2,
+          "positive_page_at_8": 8,
+          "positive_any_atom_at_8": 5,
+          "positive_full_atoms_at_8": 4,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 2
+        }
+      }
+    },
+    "answer_fields": {
+      "total": 40,
+      "correct": 1,
+      "missing": 37,
+      "wrong": 2
+    },
+    "retrieval": {
+      "scored_dense": {
+        "ready": 30
+      },
+      "first_dense": {
+        "ready": 30
+      },
+      "scored_methods": {
+        "multilingual-e5-small": 18,
+        "bm25+multilingual-e5-small": 12
+      },
+      "first_methods": {
+        "multilingual-e5-small": 18,
+        "bm25+multilingual-e5-small": 12
+      },
+      "repeated_after_preparing": 0,
+      "answer_method": {
+        "local_cited_draft": 4,
+        "none": 26
+      },
+      "generation": {
+        "cited_draft": 4,
+        "insufficient_evidence": 8,
+        "validation_failed": 5,
+        "unavailable": 11,
+        "not_reported": 2
+      },
+      "reader": {
+        "ready": 28,
+        "not_reported": 2
+      }
+    },
+    "sum_http_request_seconds": 1503.4256,
+    "index_retries": 0,
+    "generator_unavailable_durations_seconds": {
+      "at_least_75": 11
+    },
+    "displayed_quote_audit": {
+      "question_with_selected_quotes": 4,
+      "selected_quotes": 4,
+      "offsets_point_to_selected_document": 4,
+      "quotes_verbatim_on_actual_page": 4,
+      "quotes_on_expected_page": 3,
+      "quote_semantic_wrong": 2,
+      "quote_semantic_full": 1,
+      "quote_semantic_partial": 1
+    }
+  },
+  "after": {
+    "gold_sha256": "ea9e21d2b823e5b199637a066c446d365d70c41cdb163b27b1042076733eea3f",
+    "code_sha256": "5791df2d943d675189bcc5e9da4fe5e62c9440caac141b1a3d6b1b41dcf14a7e",
+    "git_head": "c94c6285d7a1a4e9764644dd35ca6469b3378efe",
+    "endpoint": "POST /api/followup",
+    "imports": 6,
+    "aggregate": {
+      "questions": 30,
+      "answerable": 24,
+      "positive_nonempty_answer": 5,
+      "positive_explicit_gap": 19,
+      "positive_page_at_1": 15,
+      "positive_any_atom_at_1": 9,
+      "positive_full_atoms_at_1": 3,
+      "positive_page_at_3": 20,
+      "positive_any_atom_at_3": 13,
+      "positive_full_atoms_at_3": 4,
+      "positive_page_at_8": 22,
+      "positive_any_atom_at_8": 18,
+      "positive_full_atoms_at_8": 7,
+      "positive_correct_answers": 1,
+      "positive_correct_with_full_atoms_at_8": 1,
+      "positive_partial_answers": 0,
+      "positive_unsupported_answers": 4,
+      "no_single_answer": 6,
+      "negative_nonempty_answer": 1,
+      "negative_explicit_gap": 5,
+      "negative_ui_generic_no_match": 0,
+      "negative_silent_with_hits": 0,
+      "negative_targeted_refusal": 0,
+      "negative_generic_refusal": 5,
+      "negative_silent": 0,
+      "negative_unsupported_answers": 1
+    },
+    "latency_seconds": {
+      "median": 8.5029,
+      "p90": 12.8677,
+      "max": 21.2772
+    },
+    "groups": {
+      "lang": {
+        "en": {
+          "questions": 14,
+          "answerable": 12,
+          "positive_nonempty_answer": 5,
+          "positive_explicit_gap": 7,
+          "positive_page_at_1": 10,
+          "positive_any_atom_at_1": 6,
+          "positive_full_atoms_at_1": 3,
+          "positive_page_at_3": 12,
+          "positive_any_atom_at_3": 8,
+          "positive_full_atoms_at_3": 4,
+          "positive_page_at_8": 12,
+          "positive_any_atom_at_8": 11,
+          "positive_full_atoms_at_8": 5,
+          "positive_correct_answers": 1,
+          "positive_correct_with_full_atoms_at_8": 1,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 4,
+          "no_single_answer": 2,
+          "negative_nonempty_answer": 0,
+          "negative_explicit_gap": 2,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 2,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 0
+        },
+        "zh": {
+          "questions": 16,
+          "answerable": 12,
+          "positive_nonempty_answer": 0,
+          "positive_explicit_gap": 12,
+          "positive_page_at_1": 5,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 8,
+          "positive_any_atom_at_3": 5,
+          "positive_full_atoms_at_3": 0,
+          "positive_page_at_8": 10,
+          "positive_any_atom_at_8": 7,
+          "positive_full_atoms_at_8": 2,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 0,
+          "no_single_answer": 4,
+          "negative_nonempty_answer": 1,
+          "negative_explicit_gap": 3,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 3,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 1
+        }
+      },
+      "subset": {
+        "absent": {
+          "questions": 5,
+          "no_single_answer": 5,
+          "negative_nonempty_answer": 0,
+          "negative_explicit_gap": 5,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 5,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 0
+        },
+        "ambiguous": {
+          "questions": 1,
+          "no_single_answer": 1,
+          "negative_nonempty_answer": 1,
+          "negative_explicit_gap": 0,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 0,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 1
+        },
+        "prose": {
+          "questions": 9,
+          "answerable": 9,
+          "positive_nonempty_answer": 3,
+          "positive_explicit_gap": 6,
+          "positive_page_at_1": 5,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 3,
+          "positive_page_at_3": 7,
+          "positive_any_atom_at_3": 3,
+          "positive_full_atoms_at_3": 3,
+          "positive_page_at_8": 7,
+          "positive_any_atom_at_8": 5,
+          "positive_full_atoms_at_8": 5,
+          "positive_correct_answers": 1,
+          "positive_correct_with_full_atoms_at_8": 1,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 2
+        },
+        "same-page": {
+          "questions": 8,
+          "answerable": 8,
+          "positive_nonempty_answer": 1,
+          "positive_explicit_gap": 7,
+          "positive_page_at_1": 6,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 7,
+          "positive_any_atom_at_3": 6,
+          "positive_full_atoms_at_3": 1,
+          "positive_page_at_8": 8,
+          "positive_any_atom_at_8": 7,
+          "positive_full_atoms_at_8": 2,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 1
+        },
+        "table": {
+          "questions": 7,
+          "answerable": 7,
+          "positive_nonempty_answer": 1,
+          "positive_explicit_gap": 6,
+          "positive_page_at_1": 4,
+          "positive_any_atom_at_1": 3,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 6,
+          "positive_any_atom_at_3": 4,
+          "positive_full_atoms_at_3": 0,
+          "positive_page_at_8": 7,
+          "positive_any_atom_at_8": 6,
+          "positive_full_atoms_at_8": 0,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 1
+        }
+      },
+      "form": {
+        "direct": {
+          "questions": 4,
+          "answerable": 4,
+          "positive_nonempty_answer": 1,
+          "positive_explicit_gap": 3,
+          "positive_page_at_1": 3,
+          "positive_any_atom_at_1": 2,
+          "positive_full_atoms_at_1": 0,
+          "positive_page_at_3": 3,
+          "positive_any_atom_at_3": 3,
+          "positive_full_atoms_at_3": 0,
+          "positive_page_at_8": 4,
+          "positive_any_atom_at_8": 4,
+          "positive_full_atoms_at_8": 0,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 1
+        },
+        "natural": {
+          "questions": 16,
+          "answerable": 10,
+          "positive_nonempty_answer": 2,
+          "positive_explicit_gap": 8,
+          "positive_page_at_1": 8,
+          "positive_any_atom_at_1": 5,
+          "positive_full_atoms_at_1": 1,
+          "positive_page_at_3": 10,
+          "positive_any_atom_at_3": 8,
+          "positive_full_atoms_at_3": 2,
+          "positive_page_at_8": 10,
+          "positive_any_atom_at_8": 9,
+          "positive_full_atoms_at_8": 3,
+          "positive_correct_answers": 1,
+          "positive_correct_with_full_atoms_at_8": 1,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 1,
+          "no_single_answer": 6,
+          "negative_nonempty_answer": 1,
+          "negative_explicit_gap": 5,
+          "negative_ui_generic_no_match": 0,
+          "negative_silent_with_hits": 0,
+          "negative_targeted_refusal": 0,
+          "negative_generic_refusal": 5,
+          "negative_silent": 0,
+          "negative_unsupported_answers": 1
+        },
+        "paraphrase": {
+          "questions": 10,
+          "answerable": 10,
+          "positive_nonempty_answer": 2,
+          "positive_explicit_gap": 8,
+          "positive_page_at_1": 4,
+          "positive_any_atom_at_1": 2,
+          "positive_full_atoms_at_1": 2,
+          "positive_page_at_3": 7,
+          "positive_any_atom_at_3": 2,
+          "positive_full_atoms_at_3": 2,
+          "positive_page_at_8": 8,
+          "positive_any_atom_at_8": 5,
+          "positive_full_atoms_at_8": 4,
+          "positive_correct_answers": 0,
+          "positive_correct_with_full_atoms_at_8": 0,
+          "positive_partial_answers": 0,
+          "positive_unsupported_answers": 2
+        }
+      }
+    },
+    "answer_fields": {
+      "total": 40,
+      "correct": 1,
+      "missing": 38,
+      "wrong": 1
+    },
+    "retrieval": {
+      "scored_dense": {
+        "ready": 30
+      },
+      "first_dense": {
+        "ready": 30
+      },
+      "scored_methods": {
+        "multilingual-e5-small": 18,
+        "bm25+multilingual-e5-small": 12
+      },
+      "first_methods": {
+        "multilingual-e5-small": 18,
+        "bm25+multilingual-e5-small": 12
+      },
+      "repeated_after_preparing": 0,
+      "answer_method": {
+        "none": 24,
+        "local_cited_draft": 6
+      },
+      "generation": {
+        "validation_failed": 15,
+        "insufficient_evidence": 7,
+        "cited_draft": 6,
+        "not_reported": 2
+      },
+      "reader": {
+        "ready": 28,
+        "not_reported": 2
+      }
+    },
+    "sum_http_request_seconds": 271.687,
+    "index_retries": 0,
+    "generator_unavailable_durations_seconds": {},
+    "displayed_quote_audit": {
+      "question_with_selected_quotes": 6,
+      "selected_quotes": 6,
+      "offsets_point_to_selected_document": 6,
+      "quotes_verbatim_on_actual_page": 6,
+      "quote_semantic_wrong": 4,
+      "quotes_on_expected_page": 4,
+      "quote_semantic_full": 1,
+      "quote_semantic_partial": 1
+    }
+  }
+}

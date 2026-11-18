@@ -1,0 +1,128 @@
+{
+  "doc_sha256": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+  "reference_id": "466b608afcf20e003c6df9c3",
+  "snapshot": {
+    "status": "snapshot",
+    "schema": "evidence-desk-github-snapshot-v1",
+    "checked_at": "2026-11-18T12:19:21+00:00",
+    "repo": "google-research/bert",
+    "commit": "eedf5716ce1268e56f0a50264a88cafad334ac61",
+    "commit_url": "https://github.com/google-research/bert/commit/eedf5716ce1268e56f0a50264a88cafad334ac61",
+    "default_branch": "master",
+    "default_head": "eedf5716ce1268e56f0a50264a88cafad334ac61",
+    "basis": "default_branch_at_fetch",
+    "groups": {
+      "license": {
+        "files": [
+          {
+            "path": "LICENSE",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "bytes": 11358,
+            "blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+            "media_type": "text/plain",
+            "raw_url": "https://raw.githubusercontent.com/google-research/bert/eedf5716ce1268e56f0a50264a88cafad334ac61/LICENSE",
+            "url": "https://github.com/google-research/bert/blob/eedf5716ce1268e56f0a50264a88cafad334ac61/LICENSE"
+          }
+        ],
+        "count": 1,
+        "status": "found"
+      },
+      "readme": {
+        "files": [
+          {
+            "path": "README.md",
+            "sha256": "43b560935cfaef7427ae15d5c2c089b46d857e9e51fce5f20c93a9a74f99b756",
+            "bytes": 50519,
+            "blob_sha": "da8f792a04cbdcc3a6c5baaee5c579a749b4f4c7",
+            "media_type": "text/plain",
+            "raw_url": "https://raw.githubusercontent.com/google-research/bert/eedf5716ce1268e56f0a50264a88cafad334ac61/README.md",
+            "url": "https://github.com/google-research/bert/blob/eedf5716ce1268e56f0a50264a88cafad334ac61/README.md"
+          }
+        ],
+        "count": 1,
+        "status": "found"
+      },
+      "environment": {
+        "files": [
+          {
+            "path": "requirements.txt",
+            "sha256": "c57a65dbc90d15495bbb69c2989a01f3030632c18f5bc395b68206e955d921c9",
+            "bytes": 110,
+            "blob_sha": "357b5ea077b787d61c15d735d0a1b73971f22602",
+            "media_type": "text/plain",
+            "raw_url": "https://raw.githubusercontent.com/google-research/bert/eedf5716ce1268e56f0a50264a88cafad334ac61/requirements.txt",
+            "url": "https://github.com/google-research/bert/blob/eedf5716ce1268e56f0a50264a88cafad334ac61/requirements.txt"
+          }
+        ],
+        "count": 1,
+        "status": "found"
+      },
+      "training": {
+        "files": [
+          {
+            "path": "run_pretraining.py",
+            "sha256": "96f34d5b4ee3bd54aa397b4d0817e93b2da7b832e794a9ecace7d06f4375df93",
+            "bytes": 18667,
+            "blob_sha": "b118f62a38c04ab4c2d78c5678e1f8c758656c34",
+            "media_type": "text/plain",
+            "raw_url": "https://raw.githubusercontent.com/google-research/bert/eedf5716ce1268e56f0a50264a88cafad334ac61/run_pretraining.py",
+            "url": "https://github.com/google-research/bert/blob/eedf5716ce1268e56f0a50264a88cafad334ac61/run_pretraining.py"
+          }
+        ],
+        "count": 1,
+        "status": "found"
+      },
+      "evaluation": {
+        "files": [
+          {
+            "path": "run_squad.py",
+            "sha256": "163fd48c7f6b5135a29e25f2cbdae65dbff9697cbff41ce3ebd7d16fdf2ea230",
+            "bytes": 46532,
+            "blob_sha": "edd4c3ed9863ea350dd8de330dbe9e84609a048c",
+            "media_type": "text/plain",
+            "raw_url": "https://raw.githubusercontent.com/google-research/bert/eedf5716ce1268e56f0a50264a88cafad334ac61/run_squad.py",
+            "url": "https://github.com/google-research/bert/blob/eedf5716ce1268e56f0a50264a88cafad334ac61/run_squad.py"
+          }
+        ],
+        "count": 1,
+        "status": "found"
+      }
+    },
+    "unavailable": [],
+    "git_advertisement": {
+      "url": "https://github.com/google-research/bert.git/info/refs?service=git-upload-pack",
+      "sha256": "7abf26750b4265a6c5dc654f6a0ee16108bd70a39734df22f6816a0937fb9d78",
+      "bytes": 22826
+    },
+    "record_sha256": "af3e97af8a599f5fbc15f6003ad2d95b7e4842599a474e56bb46a08c212e959d"
+  },
+  "raw_files_readback_verified": 5,
+  "browser": {
+    "proof_page": 2,
+    "proof_block": 5,
+    "exact_reference": "https://github.com/\ngoogle-research/bert.",
+    "physical_page_url": "/pdf/987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4#page=2",
+    "selection_boxes": [
+      [
+        165.904,
+        454.0073,
+        290.2677,
+        464.9164
+      ],
+      [
+        82.909,
+        467.5563,
+        217.0433,
+        479.0239
+      ]
+    ],
+    "browser_external_requests": 0,
+    "live": {
+      "status": "unavailable",
+      "checked_at": "2026-11-18T12:19:24+00:00",
+      "reason": "forbidden",
+      "message": "GitHub 公共 API 请求返回 403，本次未取得实时结果。"
+    },
+    "second_live_read_cached": true
+  }
+}

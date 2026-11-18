@@ -374,8 +374,31 @@ async function startReader() {
     finally { setRunning(false); }
   };
   function show(page) {load(page).catch(e => {status.textContent=e.message;});}
+  function pageNumber(value, maximum = Infinity) {
+    if (!/^[0-9]+$/.test(value)) return null;
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number >= 1 && number <= maximum ? number : null;
+  }
+  function pageWarning() {
+    if (!current) return;
+    $("page").value = current.page;
+    status.textContent = `请输入 1 至 ${current.pages} 的物理页码，当前显示第 ${current.page} 页。`;
+  }
+  function jump() {
+    const input = $("page");
+    const page = pageNumber(input.value, current?.pages);
+    if (page !== null) {show(page); return;}
+    if (current) pageWarning();
+    else status.textContent = "请输入有效的物理页码。";
+    input.focus();
+  }
   docs.onchange = () => show(1); direction.onchange = () => show(current?.page || 1);
-  $("go").onclick = () => show($("page").value); $("pageRun").onclick = () => run("page");
+  $("go").onclick = jump;
+  $("page").addEventListener("keydown", event => {
+    if (event.key !== "Enter" || $("go").disabled) return;
+    event.preventDefault(); jump();
+  });
+  $("pageRun").onclick = () => run("page");
   $("all").onclick = () => run("all"); $("cancel").onclick = () => {generation++; status.textContent = "已停止。";};
   try {
     const [library,models] = await Promise.all([json("/api/library"),json("/api/bilingual/models")]);
@@ -383,7 +406,11 @@ async function startReader() {
     for (const doc of library.docs) docs.add(new Option(doc.name,doc.id));
     const requested = new URLSearchParams(location.search);
     if (library.docs.some(doc => doc.id === requested.get("doc"))) docs.value=requested.get("doc");
-    if (docs.value) await load(requested.get("page") || 1);
-    else status.textContent = "请先在文库导入 PDF。";
+    const selected = library.docs.find(doc => doc.id === docs.value);
+    if (selected) {
+      const page = pageNumber(requested.get("page") || "1", selected.pages);
+      await load(page ?? 1);
+      if (page === null) pageWarning();
+    } else status.textContent = "请先在文库导入 PDF。";
   } catch (e) {status.textContent=e.message;}
 }

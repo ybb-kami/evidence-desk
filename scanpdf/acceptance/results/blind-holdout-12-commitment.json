@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "dataset": "independent-sealed-followup-holdout-12",
+  "status": "committed_not_run",
+  "gold_sha256": "8c81a390b9daecca847d5b272fdfe8b118fec3a3979efd7ce2b168811fd8a535",
+  "committed_at_utc": "2026-11-18T12:09:19+00:00",
+  "sources": 4,
+  "source_overlap_with_previous_30": 0,
+  "questions": 12,
+  "answerable": 9,
+  "without_reported_answer": 3,
+  "required_answer_fields": 21,
+  "languages": {
+    "en": 6,
+    "zh": 6
+  },
+  "strata": {
+    "table": 3,
+    "prose": 3,
+    "absent": 3,
+    "same-page": 3
+  },
+  "gold_checks": [
+    "original PDF page render reviewed",
+    "evidence atoms checked in native extraction on declared physical pages",
+    "PDF byte digests differ from all first-set sources",
+    "questions differ from all first-set questions"
+  ],
+  "public_artifact_scope": "commitment and aggregate composition only"
+}

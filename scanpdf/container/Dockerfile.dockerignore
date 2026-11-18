@@ -46,6 +46,14 @@ scanpdf/discovery/**
 !scanpdf/local_llm/
 scanpdf/local_llm/**
 !scanpdf/local_llm/*.py
+!scanpdf/preload/
+scanpdf/preload/**
+!scanpdf/preload/*.py
+!scanpdf/reproducibility/
+scanpdf/reproducibility/**
+!scanpdf/reproducibility/*.py
+!scanpdf/reproducibility/*.js
+!scanpdf/reproducibility/*.html
 !scanpdf/qa_reader/
 scanpdf/qa_reader/**
 !scanpdf/qa_reader/*.py

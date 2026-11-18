@@ -182,6 +182,11 @@ class Handler(app.Handler):
         if path in {"/formula-review", "/formula-review/image", "/api/formula-review"}:
             from formula_review import handle
             return handle(self, post, url)
+        if not post and path == "/workbench.css":
+            return self.payload(200, (HERE / "workbench.css").read_bytes(), "text/css; charset=utf-8")
+        if path in {"/reproducibility", "/reproducibility.js", "/api/reproducibility/references", "/api/reproducibility/audit"}:
+            from reproducibility.routes import handle
+            return handle(self, post, url)
         if not post and path in {"/copilot", "/copilot.js"}:
             filename, mime = (("copilot.html", "text/html; charset=utf-8") if path == "/copilot" else
                               ("copilot.js", "application/javascript; charset=utf-8"))
@@ -207,9 +212,9 @@ class Handler(app.Handler):
             if handle(self, post, path):
                 return
         if not post and path in ("/", "/index.html"):
-            home = (app.HERE / "index.html").read_text()
+            home = (app.HERE / "index.html").read_text().replace("</head>", '<link rel="stylesheet" href="/workbench.css"></head>', 1)
             home = home.replace('<span class="tag">本地工作区</span>',
-                                '<nav><a href="/copilot">科研 Copilot</a> · <a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a> · <a href="/followup">证据追问</a> · <a href="/architecture">跨篇问答</a></nav>')
+                                '<nav aria-label="工作台工具"><a href="/copilot">科研 Copilot</a> <a href="/scan">扫描页识别</a> <a href="/translation">双语精读</a> <a href="/download">下载论文</a> <a href="/reproducibility">核对论文代码</a> <a href="/followup">证据追问</a> <a href="/architecture">跨篇问答</a></nav>')
             home = home.replace('<p class="subtle" id="csv-help">', '<p><a href="/csv-trends">按变量绘图与核对趋势</a></p><p class="subtle" id="csv-help">', 1)
             home = home.replace('id="local-review"></section>', 'id="local-review"><a href="/synthesis">选择文献生成综述</a></section>', 1)
             home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
@@ -268,6 +273,13 @@ class Handler(app.Handler):
                 page = pdf[number - 1]
                 from source_locator import render_image
                 return self.payload(200, render_image(page), "image/png")
+        if post and path == "/api/import":
+            try:
+                return super().serve(post)
+            except ValueError as exc:
+                if str(exc) == "Not a PDF file.":
+                    raise app.Bad(400, "文件不是有效的 PDF，请重新选择。") from None
+                raise
         return super().serve(post)
 
 

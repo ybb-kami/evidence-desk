@@ -27,6 +27,26 @@ def open_doc(page, base, docid, pnum):
     page.locator("article").first.wait_for(timeout=20000)
 
 
+def verify_page_jump(page, base, docid):
+    open_doc(page, base, docid, 1)
+    field = page.locator("#page")
+    field.fill("2")
+    field.press("Enter")
+    proof = page.locator("#original")
+    expect(proof).to_have_attribute("href", f"/pdf/{docid}#page=2")
+    passage = page.locator('.source-card[data-anchor="p2-b1"]').filter(visible=True)
+    expect(passage).to_contain_text("The result is correct.")
+    field.fill("999")
+    field.press("Enter")
+    expect(field).to_have_value("2")
+    expect(page.locator("#status")).to_have_text("请输入 1 至 2 的物理页码，当前显示第 2 页。")
+    expect(proof).to_have_attribute("href", f"/pdf/{docid}#page=2")
+    expect(passage).to_be_visible()
+    open_doc(page, base, docid, 999)
+    expect(field).to_have_value("1")
+    expect(page.locator("#status")).to_have_text("请输入 1 至 2 的物理页码，当前显示第 1 页。")
+
+
 def select(page, part):
     source = page.locator(".source").filter(has_text=part).first
     card = source.locator("..")
@@ -334,6 +354,7 @@ def verify(base, files, chromium, example_dir=None):
         print(
             "Direction scoping, glossary invalidation and literal preservation verified"
         )
+        verify_page_jump(page, base, fixture)
         verify_alignment(page, base, alignment_fixture)
         assert not errors, errors
         browser.close()

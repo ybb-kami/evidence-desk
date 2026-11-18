@@ -18,6 +18,8 @@ git rev-parse HEAD
 - 扫描样本的表 2 可从问答打开物理页 8 的行 12 列 2 与列 3，读数 28.4 和 41.0；两次跳转均核对单元格边框。公开 73 题检索页码命中 48/73，对方公开记录 68/73。原包 39 份的 15 道示例实例，12 个答全，2 个部分，1 个缺失；补充原包以外 GPT-2 后另 3 个答全。[扫描定位回放](acceptance/results/scan-qa-cell-links.json) · [评审要求与同输入对照](RUBRIC.md)
 - 新评委文库单独设目录。单 PDF 上限 24 MiB、文库上限 50 份 / 128 MiB，39 份资料同时装入后剩约 2.27 MiB。上传体验需要单独的空文库。保持评委入口、进程、文库与原有监控和个人文档隔离。演示地址应直接打开科研助手。公网问答与官网提交不在上述本机验收内。
 
+在 `c94c6285d7a1a4e9764644dd35ca6469b3378efe` 已有可实际复跑的 Copilot 工具调用、增量输出、Docker 配方和 7 分钟普通话候选视频。点击「科研 Copilot」或访问本机 `/copilot`。普通话视频冻结在较早的 `5203688`，其逐镜记录列出了实际启用的模型。[Copilot 验收](COPILOT.md) · [录制版本](delivery/video-reproduction-5203688c.md)
+
 ## 从干净环境运行
 
 在新检出的仓库根目录使用 Linux x86-64 和 Python 3.12。系统需装 `tesseract-ocr`、`tesseract-ocr-eng`。额外中文 OCR 使用 `tesseract-ocr-chi-sim` 和 `--lang chi_sim+eng`。模型安装器各自核验固定来源和 SHA。逻辑、依赖和原始测试记录均可在 Git 中核对，模型和运行时二进制另行下载。

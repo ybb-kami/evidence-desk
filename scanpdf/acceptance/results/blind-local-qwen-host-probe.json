@@ -1,0 +1,93 @@
+{
+  "scope": "synthetic host timing only. No sealed questions used.",
+  "started_at_utc": "2026-11-18T12:14:18.639261+00:00",
+  "cpu_quota": "400000 100000",
+  "initial_load": [
+    "4.27",
+    "4.14",
+    "6.15"
+  ],
+  "runs": [
+    {
+      "label": "original_4_threads",
+      "port": 39348,
+      "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+      "threads": 4,
+      "context_tokens": 4096,
+      "cache_ram": "server default",
+      "parallel": 1,
+      "results": [
+        {
+          "trial": 1,
+          "elapsed_seconds": 20.4832,
+          "http_status": 200,
+          "finish_reason": "length",
+          "prompt_tokens": 1429,
+          "completion_tokens": 64,
+          "timings": {
+            "prompt_n": 1429,
+            "prompt_ms": 16397.799,
+            "prompt_per_second": 87.14584195110575,
+            "predicted_n": 64,
+            "predicted_ms": 3907.024,
+            "predicted_per_second": 16.380754251829526
+          }
+        },
+        {
+          "trial": 2,
+          "elapsed_seconds": 18.2078,
+          "http_status": 200,
+          "finish_reason": "length",
+          "prompt_tokens": 1429,
+          "completion_tokens": 64,
+          "timings": {
+            "prompt_n": 1429,
+            "prompt_ms": 14914.752,
+            "prompt_per_second": 95.81118076921426,
+            "predicted_n": 64,
+            "predicted_ms": 2995.505,
+            "predicted_per_second": 21.36534574303832
+          }
+        }
+      ]
+    },
+    {
+      "label": "dedicated_1_thread",
+      "port": 39349,
+      "model": "evidence-local-qwen",
+      "threads": 1,
+      "context_tokens": 3072,
+      "cache_ram": 96,
+      "parallel": 1,
+      "results": [
+        {
+          "trial": 1,
+          "exception": "TimeoutError",
+          "elapsed_seconds": 75.0272
+        },
+        {
+          "trial": 2,
+          "elapsed_seconds": 61.2822,
+          "http_status": 200,
+          "finish_reason": "length",
+          "prompt_tokens": 1429,
+          "completion_tokens": 64,
+          "timings": {
+            "prompt_n": 1429,
+            "prompt_ms": 51933.71,
+            "prompt_per_second": 27.515846643731017,
+            "predicted_n": 64,
+            "predicted_ms": 8652.333,
+            "predicted_per_second": 7.396848919245248
+          }
+        }
+      ]
+    }
+  ],
+  "profiles_differ_in": [
+    "CPU threads",
+    "context length",
+    "server prompt cache capacity"
+  ],
+  "interpretation": "Two serial probes per profile on this host. Both completed four-thread probes and the completed single-thread probe used 1429 input tokens and reached the 64-token limit. One single-thread probe hit the 75-second client timeout."
+}

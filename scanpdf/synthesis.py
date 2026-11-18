@@ -6,6 +6,7 @@ import re
 
 import app
 import provider
+from future_work import classify_later, group_proposals
 from graph import build_graph
 from local_review import (FUTURE, SENTENCE_BOUNDARY, _body_chunks, _body_passages,
                           _find_passage, _topic_terms, _version_stamp)
@@ -146,8 +147,8 @@ def _follow_ups(papers, links, evidence, documents, add):
         for direction in paper['future']:
             quote = TOPIC_NOISE.sub(' ', evidence[direction]['text'])
             comparable_topic = len(set(_topic_terms(FUTURE.sub('', quote)))) >= 3
-            checked, matches = 0, 0
-            candidates = []
+            checked = 0
+            matches = []
             if comparable_topic:
                 for later, link in chronological:
                     doc = documents[later['id']]
@@ -159,22 +160,29 @@ def _follow_ups(papers, links, evidence, documents, add):
                     matched = _find_passage(passages[doc['id']], quote)
                     if not matched:
                         continue
-                    matches += 1
-                    if len(candidates) < MAX_LATER_PER_DIRECTION:
-                        chunk, excerpt, terms = matched
-                        ref = add(doc, chunk, excerpt, '后续正文', later['title'])
-                        candidates.append({'excerpt': ref, 'citation': link['ref'],
-                                           'date': later['date'], 'terms': terms})
+                    chunk, excerpt, terms = matched
+                    kind = classify_later(evidence[direction]['text'], excerpt)
+                    matches.append((kind, later, link, chunk, excerpt, terms))
+            matches.sort(key=lambda match: match[0] != 'reported_same_scope')
+            candidates = []
+            for kind, later, link, chunk, excerpt, terms in matches[:MAX_LATER_PER_DIRECTION]:
+                ref = add(documents[later['id']], chunk, excerpt, '后续正文', later['title'])
+                candidates.append({'excerpt': ref, 'citation': link['ref'], 'date': later['date'],
+                                   'terms': terms, 'kind': kind})
+            observed = sum(match[0] == 'reported_same_scope' for match in matches)
+            state = ('reported_same_scope' if observed else 'topic_candidate' if matches else
+                     'checked_no_match' if checked else 'unverified')
             reviews.append({'direction': direction, 'date': paper['date'],
                             'citations': len(incoming[paper['work']]), 'unordered': unordered,
-                            'later': len(chronological), 'checked': checked, 'matches': matches,
+                            'later': len(chronological), 'checked': checked, 'matches': len(matches),
+                            'same_scope': observed, 'state': state,
                             'comparable_topic': comparable_topic, 'candidates': candidates})
     return sorted(reviews, key=lambda row: (
         (row['date'] or {}).get('year', 9999), (row['date'] or {}).get('date') or '', int(row['direction'][1:])
     ))
 
 
-def evidence_set(documents):
+def evidence_set(documents, *, dense=None):
     graph = build_graph(documents)
     by_id = {doc['id']: doc for doc in documents}
     nodes = sorted(graph['nodes'], key=lambda node: (-node['pagerank'], node['id']))
@@ -211,10 +219,11 @@ def evidence_set(documents):
 
     follow_ups = _follow_ups(papers, links, evidence, by_id, add)
     works = {paper['work'] for paper in papers if paper['abstract']}
+    proposals = group_proposals(follow_ups, evidence, papers, nodes, dense=dense)
     return {'works': len(graph['nodes']), 'edges': len(graph['edges']),
             'abstracts': len(works), 'sources': list(evidence.values()),
             'papers': papers, 'nodes': nodes, 'links': links, 'groups': _citation_groups(nodes, links),
-            'follow_ups': follow_ups}
+            'follow_ups': follow_ups, 'proposals': proposals}
 
 
 def _model_sources(result):
@@ -287,7 +296,9 @@ def generated_paragraphs(sources, *, transport=None):
 
 def handle(handler):
     req = handler.json_request()
-    if set(req) != {'ids','mode','consent'} or req['mode'] not in ('local','model') or type(req['consent']) is not bool:
+    known = {'ids', 'mode', 'consent'}
+    if (set(req) not in (known, known | {'semantic'}) or req['mode'] not in ('local','model')
+            or type(req['consent']) is not bool or type(req.get('semantic', False)) is not bool):
         raise app.Bad(400,'综述请求格式无效。')
     ids = req['ids']
     if (not isinstance(ids, list) or not 2 <= len(ids) <= app.MAX_DOCS or
@@ -298,7 +309,10 @@ def handle(handler):
     docs = handler.server.library.records(ids)
     if len(docs) != len(ids):
         raise app.Bad(404, '部分文献已移出文库，请重新选择。')
-    result = evidence_set(docs)
+    dense = getattr(handler.server.library, 'dense', None) if req.get('semantic') else None
+    result = evidence_set(docs, dense=dense)
+    if req.get('semantic') and dense is None:
+        result['proposals']['vector'] = 'unavailable'
     result.update(mode='local', paragraphs=[])
     if req['mode'] == 'model':
         if result['abstracts'] < 2:
