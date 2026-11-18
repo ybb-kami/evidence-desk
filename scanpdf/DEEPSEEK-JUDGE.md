@@ -53,4 +53,4 @@ python3.12 -m venv .venv
 
 [13 页技术说明](delivery/technical-report-zh-49fb098.pdf) · [可编辑源稿](delivery/technical-report-source-49fb098.zip) · [7 分钟普通话视频，录制版 5203688](delivery/evidence-desk-mandarin-1080p-5203688c.mp4)
 
-补充材料对应产品提交 `90f8f04`。三页核验摘要列出 18 个评分考察点的实测与缺口，62.5 秒录屏展示教材原页定位，片中使用本地证据。 [核验摘要 PDF](delivery/verification-90f8f04.pdf) · [教材真实操作补充视频](delivery/long-book-90f8f04.mp4) · [录制与文件校验](delivery/long-book-90f8f04.json)
+冻结产品 `c4cbd1b` 的公开检索、长书封存组、印刷原式和官方 15 题验收见本轮记录。先前提交 `90f8f04` 的三页核验摘要仍列出 18 个评分考察点，62.5 秒录屏展示本地教材原页定位。[本轮核验](acceptance/GAP-CHECK-c4cbd1b.md) · [上轮交接](acceptance/REVIEW-90f8f04.md) · [核验摘要 PDF](delivery/verification-90f8f04.pdf) · [教材真实操作补充视频](delivery/long-book-90f8f04.mp4) · [录制与文件校验](delivery/long-book-90f8f04.json)
