@@ -27,6 +27,8 @@ python3 -m venv .venv
 
 **可选 DeepSeek**：只在你通过自己的私密环境变量配置 `DEEPSEEK_API_KEY` 后，以 `app.py --enable-deepseek` 启动，且每次在界面同意发送查询和证据摘录，才会请求官方 DeepSeek 服务（可能计费）。未确认时不会调用；没有匹配时也不会发送。线上核选只返回本地能逐字对照的引用，不生成未经核查的事实。详见 [服务与隐私](DEEPSEEK.md)。本交付没有使用真实 key 联调；合约测试不代表线上服务可用。不要把 key 粘到聊天、源码或仓库里。
 
+**可选英文 OCR**：Linux / macOS 安装本地 Tesseract 英语语言包后，执行 `python ocr_local.py input.pdf input.ocr.pdf`，再手动导入衍生副本。最多 10 页纯扫描件；页序保留、不会覆盖原件，识别结果必须对照原图。见 [OCR 说明](OCR.md)。
+
 ## 已实现与边界
 
 | 能力 | 本版能做什么 | 不承诺什么 |
