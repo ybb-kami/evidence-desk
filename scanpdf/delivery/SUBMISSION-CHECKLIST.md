@@ -1,6 +1,6 @@
 # 证据台 · 可溯源科研文献助手　交付清单
 
-当前材料供参赛者和评委本机复核。技术文档同时列出 `abbb714` 基线与后续本机工作台回放。参赛信息已按袁瑞提供的个人赛报名信息填写，正式演示地址与官网回执待补充。
+当前材料供参赛者和评委本机复核。技术文档同时列出 `abbb714` 基线与后续本机工作台回放。参赛信息已按袁瑞提供的个人赛报名信息填写，正式演示地址与官网回执待补充。当前六维权重和部署抽测要求见[评审对照](../RUBRIC.md)；旧版录像和技术稿各自标明了所测版本。
 
 ## 个人赛报名信息与待填项目
 
@@ -13,7 +13,7 @@
 | 唯一参赛者 | 袁瑞 |
 | 参赛编号（如官网另行分配） | ________ |
 | 组委会要求的联系方式 | ________（按报名渠道提供） |
-| GitHub 仓库及分支 | [ybb-kami/evidence-desk](https://github.com/ybb-kami/evidence-desk) · [feature/scanpdf-parser](https://github.com/ybb-kami/evidence-desk/tree/feature/scanpdf-parser) |
+| GitHub 仓库及分支 | [ybb-kami/evidence-desk](https://github.com/ybb-kami/evidence-desk) · [feature/research-assistant-rag](https://github.com/ybb-kami/evidence-desk/tree/feature/research-assistant-rag) |
 | 正式提交的冻结版本 | 封包或推送后填写最终提交哈希 ________ |
 | 仓库访问方式和权限复核结果 | □ 公开　□ 已向评审账户授权；核验日期 ________ |
 | 正式演示 URL、评审期可用时间 | ________ |

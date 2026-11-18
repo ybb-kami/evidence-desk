@@ -10,3 +10,11 @@
 # Optional: enable offline formula candidates with verified local weights.
 # export EVIDENCE_FORMULA_PYTHON="/absolute/path/to/formula-env/bin/python"
 # export EVIDENCE_FORMULA_WEIGHTS="/absolute/path/to/verified-weights"
+
+# The CPU retriever chooses the default verified E5 installation, or this path.
+# export EVIDENCE_DENSE_MODEL_DIR=/absolute/path/to/verified-e5-directory
+# Verified MobileBERT extracts candidate spans from the retrieved passages.
+# export EVIDENCE_QA_READER=/absolute/path/to/reader/mobilebert_qa.tflite
+# Optional, explicitly configured local generation. Use the alias of the running model.
+# export EVIDENCE_LOCAL_QA_URL=http://127.0.0.1:39348/v1/chat/completions
+# export EVIDENCE_LOCAL_QA_MODEL=evidence-local-qwen

@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import patch
 import workbench
-from architecture import compare, metric_observation
+from architecture import _difference, compare, metric_observation
 
 
 def paper(name, *texts):
@@ -58,3 +59,48 @@ class ComparisonTests(unittest.TestCase):
         self.assertIsNone(result["answer"])
         self.assertEqual(len(result["papers"][0]["hits"]),1)
         self.assertEqual(result["papers"][1]["hits"],[])
+
+    def test_gpt2_presence_is_checked_by_selected_paper_not_count(self):
+        first = paper("Improving Language Understanding by Generative Pre-Training", "We train on sequences of 512 tokens.")
+        third = paper("Language Models are Few-Shot Learners", "All models use a context window of nctx = 2048 tokens.")
+        unrelated = paper("A paper reviewing GPT-2", "GPT-2 is referenced below.")
+        result = compare([third, unrelated, first], "从GPT-1到GPT-3的上下文长度如何变化？")
+        self.assertIsNone(result["answer"])
+        self.assertIn("缺少 GPT-2 原始论文", result["gap"])
+
+    def test_requested_title_and_version_must_belong_to_same_paper(self):
+        earlier = dict(self.base, arxiv={"id": "1706.03762", "version": 1})
+        different = dict(self.child, arxiv={"id": "2101.10311", "version": 7})
+        result = compare([earlier, different], "《A new model》v7与《Method B》的训练条件各是什么？")
+        self.assertIsNone(result["answer"])
+        self.assertIn("缺少该题名的 v7", result["gap"])
+        explicit = compare([earlier, different], "对照 arXiv:1706.03762v7 与所选文献。")
+        self.assertIn("1706.03762v7", explicit["gap"])
+
+    def test_each_paper_must_supply_its_own_original_evidence(self):
+        one = paper("First trial", "We measured a latency of 10 seconds in the main trial.")
+        two = paper("Second trial", "The experiment used a different scheduling policy.")
+        local = dict(one["chunks"][0], id=one["id"], name=one["name"])
+        with patch("followup.lookup", side_effect=[{"answer": "10 seconds", "hits": [local]},
+                                                   {"answer": "10 seconds", "hits": [local]}]) as lookup:
+            result = compare([one, two], "对比两篇论文，各自的时延是多少？差多少？", store=object())
+        reqs = [call.args[1] for call in lookup.call_args_list]
+        self.assertEqual([req["id"] for req in reqs], [one["id"], two["id"]])
+        self.assertTrue(all("差多少" not in req["question"] for req in reqs))
+        self.assertEqual(result["papers"][0]["answer"], "10 seconds")
+        self.assertIsNone(result["papers"][1]["answer"])
+        self.assertEqual(result["papers"][1]["hits"], [])
+        self.assertIsNone(result["answer"])
+
+    def test_difference_requires_same_named_protocol_metric_row_and_unit(self):
+        def reading(value="83.5 %", target="CrossBench", metric="Accuracy (%)", row="Shared baseline"):
+            return {"answer": value, "table_cells": [dict(page=3, method="native_pdf", table=2, value=value,
+                                                         row_label=row, column_label=metric)],
+                    "hits": [dict(page=3, text=f"Table 2: Accuracy on the {target} test split.")]}
+
+        first, second = reading(), reading(value="80.0 %")
+        self.assertIn("3.5个百分点", _difference([first, second]))
+        for alternate in (reading(target="OtherBench"), reading(value="80.0"), reading(metric="Precision (%)"),
+                          reading(row="Another run"), reading(target="held-out")):
+            self.assertIsNone(_difference([first, alternate]))
+        self.assertIsNone(_difference([first, second, reading()]))

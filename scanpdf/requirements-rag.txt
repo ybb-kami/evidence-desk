@@ -1,0 +1,4 @@
+-r requirements.txt
+-r semantic/requirements.txt
+-r bilingual/requirements.txt
+-r qa_reader/requirements.txt

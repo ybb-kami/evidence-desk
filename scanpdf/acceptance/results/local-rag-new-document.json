@@ -1,0 +1,55 @@
+{
+  "workbench_commit": "5203688cf7d8b1f3340b63eeada92167855455bc",
+  "document_sha256": "d18a0ae03a3f16f43be356d36479e109c0390a5ea186a03a0bb322fbc8a22224",
+  "transport": "browser",
+  "cases": [
+    {
+      "question": "验证集收录了多少篇标注摘要？",
+      "passed": true,
+      "seconds": 9.74,
+      "answer": "验证集收录了37篇标注摘要。",
+      "method": "local_cited_draft",
+      "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+      "status": "cited_draft",
+      "evidence": [
+        {
+          "page": 2,
+          "block": 2,
+          "part": 1,
+          "span": "The validation split contains 37 annotated abstracts.",
+          "answer_start": 0,
+          "answer_end": 53
+        }
+      ]
+    },
+    {
+      "question": "Which instrument recorded chamber pressure during calibration?",
+      "passed": true,
+      "seconds": 6.16,
+      "answer": "capacitive gauge",
+      "method": "local_cited_draft",
+      "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+      "status": "cited_draft",
+      "evidence": [
+        {
+          "page": 3,
+          "block": 2,
+          "part": 1,
+          "span": "A capacitive gauge recorded chamber pressure during calibration.",
+          "answer_start": 0,
+          "answer_end": 64
+        }
+      ]
+    },
+    {
+      "question": "What serial number was printed on that pressure gauge?",
+      "passed": true,
+      "seconds": 7.08,
+      "answer": null,
+      "method": null,
+      "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+      "status": "insufficient_evidence",
+      "evidence": []
+    }
+  ]
+}

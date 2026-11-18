@@ -49,6 +49,16 @@ def document():
 
 
 class PersistentIndexTest(TestCase):
+    def test_unavailable_storage_falls_back_to_memory(self):
+        with TemporaryDirectory() as root:
+            folder = Path(root) / "unavailable"
+            folder.touch()
+            dense = service(folder)
+            doc = document()
+            first = dense.search([doc], "calibration")
+            self.assertEqual(dense.search([doc], "calibration"), first)
+            self.assertEqual(dense._encoder.passage_calls, 1)
+
     def test_reopened_index_skips_passage_encoding_and_keeps_scope(self):
         with TemporaryDirectory() as root:
             folder = Path(root) / "first-library"

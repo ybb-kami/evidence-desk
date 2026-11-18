@@ -1,0 +1,54 @@
+{
+  "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+  "answer": "表 2（物理页 8）中，Transformer (big) · BLEU · EN-DE = 28.4。Transformer (big) · BLEU · EN-FR = 41.0。",
+  "physical_page": 8,
+  "cells": [
+    {
+      "page": 8,
+      "region": "p8-r1",
+      "table": 2,
+      "row": 12,
+      "column": 2,
+      "column_span": 1,
+      "row_label": "Transformer (big)",
+      "column_label": "BLEU · EN-DE",
+      "text": "28.4",
+      "value": "28.4",
+      "method": "cached_ocr",
+      "bbox_pt": [
+        282.0,
+        228.6,
+        324.3,
+        243.0
+      ],
+      "line_id": "7.3.9",
+      "region_status": "structure_recognized",
+      "block": 4,
+      "part": 1
+    },
+    {
+      "page": 8,
+      "region": "p8-r1",
+      "table": 2,
+      "row": 12,
+      "column": 3,
+      "column_span": 1,
+      "row_label": "Transformer (big)",
+      "column_label": "BLEU · EN-FR",
+      "text": "41.0",
+      "value": "41.0",
+      "method": "cached_ocr",
+      "bbox_pt": [
+        324.3,
+        228.6,
+        371.1,
+        243.0
+      ],
+      "line_id": "7.3.9",
+      "region_status": "structure_recognized",
+      "block": 4,
+      "part": 1
+    }
+  ],
+  "transport": "Chromium UI, actual OCR, cell highlight checked"
+}

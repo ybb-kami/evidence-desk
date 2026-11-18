@@ -75,11 +75,13 @@ class VectorCache:
 
     def load(self, key, rows):
         length = rows * self.dimensions * 4
-        if not 0 < length <= MAX_DISK_BYTES or not self.directory.is_dir():
+        if not 0 < length <= MAX_DISK_BYTES:
             return None
         identity = self._identity(key, rows)
         file = self._file(identity)
         try:
+            if not self.directory.is_dir():
+                return None
             with self._locked():
                 try:
                     vectors = self._read(file, identity, length)

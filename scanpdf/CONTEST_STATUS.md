@@ -2,11 +2,11 @@
 
 作品为《证据台 · 可溯源科研文献助手》，参赛形式为个人赛，唯一参赛者为青海大学袁瑞，报名系统中的队伍名为 `26CZB0001406`。
 
-2026-11-18，功能分支 `feature/scanpdf-parser`。以下结果属于本分支的可运行代码。新工作台入口为 `python scanpdf/workbench.py`，运行需要 Python 3.12 和本地 OCR 依赖。双语权重通过单独安装器取得。环境变量示例见 [environment.example](environment.example)。原轻量工作台可继续通过 `app.py` 启动。
+本页保留早期 `feature/scanpdf-parser` 的模块验收。后续开发位于 `feature/research-assistant-rag`。当前评分细则、逐项进展和新旧对照见[评审对照](RUBRIC.md)。新工作台入口为 `python scanpdf/workbench.py`，运行需要 Python 3.12 和本地 OCR 依赖。双语权重通过单独安装器取得。环境变量示例见 [environment.example](environment.example)。原轻量工作台可继续通过 `app.py` 启动。
 
 ### 提交要求与材料
 
-对照资料包镜像中 7 页《科研小助手 Agent》的提交表。评分权重为 AI 技术深度 35%、产品功能和工程质量 30%、创新性 15%、用户体验 10%、实用性 10%。镜像与输入版本固定，组委会官网未提供本次可独立验证的原件哈希。[赛题说明镜像](https://github.com/CuiMiles/ResearchTrace/tree/52d11950da4f3da1dcb830d6212665eb89c0394f/evals/pdfs/科研小助手)
+本次采用参赛者提供的分项细则。Agent 与大模型技术深度占 35%，科研场景创新性占 25%，工程质量、业务闭环、学术交互和学术价值各占 10%。比赛环境第 3.5 条还要求在评审部署中运行预置 `pdf/` 用例。七页资料包可核对题目、输入和提交规格；官网个人中心正文与最终通知仍须以报名渠道显示为准。[固定版本的七页资料包](https://github.com/CuiMiles/ResearchTrace/tree/52d11950da4f3da1dcb830d6212665eb89c0394f/evals/pdfs/科研小助手)
 
 | 提交物 | 当前交付 | 参赛者仍需完成 |
 |---|---|---|
