@@ -104,6 +104,7 @@ def handle(handler, post, path):
     assets = {
         "/translation": ("reader.html", "text/html"),
         "/bilingual/export.js": ("export.js", "text/javascript"),
+        "/bilingual/alignment.js": ("alignment.js", "text/javascript"),
         "/bilingual/reader.js": ("reader.js", "text/javascript"),
     }
     if not post and path in assets:

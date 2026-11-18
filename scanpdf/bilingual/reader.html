@@ -1,5 +1,93 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>双语对照阅读</title>
-<style>
-*{box-sizing:border-box}body{font:16px/1.6 system-ui,sans-serif;margin:0;color:#17292b;background:#f5f7f5}main{max-width:1160px;margin:auto;padding:1.4rem}a{color:#086c63}h1{margin:.55rem 0}nav,.settings,.actions{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}select,button,input{font:inherit;padding:.35rem .6rem;border:1px solid #859994;border-radius:.3rem;background:white;color:inherit}button{cursor:pointer}button:disabled{opacity:.55}select{max-width:100%}input[type=number]{width:5rem}.settings,.actions{margin:.85rem 0}article{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1rem;background:white;border-top:1px solid #cad5d2}article header{grid-column:1/-1;display:flex;align-items:center;gap:.8rem;font-size:.85rem}article p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.translated{border-left:2px solid #d5e8df;padding-left:1rem}.source{font-family:Georgia,serif}details{grid-column:1/-1;font-size:.85rem;color:#28564e}details img{display:block;max-width:100%;margin-top:.5rem}summary{cursor:pointer}.note{color:#405954}.status{min-height:1.5rem}button:focus-visible,a:focus-visible{outline:3px solid #116f70}@media(max-width:620px){article{grid-template-columns:1fr}.translated{padding:.4rem 0 0;border:0;border-top:1px dotted #a2ada7}}
-</style><main><nav><a href="/">返回工作台</a></nav><h1>双语对照阅读</h1><div class="settings"><label>文献 <select id="doc"></select></label><label>翻译方向 <select id="direction"><option value="en-zh">英文 → 中文</option><option value="zh-en">中文 → 英文</option></select></label></div>
-<div class="actions"><label>物理页 <input id="page" type="number" min="1" value="1"></label><button id="go">跳页</button><span id="count"></span><a id="original" target="_blank" rel="noopener">打开原 PDF</a></div><div class="actions"><button id="pageRun">翻译本页</button><button id="all">连续翻译至末页</button><button id="cancel" disabled>停止</button><button id="export" disabled>导出已完成译段（HTML）</button></div><details><summary>设置需保留原文的术语</summary><label for="terms">每行一个术语，按大小写和字面匹配。应用后，本篇此方向已有译段需重新翻译。</label><br><textarea id="terms" rows="3" cols="35" maxlength="2048"></textarea> <button id="applyTerms">应用术语</button></details><p class="note">可在原文中划选后点击该段按钮。左右栏按原文位置对齐，翻译在本机运行。浏览器首次使用时可能需要下载语言包。</p><p id="status" class="status" role="status"></p><section id="rows"></section></main><script src="/bilingual/export.js"></script><script src="/bilingual/reader.js"></script></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>双语对照阅读</title>
+  <style>
+    * { box-sizing: border-box }
+    [hidden] { display: none !important }
+    body { font: 16px/1.6 system-ui,sans-serif; margin: 0; color: #17292b; background: #f5f7f5 }
+    main { max-width: 1160px; margin: auto; padding: 1.4rem }
+    a { color: #086c63 }
+    h1 { margin: .55rem 0 }
+    nav, .settings, .actions { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap }
+    .settings label { min-width: 0 }
+    select, button, input { font: inherit; padding: .35rem .6rem; border: 1px solid #859994; border-radius: .3rem; background: white; color: inherit }
+    button { cursor: pointer }
+    button:disabled { opacity: .55 }
+    select, textarea { max-width: 100% }
+    input[type=number] { width: 5rem }
+    .settings, .actions { margin: .85rem 0 }
+    .note, .status { margin: .65rem 0; color: #405954 }
+    .status { min-height: 1.6em }
+    .reader-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem }
+    .reader-column { min-width: 0; border: 1px solid #adbfb8; border-radius: .4rem; background: white }
+    .reader-column h2 { margin: 0; font-size: 1rem; padding: .42rem .85rem; border-radius: .4rem .4rem 0 0; background: #e3eee8 }
+    .reader-pane {
+      position: relative; height: clamp(18rem, 62dvh, 50rem); overflow: auto; overflow-anchor: none;
+      overscroll-behavior-y: contain; scrollbar-gutter: stable; border-radius: 0 0 .4rem .4rem
+    }
+    .passage { min-width: 0; padding: .8rem .9rem; border-top: 1px solid #cad5d2; border-left: .25rem solid transparent; background: white }
+    .passage.current-passage { border-left-color: #127368 }
+    .passage header { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .65rem; font-size: .85rem; color: #405954; margin-bottom: .55rem }
+    .passage p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 }
+    .source[lang=en] { font-family: Georgia,serif }
+    details { font-size: .9rem; color: #28564e }
+    .passage details { margin-top: .5rem }
+    details img { display: block; max-width: 100%; margin-top: .5rem }
+    summary { cursor: pointer }
+    :focus-visible { outline: 3px solid #116f70; outline-offset: -2px }
+    @media (max-width: 680px) {
+      main { padding: .85rem }
+      .reader-columns { display: block }
+      .stacked-pair { margin-bottom: 1rem; border: 1px solid #adbfb8; border-radius: .4rem }
+      .stacked-pair .source-card { border-top: 0 }
+      .stacked-pair .translation-card { background: #eef5f1 }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav><a href="/">返回工作台</a></nav>
+    <h1>双语对照阅读</h1>
+    <div class="settings">
+      <label>文献 <select id="doc"></select></label>
+      <label>翻译方向 <select id="direction"><option value="en-zh">英文 → 中文</option><option value="zh-en">中文 → 英文</option></select></label>
+    </div>
+    <div class="actions">
+      <label>物理页 <input id="page" type="number" min="1" value="1"></label>
+      <button id="go">跳页</button><span id="count"></span><a id="original" target="_blank" rel="noopener">打开原 PDF</a>
+    </div>
+    <div class="actions">
+      <button id="pageRun">翻译本页</button><button id="all">连续翻译至末页</button>
+      <button id="cancel" disabled>停止</button><button id="export" disabled>导出已完成译段（HTML）</button>
+    </div>
+    <details>
+      <summary>设置需保留原文的术语</summary>
+      <label for="terms">每行一个术语，按大小写和字面匹配。应用后，本篇此方向已有译段需重新翻译。</label><br>
+      <textarea id="terms" rows="3" cols="35" maxlength="2048"></textarea> <button id="applyTerms">应用术语</button>
+    </details>
+    <p class="note">可在原文段内划选后翻译。宽屏滚动任一栏时，另一栏跟随到对应段落。翻译在本机运行。</p>
+    <p id="status" class="status" role="status"></p>
+    <div id="rows" class="reader-columns" hidden>
+      <div class="reader-column">
+        <h2 id="source-heading">原文</h2>
+        <section id="source-pane" class="reader-pane" tabindex="0" aria-labelledby="source-heading">
+          <div class="passages"></div><div class="end-space" aria-hidden="true"></div>
+        </section>
+      </div>
+      <div class="reader-column">
+        <h2 id="translation-heading">译文</h2>
+        <section id="translation-pane" class="reader-pane" tabindex="0" aria-labelledby="translation-heading">
+          <div class="passages"></div><div class="end-space" aria-hidden="true"></div>
+        </section>
+      </div>
+      <div id="stacked" hidden></div>
+    </div>
+  </main>
+  <script src="/bilingual/export.js"></script>
+  <script src="/bilingual/alignment.js"></script>
+  <script src="/bilingual/reader.js"></script>
+</body>
+</html>

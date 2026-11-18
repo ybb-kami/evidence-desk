@@ -1,6 +1,6 @@
 "use strict";
 const assert = require("node:assert/strict");
-const {parts} = require("./reader.js");
+const {parts, translateWithTerms} = require("./reader.js");
 const text = "😀The model uses x = 2 + 3 and `fit(x)`.\nconst y = 5;\n$z_1$ and 计算。";
 const slices = parts({text,protected:[]},0,text.length);
 assert.equal(slices.map(p=>p.text).join(""),text);
@@ -41,3 +41,42 @@ for (const token of ["<pad>","<EOS>"]) {
 const {denseNumericTable} = require("./reader.js");
 assert(denseNumericTable("base\n6\n0.1\n0.1\n100K"));
 assert(!denseNumericTable("This experiment uses 12 people.\nOne group has 6 participants.\n6"));
+
+const long = "sample ".repeat(29) + "convolutional neural networks keep running.";
+const split = parts({text:long,protected:[]},0,long.length,[],"en-zh");
+assert.equal(split.map(p=>p.text).join(""),long);
+assert(split.some(p=>p.text.includes("convolutional neural networks")));
+const code = "`label smoothing`";
+assert.deepEqual(parts({text:code,protected:[]},0,code.length,[],"en-zh"),[{text:code,translate:false}]);
+const title = "Label Smoothing\nDuring training, we enabled label smoothing.";
+assert.deepEqual(parts({text:title,protected:[]},0,title.length,[],"en-zh").map(p=>p.text),
+  ["Label Smoothing\n","During training, we enabled label smoothing."]);
+
+async function testTerms() {
+  const forbidden = () => assert.fail("An exact term should not call the model.");
+  assert.equal(await translateWithTerms("Scaled Dot-\nProduct Attention","en-zh",forbidden),"缩放点积注意力");
+  const markerInput = "Test label smoothing with multi-head attention.";
+  assert.equal(await translateWithTerms(markerInput,"en-zh",async value => {
+    assert.equal(value, markerInput);
+    return "用多头注意测试标牌的平滑。";
+  }),"用多头注意力测试标签平滑。");
+  assert.equal(await translateWithTerms(markerInput,"en-zh",async value => ({
+    [markerInput]:"尝试标记技术。",
+    "Test [TERM1] with [TERM2].":"结合[TERM2]测试[TERM1]。",
+  })[value]),"结合多头注意力测试标签平滑。");
+  assert.equal(await translateWithTerms(markerInput,"en-zh",async value => ({
+    [markerInput]:"尝试标记技术。",
+    "Test [TERM1] with [TERM2].":"[TERM2]和[TERM2]。",
+    "Test":"测试",
+    "with":"配合",
+  })[value]),"测试 标签平滑 配合 多头注意力.");
+  for (const [value,direction] of [["The writer smooths a paper label.","en-zh"],["label smoothing","zh-en"]]) {
+    assert.equal(await translateWithTerms(value,direction,async original => {
+      assert.equal(original,value);
+      return "MODEL";
+    }),"MODEL");
+  }
+  console.log("Academic terms, marker validation, fallback and direction scoping verified.");
+}
+
+testTerms().catch(error => { console.error(error); process.exitCode = 1; });
