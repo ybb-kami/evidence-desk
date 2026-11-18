@@ -18,6 +18,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE))
 from scanpdf import parse_pdf as recognize_pdf
+from scanpdf import refresh_cached_figures
 import app
 import engine
 from graph import _blocks
@@ -50,8 +51,8 @@ def index_page(doc, page):
 
 
 class ScanLibrary(app.Library):
-    # Bump when older table or formula regions need an explicit refresh.
-    REGION_REVISION = 2
+    # Bump when saved region types or recognition need an explicit refresh.
+    REGION_REVISION = 3
 
     def __init__(self, root, lang="eng"):
         super().__init__(root)
@@ -61,11 +62,23 @@ class ScanLibrary(app.Library):
         from local_generation import LocalGenerator
         self.dense = DenseIndex(cache_dir=Path(root) / "semantic-vectors")
         self.passage_reader = PassageReader()
-        self.local_generator = LocalGenerator()
+        # The judging build never falls back to a local generative model.
+        self.local_generator = LocalGenerator(url="", model="")
+        import os
+        self.budget_path = Path(os.environ.get("EVIDENCE_BUDGET_DB") or (Path(root) / "deepseek-budget.sqlite3"))
+        self._paid_budget = None
+        self._budget_lock = threading.Lock()
         self.worker = threading.Lock()
         with closing(sqlite3.connect(self.db)) as db, db:
             db.execute("CREATE TABLE IF NOT EXISTS scan_pages "
                        "(id TEXT, page INTEGER, result BLOB, PRIMARY KEY(id,page))")
+
+    def paid_round(self):
+        from paid_budget import Budget
+        with self._budget_lock:
+            if self._paid_budget is None:
+                self._paid_budget = Budget(self.budget_path)
+            return self._paid_budget.start_round()
 
     def lookup(self, docid, number):
         if not isinstance(docid, str) or not app.ID.fullmatch(docid) or type(number) is not int:
@@ -114,11 +127,15 @@ class ScanLibrary(app.Library):
             with tempfile.TemporaryDirectory() as folder:
                 source = Path(folder) / "source.pdf"
                 source.write_bytes(self.pdf(docid))
+                figures_only = cached is not None and info["region_revision"] == 2
                 if cached is None:
                     result = recognize_pdf(source, pages=str(number), lang=self.lang)
+                elif figures_only:
+                    result = refresh_cached_figures(source, cached)
                 else:
                     render = cached["render"]
-                    result = recognize_pdf(source, pages=str(number), lang=render["lang"], dpi=render["dpi"])
+                    result = recognize_pdf(source, pages=str(number), lang=render["lang"], dpi=render["dpi"],
+                                           figure_ocr={number: cached["lines"]})
             if result["source"]["sha256"] != docid:
                 raise ValueError("原件校验失败。")
             page = result["pages"][0]
@@ -129,9 +146,10 @@ class ScanLibrary(app.Library):
                 if (result["render"] != cached["render"]
                         or any(page[key] != cached[key] for key in geometry)):
                     raise ValueError("更新后的区域坐标与原页不一致。")
-                # Keep line, word, and indexed block anchors from the original OCR.
-                page = cached | {"regions": page["regions"]}
-                if "indexed_crop_cells" not in cached:
+                # Keep the original OCR and its indexed anchors. Revision 2 only adds figures.
+                page = cached | {"regions": page["regions"], "figures": page.get("figures", []),
+                                 "unresolved_captions": page.get("unresolved_captions", [])}
+                if not figures_only and "indexed_crop_cells" not in cached:
                     from source_locator import ocr_index_cells
                     page["indexed_crop_cells"] = ocr_index_cells(cached)
             page["region_revision"] = self.REGION_REVISION
@@ -167,7 +185,28 @@ class ScanLibrary(app.Library):
 
 
 class Handler(app.Handler):
+    def flash_ticket(self):
+        if not self.server.enable_model or not app.provider.configured():
+            raise app.Bad(503, "DeepSeek 尚未启用或未在服务端配置凭据。")
+        if self._paid_round is None:
+            self._paid_round = self.server.library.paid_round()
+        return self._paid_round
+
+    def flash_model(self):
+        from flash_transport import FlashGenerator
+        return FlashGenerator(self.flash_ticket())
+
     def serve(self, post):
+        from paid_budget import BudgetExceeded
+        from flash_transport import FlashError
+        try:
+            return self.serve_workbench(post)
+        except (BudgetExceeded, FlashError) as exc:
+            from flash_costs import public_error
+            raise app.Bad(503, public_error(exc)) from None
+
+    def serve_workbench(self, post):
+        self._paid_round = None
         url = urlsplit(self.path)
         path = url.path
         host = self.headers.get("Host", "").lower()
@@ -176,9 +215,22 @@ class Handler(app.Handler):
         if post and (self.headers.get("Origin") not in (None, "http://" + host)
                      or self.headers.get("Sec-Fetch-Site") == "cross-site"):
             raise app.Bad(403, "拒绝跨站请求。")
+        if not post and path == "/api/model-status":
+            from flash_costs import rates_ready
+            return self.payload(200, {"provider": "deepseek", "model": "DeepSeek-V4.1-Flash-1017",
+                "api_model": "deepseek-flash", "configured": bool(self.server.enable_model and app.provider.configured()),
+                "release_verified": False, "verification": "before_each_paid_model_call",
+                "model_price_configured": rates_ready("model"), "search_price_configured": rates_ready("search"),
+                "budget_usd": "0.71", "max_rounds": 100})
+        if post and path == "/api/verify":
+            from flash_verify import handle
+            return handle(self)
         from source_locator import ROUTES as source_routes, handle as handle_source
         if path in source_routes:
             return handle_source(self, post, url)
+        from version_evidence.routes import ROUTES as version_routes, handle as handle_version
+        if path in version_routes:
+            return handle_version(self, post, url)
         if path in {"/formula-review", "/formula-review/image", "/api/formula-review"}:
             from formula_review import handle
             return handle(self, post, url)
@@ -216,6 +268,12 @@ class Handler(app.Handler):
             home = home.replace('<span class="tag">本地工作区</span>',
                                 '<nav aria-label="工作台工具"><a href="/copilot">科研 Copilot</a> <a href="/scan">扫描页识别</a> <a href="/translation">双语精读</a> <a href="/download">下载论文</a> <a href="/reproducibility">核对论文代码</a> <a href="/followup">证据追问</a> <a href="/architecture">跨篇问答</a></nav>')
             home = home.replace('<p class="subtle" id="csv-help">', '<p><a href="/csv-trends">按变量绘图与核对趋势</a></p><p class="subtle" id="csv-help">', 1)
+            home = home.replace('<form id="version-form">', '<p><a id="version-evidence" href="/version-evidence">核对两个版本的摘要与原文段落</a></p><form id="version-form">', 1)
+            home = home.replace("const distinct = before && after && before !== after;", """
+                const distinct = before && after && before !== after;
+                $('version-evidence').href = distinct
+                  ? '/version-evidence?' + new URLSearchParams({before, after})
+                  : '/version-evidence';""", 1)
             home = home.replace('id="local-review"></section>', 'id="local-review"><a href="/synthesis">选择文献生成综述</a></section>', 1)
             home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
                                 "扫描件可按页识别，完成后可在这里检索 OCR 文字。")
@@ -249,8 +307,15 @@ class Handler(app.Handler):
             return route(self)
         if post and path == "/api/followup":
             from followup import answer_question
-            result = answer_question(self.server.library, self.json_request())
-            result["model_available"] = bool(self.server.enable_model and app.provider.configured())
+            req = self.json_request()
+            consent = req.pop("model_consent", False)
+            if type(consent) is not bool:
+                raise app.Bad(400, "本次模型授权须为布尔值。")
+            available = bool(self.server.enable_model and app.provider.configured())
+            result = answer_question(self.server.library, req, generator=self.flash_model() if consent and available else None)
+            result["model_available"] = available
+            if consent and not available:
+                result["model_status"] = "not_configured"
             return self.payload(200, result)
         if not post and path == "/scan":
             return self.payload(200, (HERE / "scan.html").read_bytes(), "text/html; charset=utf-8")

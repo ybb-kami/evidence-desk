@@ -1,4 +1,4 @@
-"""Install the pinned Linux x86-64 llama.cpp CPU runtime and Qwen3-1.7B GGUF."""
+"""Install the pinned Linux x86-64 llama.cpp CPU runtime and a Qwen3 GGUF."""
 
 import argparse
 import hashlib
@@ -22,6 +22,15 @@ MANIFEST_SHA = "5eef42cd04fdde10a06e082f030545f8c29ec182e0f304a9af9815e106e2ec5c
 MODEL = "Qwen3-1.7B-Q4_K_M.gguf"
 MODEL_SHA = "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
 MODEL_SIZE = 1_107_409_472
+MODELS = {
+    "1.7b": (MODEL, MODEL_SHA, MODEL_SIZE, MANIFEST_SHA),
+    "4b-instruct-2507": (
+        "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+        "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+        2_497_281_120,
+        "8cd2927dc3a33531aa57f2479e2dcfb16e3bf53e31de561a612fcbc3cf6a6893",
+    ),
+}
 
 
 class RegistryRedirect(HTTPRedirectHandler):
@@ -69,7 +78,7 @@ def download(opener, request, target, digest, size):
         partial.replace(target)
 
 
-def model_request(opener):
+def model_request(opener, manifest_sha=MANIFEST_SHA, model_sha=MODEL_SHA, model_size=MODEL_SIZE):
     token_query = urlencode(
         {"service": "registry.docker.io", "scope": f"repository:{REPOSITORY}:pull"}
     )
@@ -78,28 +87,29 @@ def model_request(opener):
     authorization = {"Authorization": "Bearer " + token}
     registry = f"https://registry-1.docker.io/v2/{REPOSITORY}"
     manifest_request = Request(
-        f"{registry}/manifests/sha256:{MANIFEST_SHA}",
+        f"{registry}/manifests/sha256:{manifest_sha}",
         headers={**authorization, "Accept": "application/vnd.oci.image.manifest.v1+json"},
     )
     with opener.open(manifest_request, timeout=30) as response:
         data = response.read()
-    if hashlib.sha256(data).hexdigest() != MANIFEST_SHA:
+    if hashlib.sha256(data).hexdigest() != manifest_sha:
         raise ValueError("OCI manifest 校验失败。")
     layers = json.loads(data)["layers"]
     if not any(
-        layer["digest"] == "sha256:" + MODEL_SHA and layer["size"] == MODEL_SIZE
+        layer["digest"] == "sha256:" + model_sha and layer["size"] == model_size
         for layer in layers
     ):
         raise ValueError("OCI manifest 未包含待安装权重。")
-    return Request(f"{registry}/blobs/sha256:{MODEL_SHA}", headers=authorization)
+    return Request(f"{registry}/blobs/sha256:{model_sha}", headers=authorization)
 
 
-def install(directory):
+def install(directory, variant="1.7b"):
+    filename, digest, size, manifest_sha = MODELS[variant]
     directory.mkdir(parents=True, exist_ok=True)
     opener = build_opener(RegistryRedirect())
     archive = directory / ARCHIVE
     runtime = directory / RUNTIME
-    model = directory / MODEL
+    model = directory / filename
     print("校验 llama.cpp b7940 CPU 运行时。", flush=True)
     download(opener, Request(RUNTIME_URL), archive, RUNTIME_SHA, RUNTIME_SIZE)
     if not runtime.exists():
@@ -109,11 +119,11 @@ def install(directory):
             (Path(staging) / RUNTIME).rename(runtime)
     if not (runtime / "llama-server").is_file():
         raise ValueError(f"运行时目录缺少 llama-server {runtime}")
-    print("校验 Qwen3-1.7B-Q4_K_M（约 1.11 GB）。", flush=True)
+    print(f"校验 {filename}（约 {size / 1e9:.2f} GB）。", flush=True)
     if model.exists():
-        verify_existing(model, MODEL_SHA, MODEL_SIZE)
+        verify_existing(model, digest, size)
     else:
-        download(opener, model_request(opener), model, MODEL_SHA, MODEL_SIZE)
+        download(opener, model_request(opener, manifest_sha, digest, size), model, digest, size)
     with model.open("rb") as source:
         if source.read(4) != b"GGUF":
             raise ValueError("下载文件缺少 GGUF 文件头。")
@@ -128,11 +138,12 @@ def main():
         type=Path,
         default=Path.home() / ".cache" / "evidence-desk-local-llm",
     )
+    parser.add_argument("--model", choices=MODELS, default="1.7b")
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         parser.error("此安装脚本仅提供 Linux x86-64 CPU 运行时。")
     try:
-        install(args.directory)
+        install(args.directory, args.model)
     except (OSError, ValueError, tarfile.TarError) as error:
         parser.exit(1, f"{error}\n")
 

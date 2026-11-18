@@ -7,6 +7,7 @@ import unicodedata
 import app
 import provider
 from measurement_units import number_key, supports_units
+from paid_budget import BudgetExceeded
 
 
 MAX_PASSAGES = 6
@@ -58,9 +59,9 @@ def _parse(raw):
         return None
 
 
-def generate(question, hits, *, transport=None):
+def generate(question, hits, *, transport=None, model=provider.MODEL):
     key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
-    if not key:
+    if not key or transport is None:
         return {"status": "not_configured", "claims": []}
     if not re.fullmatch(r"[!-~]{1,512}", key):
         raise RuntimeError("模型配置无效。")
@@ -70,7 +71,6 @@ def generate(question, hits, *, transport=None):
         return {"status": "insufficient_evidence", "claims": []}
     if key in question or any(key in text for text in excerpts.values()):
         raise app.Bad(400, "问题或摘录中含运行凭据。")
-    model = provider.model_name()
     body = {
         "model": model, "messages": [
             {"role": "system", "content": SYSTEM},
@@ -79,12 +79,15 @@ def generate(question, hits, *, transport=None):
         "stream": False, "max_tokens": 1200,
     }
     try:
-        raw = (transport or provider._send)(json.dumps(body).encode(), key)
+        raw = transport(json.dumps(body).encode(), key)
+    except BudgetExceeded:
+        raise
     except Exception:
         raise RuntimeError("模型调用未完成。") from None
     claims = _parse(raw)
     if claims is None:
         return {"status": "validation_failed", "claims": [], "model": model}
+    from claim_support import check
     checked = []
     for item in claims:
         if not isinstance(item, dict) or set(item) != {"text", "source", "quote"}:
@@ -94,9 +97,14 @@ def generate(question, hits, *, transport=None):
             break
         if not 1 <= len(text.strip()) <= 320 or not 8 <= len(quote.strip()) <= 560 or label not in excerpts:
             break
-        if quote not in excerpts[label] or not _numbers(text).issubset(_numbers(quote)) or not supports_units(text,quote):
+        offset = excerpts[label].find(quote)
+        if (offset < 0 or excerpts[label].find(quote, offset + 1) >= 0
+                or not _numbers(text).issubset(_numbers(quote)) or not supports_units(text, quote)):
             break
         hit = by_label[label]
+        if check(question, "", hits, {"text": text, "span": quote, "hit_index": int(label[1:]) - 1,
+                                      "answer_start": offset, "answer_end": offset + len(quote)}):
+            break
         checked.append({
             "text": text.strip(), "quote": quote, "id": hit["id"], "page": hit["page"],
             "block": hit["block"], "part": hit.get("part", 1), "source": hit.get("source", "native"),
@@ -121,4 +129,11 @@ def route(handler):
     # must not invent a value from an adjacent cell or bypass the scope restriction.
     if "table_cells" in result and not result.get("answer"):
         return handler.payload(200, {"status": "insufficient_evidence", "claims": []})
-    return handler.payload(200, generate(request["question"], result["hits"]))
+    try:
+        flash = handler.flash_model()
+        draft = generate(request["question"], result["hits"], transport=flash.legacy_transport, model=flash.model)
+    except BudgetExceeded:
+        raise app.Bad(429, "无法为本次 DeepSeek 请求预留预算。") from None
+    except RuntimeError:
+        raise app.Bad(502, "本次未能调用 DeepSeek。") from None
+    return handler.payload(200, draft)

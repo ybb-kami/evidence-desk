@@ -16,8 +16,11 @@ class PaperFactsTests(unittest.TestCase):
     def test_author_footnote_only_with_matching_marker(self):
         doc = {'id':'id','name':'paper', 'chunks':[{'text':'‡Work performed while at Other Lab.', 'page':1, 'block':11}]}
         hit = {'page':1,'block':3,'text':'Ren Wu†\nExample Lab\nren@example.org'}
-        result = byline_answer(doc,2,[hit]);self.assertNotIn('Other Lab', result['answer'])
-        self.assertEqual(result['hits'],[hit]);self.assertIn('Example Lab',result['answer'])
+        result = byline_answer(doc, 2, [hit])
+        self.assertNotIn('Other Lab', result['answer'])
+        self.assertIn('Example Lab', result['answer'])
+        expected_end = hit['text'].index('ren@example.org')
+        self.assertEqual(result['hits'], [dict(hit, start=0, end=expected_end)])
 
     def test_reference_does_not_merge_years_from_multiple_editions(self):
         q = '请列出“Micro Arrays”的参考文献作者和年份。'

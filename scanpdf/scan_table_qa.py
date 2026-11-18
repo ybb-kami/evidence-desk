@@ -14,6 +14,15 @@ PAGE = re.compile(r"\b(?:physical\s+)?page\s*([0-9]+)\b|第?\s*([0-9一二三四
 ROW = re.compile(r"\brow\s*([0-9]+)\b|第?\s*([0-9一二三四五六七八九十两]+)\s*行")
 COLUMN = re.compile(r"\b(?:column|col\.?)\s*([0-9]+)\b|第?\s*([0-9一二三四五六七八九十两]+)\s*列")
 ASK = re.compile(r"\b(?:value|values|score|scores|how much|how many|what|compare|difference)\b|多少|数值|得分|分数|分别|相差|什么|比较|哪[个一]|是[几多]")
+EXPLANATION = re.compile(
+    r"\bwhy\b|\bwhat\s+(?:was|is)\s+(?:the\s+)?(?:rationale|reason|meaning|definition)\b|"
+    r"\bwhat\s+(?:does|did)\s+[^?!;]{1,80}\s+(?:mean|stand for)\b|"
+    r"\bhow\s+(?:to|did|does|do|was|were|is|are)\s+(?:[\w-]+\s+){0,6}"
+    r"(?:choose|chosen|determine|determined|derive|derived|calculate|calculated|measure|measured|"
+    r"implement|implemented|validate|validated|collect|collected|design|designed)\b|"
+    r"为什么|为何|原因为何|(?:如何|怎样|怎么)(?:\S{0,8})"
+    r"(?:选择|确定|计算|推导|测量|实现|验证|收集|设计)|全称是什么", re.I
+)
 MULTIPLE = re.compile(r"\b(?:both|each|respectively|all (?:directions|tasks|languages))\b|分别|各是|各有|各为|都是多少|两个(?:方向|任务)|两[个种](?:语言|方向|任务)")
 DIFFERENCE = re.compile(r"\b(?:difference|gap|differs?|subtract|minus|by how much|how much (?:higher|lower|larger|smaller|more|less))\b|相差|差值|之差|差多少|提高了多少|高出多少|[多少]了多少")
 COMPARE = re.compile(r"\b(?:compare|vs|versus)\b|对比|相比|比较")
@@ -166,6 +175,11 @@ def _variants(text):
 def _scope(pattern, query):
     return {value for match in pattern.finditer(query)
             if (value := _number(next(x for x in match.groups() if x is not None))) is not None}
+
+
+def part_can_use_table(question):
+    """A recorded value does not explain its definition, derivation or choice."""
+    return not EXPLANATION.search(question)
 
 
 def _geometry_gap(line, region):
@@ -740,6 +754,8 @@ def _table_answers(store, doc, anchor, shape, pages):
 
 def answer_scan_table(store, doc, question, anchor=None):
     """Look up numeric cells from cached OCR. None lets evidence lookup continue."""
+    if not part_can_use_table(question):
+        return None
     if anchor is not None and anchor.get("source") != "ocr":
         return None
     shape = _query_shape(question)
@@ -973,6 +989,8 @@ def native_cell_box(page, region, row, column):
 
 def answer_native_table(store, doc, question, anchor=None):
     """Look up numeric cells in a bounded set of matching native-text pages."""
+    if not part_can_use_table(question):
+        return None
     if anchor is not None and anchor.get("source", "native") != "native":
         return None
     shape = _query_shape(question)

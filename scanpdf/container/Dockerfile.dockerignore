@@ -68,6 +68,11 @@ scanpdf/semantic/**
 !scanpdf/tools/
 scanpdf/tools/**
 !scanpdf/tools/*.py
+!scanpdf/version_evidence/
+scanpdf/version_evidence/**
+!scanpdf/version_evidence/*.py
+!scanpdf/version_evidence/*.js
+!scanpdf/version_evidence/*.html
 **/test_*.py
 **/.env*
 **/*.pdf

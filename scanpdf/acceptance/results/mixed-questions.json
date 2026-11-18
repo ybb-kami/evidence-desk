@@ -1,0 +1,834 @@
+[
+  {
+    "source_sha256": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+    "question": "In Table 1, how many n_layers does Mistral 7B have, and what does GQA stand for in the paper?",
+    "expected": "complete",
+    "result": {
+      "hits": [
+        {
+          "page": 2,
+          "block": 6,
+          "part": 1,
+          "offset": 0,
+          "text": "dim\n4096\nn_layers\n32\nhead_dim\n128\nhidden_dim\n14336\nn_heads\n32\nn_kv_heads\n8\nwindow_size\n4096\ncontext_len\n8192\nvocab_size\n32000",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        },
+        {
+          "page": 1,
+          "block": 4,
+          "part": 1,
+          "offset": 0,
+          "text": "We introduce Mistral 7B, a 7–billion-parameter language model engineered for\nsuperior performance and efficiency. Mistral 7B outperforms the best open 13B\nmodel (Llama 2) across all evaluated benchmarks, and the best released 34B\nmodel (Llama 1) in reasoning, mathematics, and code generation. Our model\nleverages grouped-query attention (GQA) for faster inference, coupled with sliding\nwindow attention (SWA) to effectively handle sequences of arbitrary length with a\nreduced inference cost. We also provide a model fine-tuned to follow instructions,\nMistral 7B – Instruct, that surpasses Llama 2 13B – chat model both on human and\nautomated benchmarks. Our models are released under the Apache 2.0 license.\nCode: https://github.com/mistralai/mistral-src\nWebpage: https://mistral.ai/news/announcing-mistral-7b/",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf",
+          "page_label": "1",
+          "start": 314,
+          "end": 343
+        },
+        {
+          "page": 2,
+          "block": 7,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 1: Model architecture.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        }
+      ],
+      "fields": [
+        {
+          "question": "In Table 1, how many n_layers does Mistral 7B have",
+          "answer": "表 1（物理页 2）中，n_layers · Value = 32。",
+          "gap": null,
+          "method": "native_table",
+          "claims": [],
+          "cells": [
+            {
+              "page": 2,
+              "region": "p2-r1",
+              "table": 1,
+              "row": 3,
+              "column": 2,
+              "column_span": 1,
+              "row_label": "n_layers",
+              "column_label": "Value",
+              "text": "32",
+              "value": "32",
+              "method": "native_pdf",
+              "value_kind": "number",
+              "bbox_pt": [
+                464.1,
+                495.0,
+                498.9,
+                504.9
+              ],
+              "line_id": "6.4",
+              "region_status": "structure_recognized",
+              "source": "native",
+              "ocr_confidence": 100,
+              "block": 6,
+              "part": 1
+            }
+          ]
+        },
+        {
+          "question": "what does GQA stand for in the paper",
+          "answer": "GQA stands for grouped-query attention.",
+          "gap": null,
+          "method": "abbreviation",
+          "claims": [],
+          "cells": []
+        }
+      ],
+      "answer": "In Table 1, how many n_layers does Mistral 7B have — 表 1（物理页 2）中，n_layers · Value = 32。\nwhat does GQA stand for in the paper — GQA stands for grouped-query attention.",
+      "answer_method": "fieldwise",
+      "completeness": "complete",
+      "gap": null,
+      "generation": {
+        "status": "complete",
+        "claims": []
+      },
+      "table_cells": [
+        {
+          "page": 2,
+          "region": "p2-r1",
+          "table": 1,
+          "row": 3,
+          "column": 2,
+          "column_span": 1,
+          "row_label": "n_layers",
+          "column_label": "Value",
+          "text": "32",
+          "value": "32",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            464.1,
+            495.0,
+            498.9,
+            504.9
+          ],
+          "line_id": "6.4",
+          "region_status": "structure_recognized",
+          "source": "native",
+          "ocr_confidence": 100,
+          "block": 6,
+          "part": 1
+        }
+      ],
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+    "question": "In Table 1, how many n_layers does Mistral 7B have, and what random seed did the authors use for pretraining?",
+    "expected": "partial",
+    "result": {
+      "hits": [
+        {
+          "page": 2,
+          "block": 6,
+          "part": 1,
+          "offset": 0,
+          "text": "dim\n4096\nn_layers\n32\nhead_dim\n128\nhidden_dim\n14336\nn_heads\n32\nn_kv_heads\n8\nwindow_size\n4096\ncontext_len\n8192\nvocab_size\n32000",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        },
+        {
+          "page": 2,
+          "block": 7,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 1: Model architecture.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        }
+      ],
+      "fields": [
+        {
+          "question": "In Table 1, how many n_layers does Mistral 7B have",
+          "answer": "表 1（物理页 2）中，n_layers · Value = 32。",
+          "gap": null,
+          "method": "native_table",
+          "claims": [],
+          "cells": [
+            {
+              "page": 2,
+              "region": "p2-r1",
+              "table": 1,
+              "row": 3,
+              "column": 2,
+              "column_span": 1,
+              "row_label": "n_layers",
+              "column_label": "Value",
+              "text": "32",
+              "value": "32",
+              "method": "native_pdf",
+              "value_kind": "number",
+              "bbox_pt": [
+                464.1,
+                495.0,
+                498.9,
+                504.9
+              ],
+              "line_id": "6.4",
+              "region_status": "structure_recognized",
+              "source": "native",
+              "ocr_confidence": 100,
+              "block": 6,
+              "part": 1
+            }
+          ]
+        },
+        {
+          "question": "what random seed did the authors use for pretraining",
+          "answer": null,
+          "gap": "当前可检索的文献范围中没有明确报告随机种子的原文，无法据此给出「what random seed did the authors use for pretraining」的答案。",
+          "method": null,
+          "claims": [],
+          "cells": []
+        }
+      ],
+      "answer": "In Table 1, how many n_layers does Mistral 7B have — 表 1（物理页 2）中，n_layers · Value = 32。",
+      "answer_method": "fieldwise",
+      "completeness": "partial",
+      "gap": "当前可检索的文献范围中没有明确报告随机种子的原文，无法据此给出「what random seed did the authors use for pretraining」的答案。",
+      "generation": {
+        "status": "partial",
+        "claims": []
+      },
+      "table_cells": [
+        {
+          "page": 2,
+          "region": "p2-r1",
+          "table": 1,
+          "row": 3,
+          "column": 2,
+          "column_span": 1,
+          "row_label": "n_layers",
+          "column_label": "Value",
+          "text": "32",
+          "value": "32",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            464.1,
+            495.0,
+            498.9,
+            504.9
+          ],
+          "line_id": "6.4",
+          "region_status": "structure_recognized",
+          "source": "native",
+          "ocr_confidence": 100,
+          "block": 6,
+          "part": 1
+        }
+      ],
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+    "question": "In Table 1, how many n_layers does Mistral 7B have, and why did the authors choose that number of n_layers?",
+    "expected": "partial",
+    "result": {
+      "hits": [
+        {
+          "page": 2,
+          "block": 6,
+          "part": 1,
+          "offset": 0,
+          "text": "dim\n4096\nn_layers\n32\nhead_dim\n128\nhidden_dim\n14336\nn_heads\n32\nn_kv_heads\n8\nwindow_size\n4096\ncontext_len\n8192\nvocab_size\n32000",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        },
+        {
+          "page": 2,
+          "block": 4,
+          "part": 1,
+          "offset": 0,
+          "text": "Figure 1: Sliding Window Attention. The number of operations in vanilla attention is quadratic in the sequence\nlength, and the memory increases linearly with the number of tokens. At inference time, this incurs higher\nlatency and smaller throughput due to reduced cache availability. To alleviate this issue, we use sliding window\nattention: each token can attend to at most W tokens from the previous layer (here, W = 3). Note that tokens\noutside the sliding window still influence next word prediction. At each attention layer, information can move\nforward by W tokens. Hence, after k attention layers, information can move forward by up to k × W tokens.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf",
+          "score": 0.047619,
+          "page_label": "2",
+          "retrieval_ranks": {
+            "bm25": 1
+          }
+        },
+        {
+          "page": 2,
+          "block": 7,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 1: Model architecture.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        }
+      ],
+      "fields": [
+        {
+          "question": "In Table 1, how many n_layers does Mistral 7B have",
+          "answer": "表 1（物理页 2）中，n_layers · Value = 32。",
+          "gap": null,
+          "method": "native_table",
+          "claims": [],
+          "cells": [
+            {
+              "page": 2,
+              "region": "p2-r1",
+              "table": 1,
+              "row": 3,
+              "column": 2,
+              "column_span": 1,
+              "row_label": "n_layers",
+              "column_label": "Value",
+              "text": "32",
+              "value": "32",
+              "method": "native_pdf",
+              "value_kind": "number",
+              "bbox_pt": [
+                464.1,
+                495.0,
+                498.9,
+                504.9
+              ],
+              "line_id": "6.4",
+              "region_status": "structure_recognized",
+              "source": "native",
+              "ocr_confidence": 100,
+              "block": 6,
+              "part": 1
+            }
+          ]
+        },
+        {
+          "question": "why did the authors choose that number of n_layers",
+          "answer": null,
+          "gap": "已检索的 1 段原文中未找到能直接回答「why did the authors choose that number of n_layers」的原句。",
+          "method": null,
+          "claims": [],
+          "cells": []
+        }
+      ],
+      "answer": "In Table 1, how many n_layers does Mistral 7B have — 表 1（物理页 2）中，n_layers · Value = 32。",
+      "answer_method": "fieldwise",
+      "completeness": "partial",
+      "gap": "已检索的 1 段原文中未找到能直接回答「why did the authors choose that number of n_layers」的原句。",
+      "generation": {
+        "status": "partial",
+        "claims": []
+      },
+      "table_cells": [
+        {
+          "page": 2,
+          "region": "p2-r1",
+          "table": 1,
+          "row": 3,
+          "column": 2,
+          "column_span": 1,
+          "row_label": "n_layers",
+          "column_label": "Value",
+          "text": "32",
+          "value": "32",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            464.1,
+            495.0,
+            498.9,
+            504.9
+          ],
+          "line_id": "6.4",
+          "region_status": "structure_recognized",
+          "source": "native",
+          "ocr_confidence": 100,
+          "block": 6,
+          "part": 1
+        }
+      ],
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+    "question": "表1中 Mistral 7B 的 n_layers 是多少？训练随机种子是多少？",
+    "expected": "partial",
+    "result": {
+      "hits": [
+        {
+          "page": 2,
+          "block": 6,
+          "part": 1,
+          "offset": 0,
+          "text": "dim\n4096\nn_layers\n32\nhead_dim\n128\nhidden_dim\n14336\nn_heads\n32\nn_kv_heads\n8\nwindow_size\n4096\ncontext_len\n8192\nvocab_size\n32000",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        },
+        {
+          "page": 2,
+          "block": 7,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 1: Model architecture.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        }
+      ],
+      "fields": [
+        {
+          "question": "表1中 Mistral 7B 的 n_layers 是多少",
+          "answer": "表 1（物理页 2）中，n_layers · Value = 32。",
+          "gap": null,
+          "method": "native_table",
+          "claims": [],
+          "cells": [
+            {
+              "page": 2,
+              "region": "p2-r1",
+              "table": 1,
+              "row": 3,
+              "column": 2,
+              "column_span": 1,
+              "row_label": "n_layers",
+              "column_label": "Value",
+              "text": "32",
+              "value": "32",
+              "method": "native_pdf",
+              "value_kind": "number",
+              "bbox_pt": [
+                464.1,
+                495.0,
+                498.9,
+                504.9
+              ],
+              "line_id": "6.4",
+              "region_status": "structure_recognized",
+              "source": "native",
+              "ocr_confidence": 100,
+              "block": 6,
+              "part": 1
+            }
+          ]
+        },
+        {
+          "question": "训练随机种子是多少",
+          "answer": null,
+          "gap": "当前可检索的文献范围中没有明确报告随机种子的原文，无法据此给出「训练随机种子是多少」的答案。",
+          "method": null,
+          "claims": [],
+          "cells": []
+        }
+      ],
+      "answer": "表1中 Mistral 7B 的 n_layers 是多少 — 表 1（物理页 2）中，n_layers · Value = 32。",
+      "answer_method": "fieldwise",
+      "completeness": "partial",
+      "gap": "当前可检索的文献范围中没有明确报告随机种子的原文，无法据此给出「训练随机种子是多少」的答案。",
+      "generation": {
+        "status": "partial",
+        "claims": []
+      },
+      "table_cells": [
+        {
+          "page": 2,
+          "region": "p2-r1",
+          "table": 1,
+          "row": 3,
+          "column": 2,
+          "column_span": 1,
+          "row_label": "n_layers",
+          "column_label": "Value",
+          "text": "32",
+          "value": "32",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            464.1,
+            495.0,
+            498.9,
+            504.9
+          ],
+          "line_id": "6.4",
+          "region_status": "structure_recognized",
+          "source": "native",
+          "ocr_confidence": 100,
+          "block": 6,
+          "part": 1
+        }
+      ],
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+    "question": "In Table 1, how many n_layers does Mistral 7B have, and what license was Mistral 7B released under?",
+    "expected": "partial",
+    "result": {
+      "hits": [
+        {
+          "page": 2,
+          "block": 6,
+          "part": 1,
+          "offset": 0,
+          "text": "dim\n4096\nn_layers\n32\nhead_dim\n128\nhidden_dim\n14336\nn_heads\n32\nn_kv_heads\n8\nwindow_size\n4096\ncontext_len\n8192\nvocab_size\n32000",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        },
+        {
+          "page": 2,
+          "block": 1,
+          "part": 1,
+          "offset": 0,
+          "text": "Mistral 7B is released under the Apache 2.0 license. This release is accompanied by a reference\nimplementation1 facilitating easy deployment either locally or on cloud platforms such as AWS, GCP,\nor Azure using the vLLM [17] inference server and SkyPilot 2. Integration with Hugging Face 3 is\nalso streamlined for easier integration. Moreover, Mistral 7B is crafted for ease of fine-tuning across\na myriad of tasks. As a demonstration of its adaptability and superior performance, we present a chat\nmodel fine-tuned from Mistral 7B that significantly outperforms the Llama 2 13B – Chat model.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf",
+          "score": 0.047619,
+          "page_label": "2",
+          "retrieval_ranks": {
+            "bm25": 1
+          }
+        },
+        {
+          "page": 2,
+          "block": 7,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 1: Model architecture.",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf"
+        },
+        {
+          "page": 1,
+          "block": 4,
+          "part": 1,
+          "offset": 0,
+          "text": "We introduce Mistral 7B, a 7–billion-parameter language model engineered for\nsuperior performance and efficiency. Mistral 7B outperforms the best open 13B\nmodel (Llama 2) across all evaluated benchmarks, and the best released 34B\nmodel (Llama 1) in reasoning, mathematics, and code generation. Our model\nleverages grouped-query attention (GQA) for faster inference, coupled with sliding\nwindow attention (SWA) to effectively handle sequences of arbitrary length with a\nreduced inference cost. We also provide a model fine-tuned to follow instructions,\nMistral 7B – Instruct, that surpasses Llama 2 13B – chat model both on human and\nautomated benchmarks. Our models are released under the Apache 2.0 license.\nCode: https://github.com/mistralai/mistral-src\nWebpage: https://mistral.ai/news/announcing-mistral-7b/",
+          "id": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+          "name": "2310.06825v1.pdf",
+          "score": 0.045455,
+          "page_label": "1",
+          "retrieval_ranks": {
+            "bm25": 2
+          }
+        }
+      ],
+      "fields": [
+        {
+          "question": "In Table 1, how many n_layers does Mistral 7B have",
+          "answer": "表 1（物理页 2）中，n_layers · Value = 32。",
+          "gap": null,
+          "method": "native_table",
+          "claims": [],
+          "cells": [
+            {
+              "page": 2,
+              "region": "p2-r1",
+              "table": 1,
+              "row": 3,
+              "column": 2,
+              "column_span": 1,
+              "row_label": "n_layers",
+              "column_label": "Value",
+              "text": "32",
+              "value": "32",
+              "method": "native_pdf",
+              "value_kind": "number",
+              "bbox_pt": [
+                464.1,
+                495.0,
+                498.9,
+                504.9
+              ],
+              "line_id": "6.4",
+              "region_status": "structure_recognized",
+              "source": "native",
+              "ocr_confidence": 100,
+              "block": 6,
+              "part": 1
+            }
+          ]
+        },
+        {
+          "question": "what license was Mistral 7B released under",
+          "answer": null,
+          "gap": "已检索的 2 段原文中未找到能直接回答「what license was Mistral 7B released under」的原句。",
+          "method": null,
+          "claims": [],
+          "cells": []
+        }
+      ],
+      "answer": "In Table 1, how many n_layers does Mistral 7B have — 表 1（物理页 2）中，n_layers · Value = 32。",
+      "answer_method": "fieldwise",
+      "completeness": "partial",
+      "gap": "已检索的 2 段原文中未找到能直接回答「what license was Mistral 7B released under」的原句。",
+      "generation": {
+        "status": "partial",
+        "claims": []
+      },
+      "table_cells": [
+        {
+          "page": 2,
+          "region": "p2-r1",
+          "table": 1,
+          "row": 3,
+          "column": 2,
+          "column_span": 1,
+          "row_label": "n_layers",
+          "column_label": "Value",
+          "text": "32",
+          "value": "32",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            464.1,
+            495.0,
+            498.9,
+            504.9
+          ],
+          "line_id": "6.4",
+          "region_status": "structure_recognized",
+          "source": "native",
+          "ocr_confidence": 100,
+          "block": 6,
+          "part": 1
+        }
+      ],
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+    "question": "For BLOOM-7.1B in Table 3, how many layers and attention heads, and what was its hidden dimension?",
+    "expected": "native_table",
+    "result": {
+      "answer": "表 3（物理页 21）中，Layers · BLOOM-7.1B = 30。Hidden dim. · BLOOM-7.1B = 4096。Attention heads · BLOOM-7.1B = 32。",
+      "gap": null,
+      "hits": [
+        {
+          "page": 21,
+          "block": 6,
+          "part": 1,
+          "offset": 0,
+          "text": "Parameters\n559M\n1,065M\n1,722M\n3,003M\n7,069M\n176,247M\nPrecision\nfloat16\nbfloat16\nLayers\n24\n24\n24\n30\n30\n70\nHidden dim.\n1024\n1536\n2048\n2560\n4096\n14336\nAttention heads\n16\n16\n16\n32\n32\n112\nVocab size\n250,680\n250,680\nSequence length\n2048\n2048\nActivation\nGELU\nGELU\nPosition emb.\nAlibi\nAlibi\nTied emb.\nTrue\nTrue",
+          "id": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+          "name": "2211.05100v4.pdf"
+        },
+        {
+          "page": 21,
+          "block": 11,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 3: BLOOM & BLOOMZ Training Hyperparameters.",
+          "id": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+          "name": "2211.05100v4.pdf"
+        }
+      ],
+      "table_cells": [
+        {
+          "page": 21,
+          "region": "p21-r1",
+          "table": 3,
+          "row": 5,
+          "column": 6,
+          "column_span": 1,
+          "row_label": "Layers",
+          "column_label": "BLOOM-7.1B",
+          "text": "30",
+          "value": "30",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            414.3072,
+            305.393,
+            469.4555,
+            317.2559
+          ],
+          "line_id": "6.16",
+          "region_status": "partial_structure",
+          "source": "native",
+          "block": 6,
+          "part": 1
+        },
+        {
+          "page": 21,
+          "region": "p21-r1",
+          "table": 3,
+          "row": 6,
+          "column": 6,
+          "column_span": 1,
+          "row_label": "Hidden dim.",
+          "column_label": "BLOOM-7.1B",
+          "text": "4096",
+          "value": "4096",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            414.3072,
+            317.2559,
+            469.4555,
+            329.1184
+          ],
+          "line_id": "6.23",
+          "region_status": "partial_structure",
+          "source": "native",
+          "block": 6,
+          "part": 1
+        },
+        {
+          "page": 21,
+          "region": "p21-r1",
+          "table": 3,
+          "row": 7,
+          "column": 6,
+          "column_span": 1,
+          "row_label": "Attention heads",
+          "column_label": "BLOOM-7.1B",
+          "text": "32",
+          "value": "32",
+          "method": "native_pdf",
+          "value_kind": "number",
+          "bbox_pt": [
+            414.3072,
+            329.1184,
+            469.4555,
+            340.9809
+          ],
+          "line_id": "6.30",
+          "region_status": "partial_structure",
+          "source": "native",
+          "block": 6,
+          "part": 1
+        }
+      ],
+      "answer_method": "native_table",
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+    "question": "How many English-to-German BLEU points did Transformer (big) get, and what was the previous state-of-the-art and by how much did the model improve?",
+    "expected": "table_calculation",
+    "result": {
+      "answer": "EN-DE 的 BLEU 列中，Transformer (big) 为 28.4；表中既有模型最高为 ConvS2S Ensemble（26.36）。28.4 − 26.36 = 2.04，提升 2.04 BLEU。",
+      "hits": [
+        {
+          "page": 8,
+          "block": 1,
+          "part": 1,
+          "offset": 0,
+          "text": "Table 2: The Transformer achieves better BLEU scores than previous state-of-the-art models on the\nEnglish-to-German and English-to-French newstest2014 tests at a fraction of the training cost.",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf"
+        },
+        {
+          "page": 8,
+          "block": 2,
+          "part": 1,
+          "offset": 0,
+          "text": "Model\nBLEU\nTraining Cost (FLOPs)",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf"
+        },
+        {
+          "page": 8,
+          "block": 3,
+          "part": 1,
+          "offset": 0,
+          "text": "EN-DE\nEN-FR\nEN-DE\nEN-FR\nByteNet [16]\n23.75\nDeep-Att + PosUnk [35]\n39.2\n1.0 · 1020",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf"
+        },
+        {
+          "page": 8,
+          "block": 9,
+          "part": 1,
+          "offset": 0,
+          "text": "ConvS2S Ensemble [9]\n26.36\n41.29\n7.7 · 1019\n1.2 · 1021",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf"
+        },
+        {
+          "page": 8,
+          "block": 11,
+          "part": 1,
+          "offset": 0,
+          "text": "Transformer (big)\n28.4\n41.0\n2.3 · 1019",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf"
+        },
+        {
+          "page": 7,
+          "block": 19,
+          "part": 1,
+          "offset": 0,
+          "text": "On the WMT 2014 English-to-German translation task, Our big transformer model (Transformer\n(big) in Table 2) outperforms the best previously reported models (including ensembles) by more\nthan 2.0 BLEU, establishing a new state-of-the-art BLEU score of 28.4. The conﬁguration of this\nmodel is listed in the bottom line of Table 3. Training took 3.5 days on 8 P100 GPUs. Even our base\nmodel surpasses all previously published models and ensembles, at a fraction of the training cost of\nany of the previous best models.",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf"
+        }
+      ],
+      "gap": null,
+      "metric_comparison": {
+        "task": "EN-DE",
+        "target_score": "28.4",
+        "prior_score": "26.36",
+        "difference": "2.04"
+      },
+      "answer_method": "table_calculation",
+      "model_available": false
+    }
+  },
+  {
+    "source_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+    "question": "How many GPUs did the authors use for training? What random seed did the authors use for training?",
+    "expected": "partial",
+    "result": {
+      "hits": [
+        {
+          "page": 7,
+          "block": 3,
+          "part": 1,
+          "offset": 0,
+          "text": "We trained our models on one machine with 8 NVIDIA P100 GPUs. For our base models using\nthe hyperparameters described throughout the paper, each training step took about 0.4 seconds. We\ntrained the base models for a total of 100,000 steps or 12 hours. For our big models,(described on the\nbottom line of table 3), step time was 1.0 seconds, and the models were trained for 300,000 steps or\n3.5 days.",
+          "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+          "name": "1706.03762v1.pdf",
+          "score": 0.045455,
+          "page_label": "7",
+          "retrieval_ranks": {
+            "bm25": 2
+          },
+          "start": 0,
+          "end": 61
+        }
+      ],
+      "fields": [
+        {
+          "question": "How many GPUs did the authors use for training",
+          "answer": "文中报告的训练硬件为 8 块 NVIDIA P100 GPU。",
+          "gap": null,
+          "method": "source_fields",
+          "claims": [],
+          "cells": []
+        },
+        {
+          "question": "What random seed did the authors use for training",
+          "answer": null,
+          "gap": "当前可检索的文献范围中没有明确报告随机种子的原文，无法据此给出「What random seed did the authors use for training」的答案。",
+          "method": null,
+          "claims": [],
+          "cells": []
+        }
+      ],
+      "answer": "How many GPUs did the authors use for training — 文中报告的训练硬件为 8 块 NVIDIA P100 GPU。",
+      "answer_method": "fieldwise",
+      "completeness": "partial",
+      "gap": "当前可检索的文献范围中没有明确报告随机种子的原文，无法据此给出「What random seed did the authors use for training」的答案。",
+      "generation": {
+        "status": "partial",
+        "claims": []
+      },
+      "model_available": false
+    }
+  }
+]

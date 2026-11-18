@@ -73,6 +73,10 @@ def lookup(store, request, *, dense=None):
         chunk = next((c for c in doc["chunks"] if [c["page"], c["block"], c["part"]] == anchor), None)
         if chunk is None:
             raise Bad(404, "未找到所选证据段落。")
+    from abbreviations import answer as abbreviation_answer
+    definition = abbreviation_answer(doc, question, chunk)
+    if definition is not None:
+        return definition
     from scan_table_qa import answer_native_table, answer_scan_table
     metric = None
     if anchor is None:
@@ -111,12 +115,14 @@ def lookup(store, request, *, dense=None):
             "gap": ("已找到相关段落，请核对其中的条件和数值。" if ranked else
                     "所选范围未找到足以回答这个问题的原文。")}
 
-def _answer_one(store, request, result, *, on_delta=None):
+def _answer_one(store, request, result, *, on_delta=None, generator=None):
+    if result.get("answer_method"):
+        return result
     if not result["hits"] and not result.get("answer"):
         from question_parts import describe_gap
         result["gap"] = describe_gap(request["question"], [])
         return result
-    if result.get("answer") or "table_cells" in result or result.get("answer_method"):
+    if result.get("answer") or "table_cells" in result:
         return result
     from passage_answer import assess_spans
     question = request["question"]
@@ -146,11 +152,12 @@ def _answer_one(store, request, result, *, on_delta=None):
     options = {"english": english} if english else {}
     if on_delta:
         options["on_delta"] = on_delta
-    draft = store.local_generator.answer(question, result["hits"], checked, **options)
+    model = generator if generator is not None else store.local_generator
+    draft = model.answer(question, result["hits"], checked, **options)
     result["generation"] = draft
     if draft["status"] == "cited_draft":
         claim = draft["claims"][0]
-        result.update(answer=claim["text"], answer_method="local_cited_draft", gap=None)
+        result.update(answer=claim["text"], answer_method=getattr(model, "answer_method", "local_cited_draft"), gap=None)
     elif draft["status"] == "insufficient_evidence":
         reasons = {"different_unit":"回答的数值单位与所引原文不一致。", "field_missing":"所引原句没有说明问题所问的字段。",
                    "different_condition":"原句对应的实验条件与问题不符。",
@@ -161,17 +168,18 @@ def _answer_one(store, request, result, *, on_delta=None):
     return result
 
 
-def answer_question(store, request, *, on_delta=None):
+def answer_question(store, request, *, on_delta=None, generator=None):
     """Split explicitly coordinated questions while preserving every field's source."""
     from question_parts import combine, split_question
     full = lookup(store, request, dense=store.dense)
     parts = split_question(request["question"])
-    if (len(parts) == 1 or full.get("answer_method") in {"source_fields","table_calculation","native_table","scan_table"}):
-        return _answer_one(store,request,full,on_delta=on_delta)
+    from direct_coverage import covers_parts
+    if len(parts) == 1 or covers_parts(full, parts):
+        return _answer_one(store,request,full,on_delta=on_delta,generator=generator)
     results=[]
     for part in parts:
         scoped=dict(request,question=part)
         # Each field obtains its own original observations and conditions.
         raw=lookup(store,scoped,dense=store.dense)
-        results.append((part,_answer_one(store,scoped,raw)))
+        results.append((part,_answer_one(store,scoped,raw,generator=generator)))
     return combine(results)

@@ -26,8 +26,10 @@ p{margin:.4rem 0}.quote{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9
 <fieldset><legend>研究范围 <small>1–6 篇</small></legend><div id="documents"></div></fieldset>
 <label class="field" for="question">你想核对什么？</label>
 <textarea id="question" required maxlength="500" placeholder="例如，比较两篇论文报告的同一项指标，列出原表位置。"></textarea>
-<label class="option"><input id="planning" type="checkbox" checked>允许本机模型选择工具</label>
-<label class="option"><input id="publisher" type="checkbox">向 JOSS 查询问题中指定的公开 DOI</label>
+<label class="option"><input id="planning" type="checkbox">本次允许 DeepSeek Flash 接收问题与命中摘录，选择工具并回答</label>
+<label for="web-terms">发送给 DeepSeek Search 的公开检索词（选填）</label>
+<input id="web-terms" type="text" maxlength="128" placeholder="例如 FlashAttention GPU memory">
+<label class="option"><input id="fetch-first" type="checkbox">同时读取第一条结果的网页正文</label>
 <p><button id="run">运行研究任务</button></p><p id="state" role="status"></p>
 </form>
 <div>

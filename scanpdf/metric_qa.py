@@ -9,6 +9,7 @@ import fitz
 from PIL import Image
 
 from scanpdf.tables import detect_tables
+from scan_table_qa import part_can_use_table
 
 DPI = 240
 MAX_PIXELS = 25_000_000
@@ -188,6 +189,8 @@ def _comparison_prose(doc, task, target):
 
 def answer_metric(store, doc, question):
     """Answer a selected-document BLEU comparison or return an evidence gap."""
+    if not part_can_use_table(question):
+        return None
     normalized = _normal(question)
     tasks = [task for task, pattern in TASKS.items() if re.search(pattern, normalized, re.I)]
     if not re.search(r"\bBLEU\b", normalized, re.I) or not re.search(
@@ -260,4 +263,6 @@ def answer_metric(store, doc, question):
                   f"{score:f} − {maximum:f} = {difference:f}，{change}。",
         "hits": hits,
         "gap": None,
+        "metric_comparison": {"task": task, "target_score": f"{score:f}", "prior_score": f"{maximum:f}",
+                              "difference": f"{difference:f}"},
     }

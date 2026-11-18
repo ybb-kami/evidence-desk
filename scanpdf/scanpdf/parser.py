@@ -14,6 +14,9 @@ from .ocr import recognize
 from .tables import detect_tables
 
 
+PAGE_FRAME = "rotated_visible_page_top_left"
+
+
 def select_pages(spec: str | None, count: int) -> list[int]:
     if spec is None:
         return list(range(1, count + 1))
@@ -64,13 +67,54 @@ def _read_missing_cells(image, tables, dpi, lang):
                             ocr_confidence=round(min(word["confidence"] for word in recovered), 2))
 
 
-def _parse_page(page, number, dpi, lang, crops, digest):
+def _render_page(page, dpi):
     rect = page.rect
     if math.ceil(rect.width * dpi / 72) * math.ceil(rect.height * dpi / 72) > 25_000_000:
-        raise ValueError(f"Physical page {number} exceeds 25 megapixels; use a lower DPI")
+        raise ValueError(f"Physical page {page.number + 1} exceeds 25 megapixels; use a lower DPI")
     pix = page.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY, alpha=False)
-    image = Image.frombytes("L", (pix.width, pix.height), pix.samples)
-    del pix
+    return Image.frombytes("L", (pix.width, pix.height), pix.samples)
+
+
+def _page_geometry(page, number, image):
+    return {"physical_page": number, "width_px": image.width, "height_px": image.height,
+            "width_pt": page.rect.width, "height_pt": page.rect.height, "rotation": page.rotation,
+            "cropbox": list(page.cropbox)}
+
+
+def _locate(record, rect, dpi, field="bbox"):
+    record[field] = [int(value) for value in record[field]]
+    record[field + "_pt"] = [round(min(rect.height if i % 2 else rect.width, value * 72 / dpi), 4)
+                              for i, value in enumerate(record[field])]
+
+
+def _region_crop(record, image, crops, digest):
+    filename = f"{digest[:16]}-{record['id']}.png"
+    with (crops / filename).open("xb") as out:
+        image.crop(record["bbox"]).save(out, "PNG")
+    record["crop"] = filename
+
+
+def _figure_annotations(page, number, image, lines, tables, dpi, crops, digest):
+    from .figures import detect_figures
+
+    figures, unresolved = detect_figures(image, lines, dpi, tables)
+    for index, item in enumerate(figures, 1):
+        item.update(id=f"p{number}-f{index}", type="figure", status="detected_only",
+                    physical_page=number, source_sha256=digest)
+        _locate(item, page.rect, dpi)
+        _locate(item, page.rect, dpi, "caption_bbox")
+        if crops:
+            _region_crop(item, image, crops, digest)
+    for index, item in enumerate(unresolved, 1):
+        item.update(id=f"p{number}-fc{index}", type="figure_caption", status="caption_only",
+                    physical_page=number, source_sha256=digest)
+        _locate(item, page.rect, dpi, "caption_bbox")
+    return {"figures": figures, "unresolved_captions": unresolved}
+
+
+def _parse_page(page, number, dpi, lang, crops, digest, figure_lines):
+    rect = page.rect
+    image = _render_page(page, dpi)
     words = recognize(image, dpi, lang, 3)
     if not words and ImageStat.Stat(image).stddev[0] > 5:
         words = recognize(image, dpi, lang, 11)
@@ -80,39 +124,27 @@ def _parse_page(page, number, dpi, lang, crops, digest):
     refine_numeric_cells(image, tables, dpi, lang)
     _read_missing_cells(image, tables, dpi, lang)
     regions.sort(key=lambda reg: (reg["bbox"][1], reg["bbox"][0]))
-
-    def locate(record):
-        record["bbox"] = [int(v) for v in record["bbox"]]
-        record["bbox_pt"] = [
-            round(min(rect.height if i % 2 else rect.width, v * 72 / dpi), 4)
-            for i, v in enumerate(record["bbox"])
-        ]
+    annotations = _figure_annotations(page, number, image, lines if figure_lines is None else figure_lines,
+                                      tables, dpi, crops, digest)
 
     for line in lines:
-        locate(line)
+        _locate(line, rect, dpi)
         for word in line["words"]:
-            locate(word)
+            _locate(word, rect, dpi)
     for index, region in enumerate(regions, 1):
         region["id"] = f"p{number}-r{index}"
-        locate(region)
+        _locate(region, rect, dpi)
         for cell in region.get("cells", []):
-            locate(cell)
+            _locate(cell, rect, dpi)
             if "numeric_ocr" in cell:
-                locate(cell["numeric_ocr"])
+                _locate(cell["numeric_ocr"], rect, dpi)
         if crops:
-            filename = f"{digest[:16]}-{region['id']}.png"
-            with (crops / filename).open("xb") as out:
-                image.crop(region["bbox"]).save(out, "PNG")
-            region["crop"] = filename
-    return {
-        "physical_page": number, "width_px": image.width, "height_px": image.height,
-        "width_pt": rect.width, "height_pt": rect.height, "rotation": page.rotation,
-        "cropbox": list(page.cropbox), "ocr_status": "words_found" if words else "no_words",
-        "lines": lines, "regions": regions,
-    }
+            _region_crop(region, image, crops, digest)
+    return {**_page_geometry(page, number, image), "ocr_status": "words_found" if words else "no_words",
+            "lines": lines, "regions": regions, **annotations}
 
 
-def parse_pdf(source, *, pages=None, dpi=240, lang="eng", crops=None):
+def parse_pdf(source, *, pages=None, dpi=240, lang="eng", crops=None, figure_ocr=None):
     """Return a JSON-compatible result. 'pages' uses 1-based intervals, e.g. '1,3-5'."""
     if not 72 <= dpi <= 600:
         raise ValueError("DPI must be between 72 and 600")
@@ -131,7 +163,28 @@ def parse_pdf(source, *, pages=None, dpi=240, lang="eng", crops=None):
         return {
             "schema_version": 1, "source": {"filename": path.name, "sha256": digest,
                                              "page_count": document.page_count},
-            "render": {"dpi": dpi, "lang": lang, "frame": "rotated_visible_page_top_left"},
-            "pages": [_parse_page(document[n - 1], n, dpi, lang, crop_dir, digest)
+            "render": {"dpi": dpi, "lang": lang, "frame": PAGE_FRAME},
+            "pages": [_parse_page(document[n - 1], n, dpi, lang, crop_dir, digest, (figure_ocr or {}).get(n))
                       for n in selected],
         }
+
+
+def refresh_cached_figures(source, cached):
+    """Locate figures against the original raster and the cached OCR line anchors."""
+    number = cached["physical_page"]
+    render = cached["render"]
+    dpi = render["dpi"]
+    if render["frame"] != PAGE_FRAME or not 72 <= dpi <= 600:
+        raise ValueError("无效的扫描页坐标系。")
+    path = Path(source)
+    with path.open("rb") as stream:
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    with pymupdf.open(path) as pdf:
+        page = pdf[number - 1]
+        image = _render_page(page, dpi)
+        geometry = _page_geometry(page, number, image)
+        if any(cached.get(key) != value for key, value in geometry.items()):
+            raise ValueError("更新后的区域坐标与原页不一致。")
+        tables = [region for region in cached["regions"] if region["type"] == "table"]
+        fields = _figure_annotations(page, number, image, cached["lines"], tables, dpi, None, digest)
+    return {"source": {"sha256": digest}, "render": render, "pages": [cached | fields]}

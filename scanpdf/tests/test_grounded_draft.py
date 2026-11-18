@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import workbench
 import grounded_draft as draft
+from paid_budget import BudgetExceeded
 
 
 class GroundedDraftTests(unittest.TestCase):
@@ -54,6 +55,7 @@ class GroundedDraftTests(unittest.TestCase):
         with self.assertRaises(workbench.app.Bad):
             draft.generate(self.key, self.hits, transport=sender)
         sender.assert_not_called()
+        self.assertEqual(draft.generate("Why?", self.hits)["status"], "not_configured")
 
     def test_consent_and_configuration_precede_any_retrieval(self):
         handler = Mock()
@@ -66,3 +68,19 @@ class GroundedDraftTests(unittest.TestCase):
         handler.json_request.return_value = dict(request, consent=True)
         draft.route(handler)
         handler.payload.assert_called_once_with(200, {"status": "not_configured", "claims": []})
+
+    def test_route_propagates_budget_denial_without_falling_back(self):
+        handler = Mock()
+        handler.server = SimpleNamespace(enable_model=True, library=SimpleNamespace(dense=None))
+        handler.json_request.return_value = {
+            "id": self.hits[0]["id"], "question": "Score?", "anchor": None, "consent": True,
+        }
+        transport = Mock(side_effect=BudgetExceeded("money_limit"))
+        handler.flash_model.return_value = SimpleNamespace(legacy_transport=transport, model="DeepSeek-V4.1-Flash-1017")
+        with patch("followup.lookup", return_value={"hits": self.hits}), patch("provider._send") as bypass:
+            with self.assertRaises(workbench.app.Bad) as denied:
+                draft.route(handler)
+        self.assertEqual(denied.exception.code, 429)
+        self.assertIn("预算", denied.exception.msg)
+        transport.assert_called_once()
+        bypass.assert_not_called()

@@ -20,10 +20,16 @@ WORKERS = threading.BoundedSemaphore(2)
 
 
 def validate(store, req):
-    if set(req) != {"ids", "question", "model_planner", "publisher_consent"}:
+    base = {"ids", "question", "model_planner", "publisher_consent"}
+    if not base <= req.keys() or req.keys() - base - {"model_consent", "search_terms", "fetch_first"}:
         raise Bad(400, "研究任务的字段无效。")
+    if type(req.get("model_consent", False)) is not bool or type(req.get("fetch_first", False)) is not bool:
+        raise Bad(400, "模型与联网选项无效。")
+    terms = req.get("search_terms", "")
+    if not isinstance(terms, str) or len(terms) > 128 or (req.get("fetch_first") and not terms.strip()):
+        raise Bad(400, "请填写最多 128 字的公开检索词。")
     ids, question = req["ids"], req["question"]
-    if (not isinstance(ids, list) or not 1 <= len(ids) <= 6
+    if (not isinstance(ids, list) or not (0 if terms.strip() else 1) <= len(ids) <= 6
             or any(not isinstance(docid, str) or not ID.fullmatch(docid) for docid in ids)
             or len(set(ids)) != len(ids) or not isinstance(question, str)
             or not 1 <= len(question.strip()) <= 500
@@ -32,13 +38,15 @@ def validate(store, req):
     dois = {value.lower() for value in DOI.findall(question)}
     if req["publisher_consent"] and len(dois) != 1:
         raise Bad(400, "出版方查询需要在问题中填写一个明确的 JOSS DOI。")
-    selected = {doc["id"]: doc for doc in store.records(ids)}
+    selected = {doc["id"]: doc for doc in store.records(ids)} if ids else {}
     if set(selected) != set(ids):
         raise Bad(404, "所选论文已移出活动文库。")
     return [selected[i] for i in ids], next(iter(dois)) if req["publisher_consent"] else None
 
 
 def choices(docs, question, doi):
+    if not docs:
+        return [], []
     primary = "answer_paper" if len(docs) == 1 else "compare_papers"
     required = []
     if GRAPH.search(question):
@@ -121,30 +129,35 @@ def report(doc, result):
             "sources": citations, "cells": cells, "generation": result.get("generation", {}).get("status")}
 
 
-def execute(store, docs, req, doi, emit):
+def execute(store, docs, req, doi, emit, *, generator=None, search_action=None):
     question = req["question"].strip()
     required, offered = choices(docs, question, doi)
+    if search_action is not None:
+        required.append("web_search")
+        offered.append({"type":"function","function":{"name":"web_search",
+            "description":"Search the web for the public terms explicitly provided by the user.",
+            "parameters":{"type":"object","properties":{},"additionalProperties":False}}})
     emit("stage", {"label": "核对文献范围", "detail": f"文库已读出 {len(docs)} 份指定版本。"})
     planner, proposed = "not_requested", []
     if req["model_planner"]:
-        emit("stage", {"label": "请求本机模型选择工具"})
-        planner, proposed = store.local_generator.choose_tools(question, len(docs), offered)
+        emit("stage", {"label": "选择研究工具"})
+        planner, proposed = (generator or store.local_generator).choose_tools(question, len(docs), offered)
     allowed = {tool["function"]["name"] for tool in offered}
     # Fixed scopes disallow model-chosen PDFs, file paths, URLs and writes.
     actions = list(dict.fromkeys([n for n in proposed if n in allowed] + required))
-    emit("plan", {"planner": planner, "model": store.local_generator.model if planner == "model_tool_calls" else None,
+    emit("plan", {"planner": planner, "model": (generator or store.local_generator).model if planner == "model_tool_calls" else None,
                   "proposed": proposed, "required": required, "tools": actions})
     by_id = {d["id"]: d for d in docs}
-    groups, public, receipts = [], [], []
+    groups, public, receipts, web = [], [], [], None
     for action in actions:
         start = time.monotonic()
-        emit("stage", {"label": DESCRIPTIONS[action][0], "tool": action})
+        emit("stage", {"label": "DeepSeek 联网检索" if action == "web_search" else DESCRIPTIONS[action][0], "tool": action})
         pages = 0
         state = "ok"
         if action == "answer_paper":
             from followup import answer_question
             doc = docs[0]
-            data = answer_question(store, {"id": doc["id"], "question": question, "anchor": None},
+            data = answer_question(store, {"id": doc["id"], "question": question, "anchor": None}, generator=generator,
                                    on_delta=lambda delta: emit("token", {"text": delta}))
             item = report(doc, data)
             groups.append(item)
@@ -187,6 +200,9 @@ def execute(store, docs, req, doi, emit):
                     coverage.append(f"{doc['name']} 各物理页均有可检索文字。")
             groups.append(dict(name="扫描覆盖", answer=" ".join(coverage), gap=None, sources=[], cells=[],
                                scan=[{"id": d["id"], "page": d["textless_pages"][0]} for d in docs if d["textless_pages"]]))
+        elif action == "web_search":
+            web = search_action()
+            state = "ok" if web["state"] == "ok" else "unavailable"
         elif action == "publication_metadata":
             from discovery.joss import read_publication
             try:
@@ -200,13 +216,23 @@ def execute(store, docs, req, doi, emit):
         if state == "gap" and "scan_coverage" not in actions and any(d["textless_pages"] for d in docs):
             actions.append("scan_coverage")
             emit("replan", {"tool":"scan_coverage","reason":"当前回答有证据缺口，所选文献仍有未索引页面。"})
-    emit("final", {"reports":groups, "publications":public, "receipts":receipts, "planner":planner})
+    emit("final", {"reports":groups, "publications":public, "receipts":receipts, "planner":planner, "web":web})
 
 
 def handle(handler):
     req = handler.json_request()
     store = handler.server.library
     docs, doi = validate(store, req)
+    import provider
+    available = bool(handler.server.enable_model and provider.configured())
+    generator = handler.flash_model() if req.get("model_consent") and available else None
+    search_action = None
+    if req.get("search_terms", "").strip():
+        from discovery.deepseek_search import search
+        from flash_costs import authorize
+        ticket = handler.flash_ticket()
+        search_action = lambda: search(req["search_terms"], authorize=lambda kind: authorize(ticket, kind),
+                                       fetch=req.get("fetch_first", False))
     if not WORKERS.acquire(blocking=False):
         raise Bad(429, "已有两项研究任务正在执行，请稍后重试。")
     try:
@@ -223,9 +249,12 @@ def handle(handler):
             handler.wfile.flush()
 
         try:
-            execute(store, docs, req, doi, emit)
+            execute(store, docs, req, doi, emit, generator=generator, search_action=search_action)
         except (ConnectionError, TimeoutError):
             return
+        except RuntimeError as exc:
+            from flash_costs import public_error
+            emit("error", {"message": public_error(exc)})
         except Exception:
             emit("error", {"message":"任务中断，未能完成全部核对；可重试或缩小文献范围。"})
     finally:

@@ -74,8 +74,8 @@ def combine(parts):
         if answer:
             supported+=1
         fields.append(dict(question=question,answer=answer,
-                           gap=None if answer else describe_gap(question,result.get("hits",[]),
-                                                        result.get("generation",{}).get("reason")),
+                           gap=None if answer else result.get("gap") or describe_gap(
+                               question, result.get("hits", []), result.get("generation", {}).get("reason")),
                            method=result.get("answer_method"),claims=field_claims,
                            cells=result.get("table_cells",[])))
     status="complete" if supported==len(parts) else ("partial" if supported else "insufficient_evidence")

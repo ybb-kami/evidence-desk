@@ -13,6 +13,7 @@ article{padding:.7rem 0;border-top:1px solid #d6dfd8}article a{margin-right:.7re
 <div id="history" aria-live="polite"></div>
 <form id="ask"><p id="scope">检索范围：当前文献全文</p><button type="button" id="release" hidden>返回全文范围</button>
 <label for="question">问题</label><input id="question" maxlength="500" required autocomplete="off">
+<label><input type="checkbox" id="flash-consent" style="width:auto"> 本次允许 DeepSeek Flash 接收问题和命中摘录以生成回答</label>
 <button class="primary" id="send">查找原文</button> <button type="button" id="clear">清空会话</button></form><p id="status" role="status"></p></main>
 <script>
 'use strict';
@@ -99,11 +100,14 @@ byId('ask').onsubmit=async event=>{
   const active=++version, current=anchor, id=picker.value;
   byId('send').disabled=true; byId('status').textContent='正在查找原文…';
   try{
-    const response=await fetch('/api/followup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,question,anchor:current})});
+    const consent=byId('flash-consent').checked;
+    byId('flash-consent').checked=false;
+    const response=await fetch('/api/followup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,question,anchor:current,model_consent:consent})});
     const data=await response.json();
     if(active!==version)return;
     if(!response.ok)throw Error(data.error||'检索失败。');
     const turn=document.createElement('section');
+    if(data.model_status==='not_configured')turn.append(node('p','服务端未启用 DeepSeek；以下为本地原文检索结果。'));
     turn.append(node('h2',question),node('p',picker.selectedOptions[0].text+' · '+(current?locationText(current):'全文')));
     if(data.fields?.length) {
       for(const field of data.fields) {
@@ -114,8 +118,8 @@ byId('ask').onsubmit=async event=>{
       }
     } else if(data.answer) {
       turn.append(node('strong',data.answer));
-      const method={local_extractive:'本机 MobileBERT 原文抽取',local_cited_draft:'本机模型生成 · 引文已匹配',
-        fieldwise:'按问题逐项核对',direct_measurement:'原句中的唯一明确读数',source_fields:'原文字段核对',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
+      const method={deepseek_cited_draft:'DeepSeek-V4.1-Flash-1017 · 引文已匹配',local_extractive:'本机 MobileBERT 原文抽取',local_cited_draft:'本机模型生成 · 引文已匹配',
+        fieldwise:'按问题逐项核对',direct_measurement:'原句中的唯一明确读数',source_fields:'原文字段核对',abbreviation:'原文括号中的全称',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
       if(method[data.answer_method])turn.append(node('p',method[data.answer_method]));
     }
     for(const claim of data.fields?.length?[]:data.generation?.claims||[]){
@@ -166,10 +170,31 @@ byId('ask').onsubmit=async event=>{
     const response=await fetch('/api/library');
     if(!response.ok)throw Error('无法读取文库。');
     for(const doc of (await response.json()).docs)picker.add(new Option(doc.name,doc.id));
-    const requested=new URLSearchParams(location.search).get('id');
-    if(requested && Array.from(picker.options).some(option=>option.value===requested))picker.value=requested;
+    const requested=new URLSearchParams(location.search);
+    if(requested.has('id'))picker.value=requested.get('id');
     clearSession();
-    if(!picker.value)byId('status').textContent='请先在文库中导入 PDF。';
+    if(!picker.value){
+      byId('status').textContent=requested.has('id')
+        ? '指定的文献版本不在活动文库。请返回文库恢复原件，或手动选择另一份文献。'
+        : '请先在文库中导入 PDF。';
+      return;
+    }
+    const fields=['page','block','part'];
+    if(fields.some(key=>requested.has(key))){
+      const active=version;
+      byId('send').disabled=true;
+      scope.textContent='正在核对所选摘录…';
+      if(!requested.has('id') || fields.some(key=>!/^[1-9][0-9]{0,5}$/.test(requested.get(key)))){
+        scope.textContent='摘录定位无效。请返回引文原页重新定位。';
+        return;
+      }
+      const params=new URLSearchParams({id:picker.value});
+      for(const key of fields)params.set(key,requested.get(key));
+      const response=await fetch('/api/source?'+params);
+      if(active!==version)return;
+      if(!response.ok){scope.textContent='未找到这份原件中的指定摘录。请返回引文原页核对。';return;}
+      selectAnchor(fields.map(key=>Number(params.get(key))));
+    }
   }catch(error){byId('status').textContent=error.message;}
 })();
 </script></html>

@@ -264,11 +264,12 @@ def _ocr(store, document, page, chunk, span):
 
 def _passage_view(store, doc, page, request):
     block, part = request["block"], request["part"]
-    matches = [row for row in doc["chunks"] if (row["page"], row["block"], row.get("part", 1))
-               == (page.number + 1, block, part)]
+    rows = [row for row in doc["chunks"] if row["page"] == page.number + 1]
+    matches = [i for i, row in enumerate(rows) if (row["block"], row.get("part", 1)) == (block, part)]
     if len(matches) != 1:
         raise app.Bad(404, "本页没有这个可核对的引文段落。")
-    chunk = matches[0]
+    index = matches[0]
+    chunk = rows[index]
     span = (request["start"], request["end"]) if "start" in request else None
     if span and not 0 <= span[0] < span[1] <= len(chunk["text"]):
         raise app.Bad(400, "证据字符范围超出该段原文。")
@@ -277,8 +278,15 @@ def _passage_view(store, doc, page, request):
         passage, selection = _ocr(store, doc, page, chunk, span)
     else:
         passage, selection = _native(page, chunk, span)
+    neighbors = []
+    for direction, neighbor_index in (("previous", index - 1), ("next", index + 1)):
+        if 0 <= neighbor_index < len(rows):
+            row = rows[neighbor_index]
+            neighbors.append({"direction": direction, "block": row["block"], "part": row.get("part", 1),
+                              "preview": " ".join(row["text"].split())[:220]})
     return {
         "block": block, "part": part, "text": chunk["text"], "source": source, "passage": passage,
+        "neighbors": neighbors,
         "selection": ({"start": span[0], "end": span[1], **(selection or _result("text"))}
                       if span else None),
     }

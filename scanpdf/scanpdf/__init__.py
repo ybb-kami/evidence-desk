@@ -1,3 +1,3 @@
-from .parser import parse_pdf
+from .parser import parse_pdf, refresh_cached_figures
 
-__all__ = ["parse_pdf"]
+__all__ = ["parse_pdf", "refresh_cached_figures"]

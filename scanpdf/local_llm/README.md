@@ -22,6 +22,27 @@ python scanpdf/local_llm/install.py --directory "$ed_llm_dir"
 
 Docker 公共 manifest 记录 GGUF 源为 `unsloth/Qwen3-1.7B-GGUF`，配置声明 Apache-2.0。llama.cpp b7940 的提交为 `e6e934c5ea1540522171ec91eee05d37909286d1`，运行时归档附 MIT 许可证。[Docker 模型仓库](https://hub.docker.com/r/ai/qwen3) · [Qwen3 发布说明](https://qwenlm.github.io/blog/qwen3/) · [llama.cpp 发布和校验值](https://github.com/ggml-org/llama.cpp/releases/expanded_assets/b7940)
 
+## 可选模型 Qwen3-4B-Instruct-2507
+
+安装器的默认选项仍为 1.7B。显式选用 `--model 4b-instruct-2507` 会在同一目录增加约 2.50 GB 的 Q4_K_M 权重。权重来自 Docker Hub `ai/qwen3:4b-instruct-2507-q4_K_M` 对应的固定 OCI manifest，元数据记载导出来源为 `unsloth/Qwen3-4B-Instruct-2507-GGUF`，许可为 Apache-2.0。[Docker 模型仓库](https://hub.docker.com/r/ai/qwen3)
+
+| 固定工件 | SHA-256 |
+|---|---|
+| Qwen3-4B-Instruct-2507 Q4_K_M GGUF，2,497,281,120 字节 | `3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597` |
+| 4B Docker OCI manifest | `8cd2927dc3a33531aa57f2479e2dcfb16e3bf53e31de561a612fcbc3cf6a6893` |
+
+```bash
+ed_llm_dir=~/.cache/evidence-desk-local-llm
+python scanpdf/local_llm/install.py --directory "$ed_llm_dir" --model 4b-instruct-2507
+"$ed_llm_dir/llama-b7940/llama-server" \
+  --model "$ed_llm_dir/Qwen3-4B-Instruct-2507-Q4_K_M.gguf" \
+  --alias qwen3-4b-instruct-2507 --host 127.0.0.1 --port 39350 --n-gpu-layers 0 \
+  --threads 3 --threads-batch 3 --poll 0 --cache-ram 128 --ctx-size 4096 --parallel 1 \
+  --chat-template-kwargs '{"enable_thinking":false}' --reasoning-budget 0
+```
+
+4B 与 1.7B 的逐题比较使用相同的冻结证据和校验流程。[固定证据 A/B](MODEL_COMPARISON.md)
+
 ## 用真实 PDF 验证回答和引文
 
 在已安装工作台依赖的 Python 环境中运行。

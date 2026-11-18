@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "status": "ended_early",
+  "full_duration_completed": false,
+  "reason": "requested_early_stop",
+  "revision": "c94c6285d7a1a4e9764644dd35ca6469b3378efe",
+  "fixture": {
+    "path": "demo/A-lantern.pdf",
+    "sha256": "b5b2e136ca4a8405cb9783032885374e90a2683edb5592c34bb2517491618dbe",
+    "fixture_disk_hash_matches": true
+  },
+  "planned_rounds": 93,
+  "completed_rounds": 18,
+  "clients_per_round": 4,
+  "round_interval_seconds": 60,
+  "nominal_full_duration_seconds": 5580,
+  "runner_elapsed_seconds_at_stop": 1043,
+  "last_completed_round_started_seconds": 1020.001,
+  "finished_at_utc": "2026-11-18T12:40:03+00:00",
+  "client_sequences": 72,
+  "failed_operations": 0,
+  "skipped_operations": 0,
+  "configuration": {
+    "data": "temporary isolated library",
+    "transport": "loopback HTTP",
+    "models_disabled": true,
+    "cache": "fresh process at start, retained across rounds, OS cache unmanaged"
+  },
+  "operations": {
+    "import": {
+      "scheduled": 72,
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "latency": {
+        "observations": 72,
+        "p50_ms": 15.3213,
+        "p95_ms": 45.6752
+      },
+      "latency_passed": {
+        "observations": 72,
+        "p50_ms": 15.3213,
+        "p95_ms": 45.6752
+      },
+      "failure_reasons": {}
+    },
+    "search": {
+      "scheduled": 72,
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "latency": {
+        "observations": 72,
+        "p50_ms": 4.5448,
+        "p95_ms": 15.7956
+      },
+      "latency_passed": {
+        "observations": 72,
+        "p50_ms": 4.5448,
+        "p95_ms": 15.7956
+      },
+      "failure_reasons": {}
+    },
+    "original_sha256": {
+      "scheduled": 72,
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "latency": {
+        "observations": 72,
+        "p50_ms": 3.4666,
+        "p95_ms": 54.8094
+      },
+      "latency_passed": {
+        "observations": 72,
+        "p50_ms": 3.4666,
+        "p95_ms": 54.8094
+      },
+      "failure_reasons": {}
+    },
+    "citation_locator": {
+      "scheduled": 72,
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "latency": {
+        "observations": 72,
+        "p50_ms": 29.7033,
+        "p95_ms": 160.9054
+      },
+      "latency_passed": {
+        "observations": 72,
+        "p50_ms": 29.7033,
+        "p95_ms": 160.9054
+      },
+      "failure_reasons": {}
+    }
+  },
+  "imports": {
+    "created": 1,
+    "duplicate": 71
+  },
+  "server_rss_kib": {
+    "samples": 19,
+    "min": 98420,
+    "max": 99512,
+    "final": 98556,
+    "peak_vm_hwm": 99512
+  },
+  "final_verification": {
+    "method": "read-only SQLite snapshot before harness interruption",
+    "sqlite_quick_check": "ok",
+    "total_documents": 1,
+    "active_documents": 1,
+    "original_blob_sha256_matches": true,
+    "runner_and_server_stopped": true
+  },
+  "harness_sha256": "a3a1044a2ca1e854aaac6babb050553d3a5f010ce591c0dd7f011cb8bc0b1e3f"
+}

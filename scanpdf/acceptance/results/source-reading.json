@@ -1,0 +1,46 @@
+[
+  {
+    "viewport_width": 1200,
+    "versions": [
+      "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+    ],
+    "identical_display_name": "paper.pdf",
+    "physical_page": 7,
+    "block": 3,
+    "quoted_span": "P100",
+    "neighbor_reopened": {
+      "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "page": 7,
+      "block": 2,
+      "part": 1
+    },
+    "scoped_followup_hits": 1,
+    "bilingual_block_focused": true,
+    "archived_source_readable": true,
+    "unavailable_version_fallbacks": 0,
+    "invalid_block_submission_disabled": true
+  },
+  {
+    "viewport_width": 390,
+    "versions": [
+      "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+    ],
+    "identical_display_name": "paper.pdf",
+    "physical_page": 7,
+    "block": 3,
+    "quoted_span": "P100",
+    "neighbor_reopened": {
+      "id": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "page": 7,
+      "block": 2,
+      "part": 1
+    },
+    "scoped_followup_hits": 1,
+    "bilingual_block_focused": true,
+    "archived_source_readable": true,
+    "unavailable_version_fallbacks": 0,
+    "invalid_block_submission_disabled": true
+  }
+]

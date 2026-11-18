@@ -2,9 +2,10 @@ import json
 import os
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from future_work import classify_later
+from paid_budget import BudgetExceeded
 from synthesis import _model_sources, abstract_sentence, evidence_set, generated_paragraphs, handle
 
 
@@ -120,10 +121,25 @@ class SynthesisTests(unittest.TestCase):
         handler = SimpleNamespace(
             json_request=lambda: {'ids': [doc['id'] for doc in docs], 'mode': 'model', 'consent': True},
             server=SimpleNamespace(library=SimpleNamespace(records=lambda ids: docs), enable_model=True),
+            flash_model=lambda: SimpleNamespace(legacy_transport=Mock(), model='DeepSeek-V4.1-Flash-1017'),
             payload=lambda code, data: (code, data),
         )
         code, data = handle(handler)
         self.assertEqual((code, data['mode'], data['abstracts'], data['paragraphs']), (200, 'unavailable', 2, []))
+
+    @patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'unit-test-private-value'})
+    def test_budget_failure_keeps_local_evidence(self):
+        docs = [paper(1), paper(2)]
+        transport = Mock(side_effect=BudgetExceeded('money_limit'))
+        handler = SimpleNamespace(
+            json_request=lambda: {'ids': [doc['id'] for doc in docs], 'mode': 'model', 'consent': True},
+            server=SimpleNamespace(library=SimpleNamespace(records=lambda ids: docs), enable_model=True),
+            flash_model=lambda: SimpleNamespace(legacy_transport=transport, model='DeepSeek-V4.1-Flash-1017'),
+            payload=lambda code, data: (code, data),
+        )
+        code, data = handle(handler)
+        self.assertEqual((code, data['mode'], data['abstracts'], data['paragraphs']), (200, 'budget_unavailable', 2, []))
+        transport.assert_called_once()
 
     @patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'unit-test-private-value'})
     def test_generation_cites_real_refs_and_sends_only_aliases(self):

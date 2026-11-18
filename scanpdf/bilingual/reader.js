@@ -405,12 +405,23 @@ async function startReader() {
     localDirections = models.directions;
     for (const doc of library.docs) docs.add(new Option(doc.name,doc.id));
     const requested = new URLSearchParams(location.search);
-    if (library.docs.some(doc => doc.id === requested.get("doc"))) docs.value=requested.get("doc");
+    if (requested.has("doc")) {
+      docs.value = requested.get("doc");
+      if (!docs.value) {
+        status.textContent = "指定的文献版本不在活动文库。请返回文库恢复原件，或手动选择另一份文献。";
+        return;
+      }
+    }
     const selected = library.docs.find(doc => doc.id === docs.value);
     if (selected) {
       const page = pageNumber(requested.get("page") || "1", selected.pages);
       await load(page ?? 1);
       if (page === null) pageWarning();
+      else if (requested.has("block") && current?.page === page && selected.id === docs.value) {
+        const index = current.segments.findIndex(segment => String(segment.block) === requested.get("block"));
+        if (index >= 0) alignment.locate(index, 0);
+        else status.textContent = "此摘录没有可对应的双语段落，请核对本页原图。";
+      }
     } else status.textContent = "请先在文库导入 PDF。";
   } catch (e) {status.textContent=e.message;}
 }

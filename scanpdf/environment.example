@@ -5,8 +5,6 @@
 # Optional: set DEEPSEEK_API_KEY using the runtime's private credential settings.
 # Then launch the workbench with --enable-deepseek for per-request quote selection.
 
-# Optional: exact chat model ID available to your DeepSeek account.
-# export DEEPSEEK_MODEL="your-enabled-model-id"
 # Optional: enable offline formula candidates with verified local weights.
 # export EVIDENCE_FORMULA_PYTHON="/absolute/path/to/formula-env/bin/python"
 # export EVIDENCE_FORMULA_WEIGHTS="/absolute/path/to/verified-weights"
@@ -15,6 +13,9 @@
 # export EVIDENCE_DENSE_MODEL_DIR=/absolute/path/to/verified-e5-directory
 # Verified MobileBERT extracts candidate spans from the retrieved passages.
 # export EVIDENCE_QA_READER=/absolute/path/to/reader/mobilebert_qa.tflite
-# Optional, explicitly configured local generation. Use the alias of the running model.
-# export EVIDENCE_LOCAL_QA_URL=http://127.0.0.1:39348/v1/chat/completions
-# export EVIDENCE_LOCAL_QA_MODEL=evidence-local-qwen
+
+# Enter verified USD upper tariff values in the private deployment environment.
+# DEEPSEEK_INPUT_USD_PER_MILLION, DEEPSEEK_OUTPUT_USD_PER_MILLION
+# DEEPSEEK_SEARCH_USD_PER_CALL, DEEPSEEK_FETCH_USD_PER_CALL
+# EVIDENCE_BUDGET_DB must be shared and persistent across judge instances.
+# See scanpdf/DEEPSEEK-JUDGE.md.

@@ -35,7 +35,8 @@ def task(browser, port, ids, query, *, planner=False, publisher=False):
             box.set_checked(box.input_value() in ids)
         page.locator("#question").fill(query)
         page.locator("#planning").set_checked(planner)
-        page.locator("#publisher").set_checked(publisher)
+        if publisher:
+            page.locator("#publisher").check()
         page.evaluate("""() => {
             const originalFetch=window.fetch.bind(window);
             window.fetch=async (...args) => {
@@ -95,6 +96,8 @@ def main():
     parser.add_argument("--mode", choices=("rules","real"), default="rules")
     parser.add_argument("--publisher",action="store_true",help="Send the public seaborn JOSS DOI to its publisher")
     args=parser.parse_args()
+    if args.mode == "real" or args.publisher:
+        parser.error("For the current DeepSeek judging build use acceptance/deepseek_live.py. Historical local-model/JOSS runs are reproducible at c94c628.")
     from playwright.sync_api import sync_playwright
     data,blank=inputs()
     with mode_env(args.mode), workbench() as port, sync_playwright() as pw, pw.chromium.launch(executable_path=str(args.chromium)) as browser:

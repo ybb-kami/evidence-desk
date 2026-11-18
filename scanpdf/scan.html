@@ -23,7 +23,7 @@ aside,article{background:#fff;border:1px solid #c9d1c9;border-radius:8px;padding
 <button class="primary" id="scan" hidden disabled>识别本页</button><button id="update-regions" hidden disabled>更新本页区域</button><button id="batch" hidden>识别整篇待处理页</button><button id="cancel" hidden>完成当前页后暂停</button><a id="source" hidden target="_blank" rel="noopener">打开原 PDF</a></div>
 <p id="progress" hidden role="status"></p>
 <p id="status" role="status"></p>
-<div class="layout"><aside><h2>本页证据</h2><label>查找文字或区域<input type="search" id="query" placeholder="词语、表格或公式"></label>
+<div class="layout"><aside><h2>本页证据</h2><label>查找文字或区域<input type="search" id="query" placeholder="词语、表格、公式或图注"></label>
 <div id="results"></div><div id="detail" aria-live="polite"></div></aside>
 <article><h2>原页定位</h2><div class="sheet"><img id="preview" hidden alt="扫描页原图"><span id="mark" hidden></span></div></article>
 </div></main>
@@ -39,6 +39,8 @@ let regionRevision = null;
 let pendingPages = [], running = false, pause = false;
 const initial = new URLSearchParams(location.search);
 const statusLabels = {structure_recognized:'已识别表格结构',partial_structure:'部分结构已识别，请核对原图',detected_only:'仅定位区域',transcribed:'已转录'};
+const figureReason = {insufficient_graphic_geometry:'图形笔画不足',insufficient_panel_span:'候选框只覆盖图中局部',
+  overlaps_table_region:'候选框和表格区域重叠',prose_or_duplicate_region:'候选框覆盖正文或重复区域'};
 async function getJSON(url, options) {
   const response = await fetch(url, options);
   const body = await response.json();
@@ -63,15 +65,30 @@ function highlight(box) {
     width:100*(right-left)/width+'%',height:100*(bottom-top)/height+'%'});
   mark.hidden = false;
 }
-function selectItem(item, button, cell) {
-  highlight(cell?.bbox_pt || item.bbox_pt);
+function selectItem(item, button, cell, captionFocus=false) {
+  const captionSelected = captionFocus || item.type==='figure_caption';
+  const box = captionSelected ? item.caption_bbox_pt : cell?.bbox_pt || item.bbox_pt;
+  highlight(box);
   byId('results').querySelector('[aria-pressed=true]')?.setAttribute('aria-pressed','false');
   button.setAttribute('aria-pressed','true');
   formulaLink(item.type==='formula' ? item.id : null);
   const detail = byId('detail');
-  const box = cell?.bbox_pt || item.bbox_pt;
+  const coordinate = captionSelected ? '图注框' : item.type==='figure' ? '图框' : '框';
   detail.textContent = (cell ? cell.text || '空白或未读出' : item.description) +
-    '\n物理页 '+page.value+' · 框坐标（点） '+box.map(n=>n.toFixed(1)).join(', ');
+    '\n物理页 '+page.value+' · '+coordinate+'坐标（点） '+box.map(n=>n.toFixed(1)).join(', ');
+  if (item.type==='figure' && item.caption_bbox_pt) {
+    const action = document.createElement('button');
+    action.id = 'figure-location';
+    action.type = 'button';
+    action.textContent = captionSelected ? '定位图框' : '定位 OCR 图注';
+    action.onclick = () => {
+      selectItem(item,button,null,!captionSelected);
+      byId('figure-location').focus();
+    };
+    const controls = document.createElement('p');
+    controls.append(action);
+    detail.append(controls);
+  }
   if (!item.cells?.length) return;
   const label = document.createElement('label');
   label.textContent = '在原页定位表格单元格';
@@ -104,6 +121,17 @@ function showResults() {
     const cells = (region.cells || []).map(cell=>'第 '+cell.row+' 行，第 '+cell.column+' 列  '+(cell.text || '空白或未读出'));
     const description = [title,statusLabels[region.status] || region.status,region.text,...cells].filter(Boolean).join('\n');
     items.push({...region,title,description});
+  }
+  for (const figure of evidence.figures || []) {
+    const title = '图 '+figure.label+' · 图版';
+    const description = [title,'已定位图框 · OCR 图注',figure.caption].join('\n');
+    items.push({...figure,title,description});
+  }
+  for (const caption of evidence.unresolved_captions || []) {
+    const title = '图 '+caption.label+' · 仅图注';
+    const description = [title,'图框待确认 · '+(figureReason[caption.reason] || '请核对原页'),
+      'OCR 图注',caption.caption].join('\n');
+    items.push({...caption,title,description});
   }
   const needle = query.value.trim().toLocaleLowerCase();
   for (const line of evidence.lines) {
@@ -145,6 +173,8 @@ function applyResponse(body) {
   batch.textContent = '识别整篇待处理页（'+pendingPages.length+'）';
   status.textContent = evidence ? '已识别 · '+evidence.lines.length+' 行文字，'+evidence.regions.length+' 个区域。'
     : originalScan ? '本页没有文字层。点击“识别本页”运行本机 OCR。' : '本页含原生文字，可在文库检索。';
+  if (evidence?.figures?.length) status.textContent += ' 图版 '+evidence.figures.length+' 个。';
+  if (evidence?.unresolved_captions?.length) status.textContent += ' 仅定位图注 '+evidence.unresolved_captions.length+' 条。';
   showResults();
 }
 async function loadPage() {
@@ -225,7 +255,7 @@ updateRegions.onclick = async ()=>{
   const active = generation;
   updateRegions.disabled = true;
   batch.hidden = true;
-  status.textContent = '正在更新本页的表格和公式区域…';
+  status.textContent = '正在更新本页区域…';
   try {
     const body = await recognizePage(doc.value, Number(page.value), regionRevision);
     if (active===generation) {
@@ -245,8 +275,13 @@ doc.onchange=()=>loadDocument(); page.onchange=loadPage; query.oninput=showResul
   try {
     documents=(await getJSON('/api/library')).docs;
     for(const record of documents) doc.add(new Option(record.name,record.id));
+    if(initial.has('id') && !documents.some(record=>record.id===initial.get('id'))){
+      doc.selectedIndex=-1;
+      status.textContent='指定的文献版本不在活动文库。';
+      return;
+    }
     if(!documents.length){status.textContent='请先在文库导入 PDF。';return;}
-    if(documents.some(record=>record.id===initial.get('id'))) doc.value=initial.get('id');
+    if(initial.has('id')) doc.value=initial.get('id');
     loadDocument(Number(initial.get('page')));
   } catch(error){status.textContent=error.message;}
 })();

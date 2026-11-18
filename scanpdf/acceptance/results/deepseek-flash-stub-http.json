@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "stub_passed",
+  "transport": "isolated in-process stubs",
+  "real_workbench_http": true,
+  "live_provider_requests": 0,
+  "provider_model_identity": "DeepSeek-V4.1-Flash-1017",
+  "fixture_sha256": "cbc5cc37834a4f39695a2cf2e1393ac5d0ec36c676c70933a45180cbf34e4e49",
+  "search_only": {
+    "search_calls": 1,
+    "fetch_calls": 0,
+    "only_explicit_public_terms_sent": true
+  },
+  "tool_plan": {
+    "passed": true,
+    "model_planned": true,
+    "citation_graph_tool_receipt": true,
+    "final_event": true,
+    "publisher_requested": false
+  },
+  "single_paper_answer": {
+    "passed": true,
+    "model_identity_verified": true,
+    "model_status": "cited_draft",
+    "expected_value_present": true,
+    "verified_physical_page": 2,
+    "original_citation_locator_verified": true
+  },
+  "missing_field": {
+    "passed": true,
+    "final_value_supplied": false,
+    "gap_reported": true,
+    "model_identity_verified": true,
+    "model_status": "insufficient_evidence"
+  },
+  "budget_saturated": {
+    "reserved_nusd": 710000000,
+    "search_refused": true,
+    "model_http_status": 503,
+    "additional_paid_calls": 0,
+    "additional_metadata_calls": 1,
+    "additional_transport_calls": 1
+  }
+}

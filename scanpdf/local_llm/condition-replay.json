@@ -1,0 +1,279 @@
+{
+  "cases_sha256": "f6dd7afe7ac74a6ff282ee586ab6b3d078ff3f4419873482e21349c6c1e41cdc",
+  "archived_results_sha256": "f24c46b97a87ad77cc3956ab0500c1aa40c4e3ec21de895d236a7f7333a76411",
+  "archived_revision": "c94c6285d7a1a4e9764644dd35ca6469b3378efe",
+  "arms": {
+    "1.7b": [
+      {
+        "id": "similarity",
+        "request_sha256": "0c7b688822094ab213ac1cb4b5f8fb1f7d3ac80401cb72c46a713d920bfbe193",
+        "archived": {
+          "status": "validation_failed"
+        },
+        "without_condition_guard": {
+          "status": "validation_failed",
+          "reason": "quote_not_bound"
+        },
+        "current": {
+          "status": "validation_failed",
+          "reason": "quote_not_bound"
+        }
+      },
+      {
+        "id": "epochs",
+        "request_sha256": "846c2a1447db4e2fee92d8b8a8569a191de24a8632402ea9defa889115038320",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "用于训练的大小数据集，最多分别训练了40轮和100轮。"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "用于训练的大小数据集，最多分别训练了40轮和100轮。"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "用于训练的大小数据集，最多分别训练了40轮和100轮。"
+        }
+      },
+      {
+        "id": "source-vocabulary",
+        "request_sha256": "32075bb10acf9a7093c02b9a83884a637864c6f2a368ac1293bfccc9dc85d479",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "160,000"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "160,000"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "160,000"
+        }
+      },
+      {
+        "id": "ap-validation",
+        "request_sha256": "f1ef595f329cd847e081c59228e3975a22ee50d7717749e00276050c511d4053",
+        "archived": {
+          "status": "insufficient_evidence"
+        },
+        "without_condition_guard": {
+          "status": "insufficient_evidence"
+        },
+        "current": {
+          "status": "insufficient_evidence"
+        }
+      },
+      {
+        "id": "ambiguous-validation",
+        "request_sha256": "87f922e9383ae377fef9c54398c80bdbefc6b24b00f7bc0f58b35f3a4765ab0c",
+        "archived": {
+          "status": "validation_failed"
+        },
+        "without_condition_guard": {
+          "status": "validation_failed",
+          "reason": "unsupported_number"
+        },
+        "current": {
+          "status": "validation_failed",
+          "reason": "unsupported_number"
+        }
+      },
+      {
+        "id": "gpu-memory",
+        "request_sha256": "fabccc3e26dc125dd92c2accd2e8cfb5e6584c83e375086ab092c4c309a7719e",
+        "archived": {
+          "status": "insufficient_evidence"
+        },
+        "without_condition_guard": {
+          "status": "insufficient_evidence"
+        },
+        "current": {
+          "status": "insufficient_evidence"
+        }
+      },
+      {
+        "id": "gpu-model",
+        "request_sha256": "5daae5bac4ffd93a3f27d7eb335c26e70abe4f7d0a74b76568ee907e24578cad",
+        "archived": {
+          "status": "insufficient_evidence"
+        },
+        "without_condition_guard": {
+          "status": "insufficient_evidence"
+        },
+        "current": {
+          "status": "insufficient_evidence"
+        }
+      },
+      {
+        "id": "lstm-structure",
+        "request_sha256": "b886a1eb04a1f2f06cba3470c5b11ab82fe6d3fbf4dc804b28dac54e98f338f4",
+        "archived": {
+          "status": "validation_failed"
+        },
+        "without_condition_guard": {
+          "status": "validation_failed",
+          "reason": "quote_not_bound"
+        },
+        "current": {
+          "status": "validation_failed",
+          "reason": "quote_not_bound"
+        }
+      },
+      {
+        "id": "topic-score",
+        "request_sha256": "5d43243e3c6daf686ab7c63024c57e384abb20945960238e389bc222c4b8089c",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "0.448"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "0.448"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "0.448"
+        }
+      }
+    ],
+    "4b-instruct-2507": [
+      {
+        "id": "similarity",
+        "request_sha256": "0c7b688822094ab213ac1cb4b5f8fb1f7d3ac80401cb72c46a713d920bfbe193",
+        "archived": {
+          "status": "validation_failed"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "dot product"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "dot product"
+        }
+      },
+      {
+        "id": "epochs",
+        "request_sha256": "846c2a1447db4e2fee92d8b8a8569a191de24a8632402ea9defa889115038320",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "用于训练的大小数据集，最多分别训练40轮和100轮。"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "用于训练的大小数据集，最多分别训练40轮和100轮。"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "用于训练的大小数据集，最多分别训练40轮和100轮。"
+        }
+      },
+      {
+        "id": "source-vocabulary",
+        "request_sha256": "32075bb10acf9a7093c02b9a83884a637864c6f2a368ac1293bfccc9dc85d479",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "160,000"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "160,000"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "160,000"
+        }
+      },
+      {
+        "id": "ap-validation",
+        "request_sha256": "f1ef595f329cd847e081c59228e3975a22ee50d7717749e00276050c511d4053",
+        "archived": {
+          "status": "validation_failed"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "AP News 语料的验证集有200,000词"
+        },
+        "current": {
+          "status": "insufficient_evidence",
+          "reason": "different_condition"
+        }
+      },
+      {
+        "id": "ambiguous-validation",
+        "request_sha256": "87f922e9383ae377fef9c54398c80bdbefc6b24b00f7bc0f58b35f3a4765ab0c",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "200,000"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "200,000"
+        },
+        "current": {
+          "status": "insufficient_evidence",
+          "reason": "ambiguous_measurement"
+        }
+      },
+      {
+        "id": "gpu-memory",
+        "request_sha256": "fabccc3e26dc125dd92c2accd2e8cfb5e6584c83e375086ab092c4c309a7719e",
+        "archived": {
+          "status": "insufficient_evidence"
+        },
+        "without_condition_guard": {
+          "status": "insufficient_evidence"
+        },
+        "current": {
+          "status": "insufficient_evidence"
+        }
+      },
+      {
+        "id": "gpu-model",
+        "request_sha256": "5daae5bac4ffd93a3f27d7eb335c26e70abe4f7d0a74b76568ee907e24578cad",
+        "archived": {
+          "status": "insufficient_evidence"
+        },
+        "without_condition_guard": {
+          "status": "insufficient_evidence"
+        },
+        "current": {
+          "status": "insufficient_evidence"
+        }
+      },
+      {
+        "id": "lstm-structure",
+        "request_sha256": "b886a1eb04a1f2f06cba3470c5b11ab82fe6d3fbf4dc804b28dac54e98f338f4",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "The deep LSTM had 4 layers, with 1000 cells at each layer."
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "The deep LSTM had 4 layers, with 1000 cells at each layer."
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "The deep LSTM had 4 layers, with 1000 cells at each layer."
+        }
+      },
+      {
+        "id": "topic-score",
+        "request_sha256": "5d43243e3c6daf686ab7c63024c57e384abb20945960238e389bc222c4b8089c",
+        "archived": {
+          "status": "cited_draft",
+          "answer": "0.448"
+        },
+        "without_condition_guard": {
+          "status": "cited_draft",
+          "answer": "0.448"
+        },
+        "current": {
+          "status": "cited_draft",
+          "answer": "0.448"
+        }
+      }
+    ]
+  }
+}

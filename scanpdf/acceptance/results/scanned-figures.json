@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "render": {
+    "dpi": 240,
+    "lang": "eng",
+    "pymupdf": "1.26.6",
+    "pillow": "13.0.0",
+    "tesseract": "tesseract 5.5.0",
+    "scipy": "1.17.0",
+    "numpy": "2.3.5"
+  },
+  "sources": {
+    "attention": {
+      "filename": "1706.03762v1_img.pdf",
+      "sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+      "page_count": 15
+    },
+    "flash_raster": {
+      "original": "2205.14135v2.pdf",
+      "original_sha256": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+      "original_physical_page": 2,
+      "raster_dpi": 220,
+      "filename": "2205.14135v2-p2-raster.pdf",
+      "sha256": "93ceb18c2f03f866e96a76a4fb04b4b7e597921d4d9c50b77a3d9c28563fc209",
+      "page_count": 1
+    },
+    "bert_raster": {
+      "original": "N19-1423.pdf",
+      "original_sha256": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+      "original_physical_page": 3,
+      "raster_dpi": 220,
+      "filename": "N19-1423-p3-raster.pdf",
+      "sha256": "f7acb3e98170e5a6b63ec490c8a411af422cf1f7e18342e4dba664ddc62ea000",
+      "page_count": 1
+    }
+  },
+  "positive": [
+    {
+      "case": "attention_architecture",
+      "figure": {
+        "label": "1",
+        "caption": "Figure 1: The Transformer - model architecture.",
+        "caption_bbox": [
+          701,
+          1350,
+          1338,
+          1381
+        ],
+        "caption_lines": [
+          "41.1.1"
+        ],
+        "bbox": [
+          651,
+          239,
+          1389,
+          1318
+        ],
+        "method": "ocr_caption_and_graphic_strokes",
+        "caption_bbox_pt": [
+          210.3,
+          405.0,
+          401.4,
+          414.3
+        ],
+        "bbox_pt": [
+          195.3,
+          71.7,
+          416.7,
+          395.4
+        ],
+        "physical_page": 3,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "id": "p3-f1",
+        "crop": "64094fe169dd4ff4-p3-f1.png"
+      },
+      "crop_sha256": "2dfc6cdc6c547113d4a67507dc319c51f766fb56b0cfa20e1a2a2a31acd94934",
+      "pixel_exact": true,
+      "overlapping_table_regions": 0,
+      "visual_landmarks_pt": [
+        [
+          208,
+          330
+        ],
+        [
+          407,
+          330
+        ],
+        [
+          344,
+          84
+        ]
+      ]
+    },
+    {
+      "case": "attention_two_panels",
+      "figure": {
+        "label": "2",
+        "caption": "Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several\nattention layers running in parallel.",
+        "caption_bbox": [
+          361,
+          841,
+          1678,
+          909
+        ],
+        "caption_lines": [
+          "12.1.1",
+          "12.1.2"
+        ],
+        "bbox": [
+          489,
+          235,
+          1561,
+          812
+        ],
+        "method": "ocr_caption_and_graphic_strokes",
+        "caption_bbox_pt": [
+          108.3,
+          252.3,
+          503.4,
+          272.7
+        ],
+        "bbox_pt": [
+          146.7,
+          70.5,
+          468.3,
+          243.6
+        ],
+        "physical_page": 4,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "id": "p4-f1",
+        "crop": "64094fe169dd4ff4-p4-f1.png"
+      },
+      "crop_sha256": "1bb6179e0090110618b53fb259c7b8c54740088a4c7a6957fe1ecebf2529073f",
+      "pixel_exact": true,
+      "overlapping_table_regions": 0,
+      "visual_landmarks_pt": [
+        [
+          153,
+          74
+        ],
+        [
+          194,
+          142
+        ],
+        [
+          416,
+          190
+        ]
+      ]
+    },
+    {
+      "case": "flash_memory_attention",
+      "figure": {
+        "label": "1",
+        "caption": "Figure 1: Left: FLASHATTENTION uses tiling to prevent materialization of the large N x N attention matrix\n(dotted box) on (relatively) slow GPU HBM. In the outer loop (red arrows), FLASHATTENTION loops through\nblocks of the K and V matrices and loads them to fast on-chip SRAM. In each block, FLASHATTENTION\nloops over blocks of Q matrix (blue arrows), loading them to SRAM, and writing the output of the attention\ncomputation back to HBM. Right: Speedup over the PyTorch implementation of attention on GPT-2.\nFLASHATTENTION does not read and write the large N x N attention matrix to HBM, resulting in an 7.6x\nspeedup on the attention computation.",
+        "caption_bbox": [
+          239,
+          797,
+          1803,
+          1066
+        ],
+        "caption_lines": [
+          "10.1.1",
+          "10.1.2",
+          "10.1.3",
+          "10.1.4",
+          "10.1.5",
+          "10.1.6",
+          "10.1.7"
+        ],
+        "bbox": [
+          358,
+          242,
+          1684,
+          755
+        ],
+        "method": "ocr_caption_and_graphic_strokes",
+        "caption_bbox_pt": [
+          71.7,
+          239.1,
+          540.9,
+          319.8
+        ],
+        "bbox_pt": [
+          107.4,
+          72.6,
+          505.2,
+          226.5
+        ],
+        "physical_page": 1,
+        "source_sha256": "93ceb18c2f03f866e96a76a4fb04b4b7e597921d4d9c50b77a3d9c28563fc209",
+        "id": "p1-f1",
+        "crop": "93ceb18c2f03f866-p1-f1.png"
+      },
+      "crop_sha256": "efa1815eece41620048ebd2ca968e7d7afb2586d5eed0820792d8b19aab8f0fd",
+      "pixel_exact": true,
+      "overlapping_table_regions": 0,
+      "visual_landmarks_pt": [
+        [
+          121,
+          153
+        ],
+        [
+          300,
+          99
+        ],
+        [
+          487,
+          158
+        ]
+      ]
+    }
+  ],
+  "paper_table_page": {
+    "physical_page": 8,
+    "figures": [],
+    "unresolved_captions": [],
+    "status": "processed",
+    "width_px": 2040,
+    "height_px": 2642,
+    "width_pt": 612.0,
+    "height_pt": 792.47998046875
+  },
+  "unresolved_captions": [
+    {
+      "label": "3",
+      "caption": "Figure 3: An example of the attention mechanism following long-distance dependencies in the\nencoder self-attention in layer 5 of 6. Many of the attention heads attend to a distant dependency of\nthe verb ‘making’, completing the phrase ‘making...more difficult’. Attentions here shown only for\nthe word ‘making’. Different colors represent different heads. Best viewed in color.",
+      "caption_bbox": [
+        360,
+        1043,
+        1682,
+        1182
+      ],
+      "caption_lines": [
+        "4.1.1",
+        "4.1.2",
+        "4.1.3",
+        "4.1.4"
+      ],
+      "reason": "insufficient_panel_span",
+      "caption_bbox_pt": [
+        108.0,
+        312.9,
+        504.6,
+        354.6
+      ],
+      "physical_page": 13,
+      "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d"
+    },
+    {
+      "label": "1",
+      "caption": "Figure 1: Overall pre-training and fine-tuning procedures for BERT. Apart from output layers, the same architec-\ntures are used in both pre-training and fine-tuning. The same pre-trained model parameters are used to initialize\nmodels for different down-stream tasks. During fine-tuning, all parameters are fine-tuned.",
+      "caption_bbox": [
+        241,
+        866,
+        1752,
+        976
+      ],
+      "caption_lines": [
+        "38.1.1",
+        "38.1.2",
+        "39.1.1"
+      ],
+      "reason": "overlaps_table_region",
+      "caption_bbox_pt": [
+        72.3,
+        259.8,
+        525.6,
+        292.8
+      ],
+      "physical_page": 1,
+      "source_sha256": "f7acb3e98170e5a6b63ec490c8a411af422cf1f7e18342e4dba664ddc62ea000"
+    }
+  ],
+  "native_exclusion": {
+    "physical_page": 2,
+    "figures": [],
+    "unresolved_captions": [],
+    "status": "skipped_native_text"
+  }
+}

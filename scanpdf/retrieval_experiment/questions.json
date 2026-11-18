@@ -1,0 +1,347 @@
+{
+  "papers": {
+    "simclr": {
+      "title": "A Simple Framework for Contrastive Learning of Visual Representations",
+      "sha256": "cc620e511bafe8b4b11ca3415f6d7bcf127a05818087bfa49905de3a2e50bc2d",
+      "file": "simclr.pdf",
+      "publisher": "https://proceedings.mlr.press/v119/chen20j/chen20j.pdf",
+      "mirror": "https://raw.githubusercontent.com/mlresearch/v119/gh-pages/chen20j/chen20j.pdf"
+    },
+    "diffusion": {
+      "title": "Improved Denoising Diffusion Probabilistic Models",
+      "sha256": "e365be4acbef22492cbe7c534019a025981cd88598c1e8e04f40d588f024d39d",
+      "file": "diffusion.pdf",
+      "publisher": "https://proceedings.mlr.press/v139/nichol21a/nichol21a.pdf",
+      "mirror": "https://raw.githubusercontent.com/mlresearch/v139/gh-pages/nichol21a/nichol21a.pdf"
+    },
+    "sac": {
+      "title": "Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor",
+      "sha256": "b071079b67ced375ad88cbbbfd2fc363b3b8ccd894766fb5d329e7ee30d843f5",
+      "file": "sac.pdf",
+      "publisher": "https://proceedings.mlr.press/v80/haarnoja18b/haarnoja18b.pdf",
+      "mirror": "https://raw.githubusercontent.com/mlresearch/v80/gh-pages/haarnoja18b/haarnoja18b.pdf"
+    }
+  },
+  "questions": [
+    {
+      "id": "S1",
+      "paper": "simclr",
+      "language": "zh",
+      "question": "SimCLR 的默认设置使用几轮线性学习率预热？同一设置下用多少 TPU v3 核，论文脚注测得跑完整个训练约需多久？",
+      "support": [
+        {
+          "page": 3,
+          "block": 22,
+          "part": 1,
+          "text": "we use linear warmup for the ﬁrst 10 epochs"
+        },
+        {
+          "page": 3,
+          "block": 12,
+          "part": 1,
+          "text": "With 128 TPU v3 cores, it takes ∼1.5 hours"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 3,
+          "block": 10,
+          "part": 1,
+          "text": "using 32 to 128 cores depending on the batch size"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "paper": "simclr",
+      "language": "en",
+      "question": "Which three transformations produce the two positive views, and which network component is discarded after contrastive training for downstream use?",
+      "support": [
+        {
+          "page": 2,
+          "block": 10,
+          "part": 1,
+          "text": "random\ncropping followed by resize back to the original size, ran-\ndom color distortions, and random Gaussian blur"
+        },
+        {
+          "page": 2,
+          "block": 22,
+          "part": 1,
+          "text": "we throw away the projection head g(·) and\nuse encoder f(·) and representation h for downstream tasks"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 4,
+          "block": 3,
+          "part": 1,
+          "text": "(g) Cutout\n(h) Gaussian noise"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "paper": "simclr",
+      "language": "en",
+      "question": "In the projection-head comparison, how much better was the nonlinear head than a linear head or no head, and did the representation before or after the head perform better?",
+      "support": [
+        {
+          "page": 6,
+          "block": 29,
+          "part": 1,
+          "text": "better than a linear projection (+3%),\nand much better than no projection (>10%)"
+        },
+        {
+          "page": 6,
+          "block": 29,
+          "part": 1,
+          "text": "the layer before the projection head, h,\nis still much better (>10%) than the layer after"
+        }
+      ],
+      "wrong_condition": []
+    },
+    {
+      "id": "S4",
+      "paper": "simclr",
+      "language": "zh",
+      "question": "SimCLR 的批量大小消融里，从短训练延长到更多训练步时，不同批量的差距怎么变？作者给这种现象限定了什么条件？",
+      "support": [
+        {
+          "page": 7,
+          "block": 26,
+          "part": 1,
+          "text": "With more training steps/epochs, the gaps\nbetween different batch sizes decrease or disappear"
+        },
+        {
+          "page": 7,
+          "block": 26,
+          "part": 1,
+          "text": "pro-\nvided the batches are randomly resampled"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 3,
+          "block": 10,
+          "part": 1,
+          "text": "A batch size\nof 8192 gives us 16382 negative examples per positive pair"
+        }
+      ]
+    },
+    {
+      "id": "D1",
+      "paper": "diffusion",
+      "language": "zh",
+      "question": "Improved DDPM 在 ImageNet 64 × 64 上训练 20 万次时，把扩散总步数从 1000 调到 4000 所报告的 bits/dim 从多少变到多少？",
+      "support": [
+        {
+          "page": 3,
+          "block": 6,
+          "part": 1,
+          "text": "achieves a log-likelihood\nof 3.99 (bits/dim) on ImageNet 64 × 64 after 200K training\niterations"
+        },
+        {
+          "page": 3,
+          "block": 6,
+          "part": 1,
+          "text": "the log-likelihood improves to 3.77"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 5,
+          "block": 39,
+          "part": 1,
+          "text": "200K\n4K\ncosine\nLhybrid\n3.62\n28.0"
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "paper": "diffusion",
+      "language": "en",
+      "question": "In the proposed cosine noise schedule, where in the diffusion process is the signal coefficient designed to drop linearly, and what upper cap is applied to each beta?",
+      "support": [
+        {
+          "page": 4,
+          "block": 38,
+          "part": 1,
+          "text": "in the middle of the process, while changing very little\nnear the extremes"
+        },
+        {
+          "page": 4,
+          "block": 37,
+          "part": 1,
+          "text": "we clip βt to be no larger than\n0.999"
+        }
+      ],
+      "wrong_condition": []
+    },
+    {
+      "id": "D3",
+      "paper": "diffusion",
+      "language": "zh",
+      "question": "直接优化 VLB 时，相对混合目标的梯度噪声怎样？采用重要性采样后，作者对直接目标和混合目标分别观察到什么？",
+      "support": [
+        {
+          "page": 5,
+          "block": 28,
+          "part": 1,
+          "text": "the gradient of Lvlb was much noisier\nthan that of Lhybrid"
+        },
+        {
+          "page": 5,
+          "block": 46,
+          "part": 1,
+          "text": "we are able to\nachieve our best log-likelihoods by optimizing Lvlb"
+        },
+        {
+          "page": 5,
+          "block": 46,
+          "part": 1,
+          "text": "the importance sampling\ntechnique was not helpful when optimizing the less-noisy\nLhybrid objective directly"
+        }
+      ],
+      "wrong_condition": []
+    },
+    {
+      "id": "D4",
+      "paper": "diffusion",
+      "language": "en",
+      "question": "In the Figure 8 sweep, roughly how many sampling steps give near-optimal FID for the fully trained learned-variance models, and where does DDIM switch from better to worse samples?",
+      "support": [
+        {
+          "page": 6,
+          "block": 43,
+          "part": 1,
+          "text": "100 sampling\nsteps is sufﬁcient to achieve near-optimal FIDs for our fully\ntrained models"
+        },
+        {
+          "page": 6,
+          "block": 44,
+          "part": 1,
+          "text": "better samples with fewer than 50 sampling steps, but\nworse samples when using 50 or more steps"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 1,
+          "block": 12,
+          "part": 1,
+          "text": "we can achieve good\nsamples with as few as 50 forward passes"
+        }
+      ]
+    },
+    {
+      "id": "R1",
+      "paper": "sac",
+      "language": "en",
+      "question": "According to the SAC implementation section, how can the target value weights be updated gradually, and why is a reparameterized estimate preferred to the likelihood-ratio policy gradient estimate?",
+      "support": [
+        {
+          "page": 5,
+          "block": 18,
+          "part": 1,
+          "text": "can be an exponentially moving average of the value\nnetwork weights"
+        },
+        {
+          "page": 5,
+          "block": 25,
+          "part": 1,
+          "text": "apply the reparameterization trick instead, resulting in a\nlower variance estimator"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 8,
+          "block": 29,
+          "part": 1,
+          "text": "the current network weights directly into the tar-\nget network every 1000 gradient steps"
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "paper": "sac",
+      "language": "zh",
+      "question": "rllab Humanoid 对比中，确定性 SAC 变体相较随机策略在不同种子间的表现如何？为做该对比，确定性变体使用什么方式的探索噪声？",
+      "support": [
+        {
+          "page": 7,
+          "block": 17,
+          "part": 1,
+          "text": "Soft actor-critic performs much more consistently,\nwhile the deterministic variant exhibits very high variability\nacross seeds"
+        },
+        {
+          "page": 7,
+          "block": 7,
+          "part": 1,
+          "text": "using ﬁxed rather than\nlearned exploration noise"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 7,
+          "block": 4,
+          "part": 1,
+          "text": "DDPG fails to make any progress on Ant-v1"
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "paper": "sac",
+      "language": "en",
+      "question": "What target-network smoothing coefficient is used for all tasks, and what did the authors report about too-large versus too-small coefficients?",
+      "support": [
+        {
+          "page": 8,
+          "block": 29,
+          "part": 1,
+          "text": "Large τ can lead to instabilities while small\nτ can make training slower"
+        },
+        {
+          "page": 8,
+          "block": 29,
+          "part": 1,
+          "text": "we used\nthe same value (0.005) across all of the tasks"
+        }
+      ],
+      "wrong_condition": [
+        {
+          "page": 8,
+          "block": 29,
+          "part": 1,
+          "text": "the current network weights directly into the tar-\nget network every 1000 gradient steps"
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "paper": "sac",
+      "language": "zh",
+      "question": "SAC 的连续控制实验大部分任务来自哪套基准？除此之外，作者选哪个来源实现的哪项任务，这项任务的动作空间是多少维？",
+      "support": [
+        {
+          "page": 6,
+          "block": 54,
+          "part": 1,
+          "text": "the OpenAI gym benchmark suite"
+        },
+        {
+          "page": 6,
+          "block": 54,
+          "part": 1,
+          "text": "the rllab implementation of\nthe Humanoid task"
+        },
+        {
+          "page": 6,
+          "block": 54,
+          "part": 1,
+          "text": "21-dimensional\nHumanoid (rllab)"
+        }
+      ],
+      "wrong_condition": []
+    }
+  ]
+}

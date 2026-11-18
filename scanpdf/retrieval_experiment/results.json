@@ -1,0 +1,5259 @@
+{
+  "questions_sha256": "3995db3c539311931c1e4e9481c549ed1847a85416666d51081a2b81be2fccb2",
+  "dense_model": "intfloat/multilingual-e5-small",
+  "dense_revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "scope": {
+    "candidate_blocks": 8,
+    "context_excerpts": 8,
+    "context_chars": 2600,
+    "gold_supports": 26,
+    "distractor_spans": 8
+  },
+  "index_preparation_ms": {
+    "simclr": 4594.125,
+    "diffusion": 1907.003,
+    "sac": 2704.201
+  },
+  "initial_retrieval_ms_median": 192.442,
+  "summary": {
+    "all": {
+      "baseline": {
+        "questions": 12,
+        "complete_input": 3,
+        "input_supports": 11,
+        "complete_candidates": 8,
+        "candidate_supports": 18,
+        "gold_in_pages5": 12,
+        "wrong_condition": 2,
+        "off_page_excerpts": 40,
+        "excerpts": 96,
+        "off_page_fraction": 0.4167,
+        "candidate_chars_median": 3250.5,
+        "excerpt_chars_median": 1088.5,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 0.0,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "adjacent": {
+        "questions": 12,
+        "complete_input": 3,
+        "input_supports": 10,
+        "complete_candidates": 8,
+        "candidate_supports": 18,
+        "gold_in_pages5": 12,
+        "wrong_condition": 2,
+        "off_page_excerpts": 40,
+        "excerpts": 96,
+        "off_page_fraction": 0.4167,
+        "candidate_chars_median": 3279.0,
+        "excerpt_chars_median": 1088.5,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 0.466,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "page_fusion": {
+        "questions": 12,
+        "complete_input": 3,
+        "input_supports": 10,
+        "complete_candidates": 9,
+        "candidate_supports": 22,
+        "gold_in_pages5": 12,
+        "wrong_condition": 2,
+        "off_page_excerpts": 40,
+        "excerpts": 96,
+        "off_page_fraction": 0.4167,
+        "candidate_chars_median": 3826.0,
+        "excerpt_chars_median": 1095.5,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 1.5990000000000002,
+        "gained_input": [],
+        "lost_input": []
+      }
+    },
+    "same_page_multiblock": {
+      "baseline": {
+        "questions": 7,
+        "complete_input": 2,
+        "input_supports": 8,
+        "complete_candidates": 4,
+        "candidate_supports": 10,
+        "gold_in_pages5": 7,
+        "wrong_condition": 2,
+        "off_page_excerpts": 20,
+        "excerpts": 56,
+        "off_page_fraction": 0.3571,
+        "candidate_chars_median": 3430,
+        "excerpt_chars_median": 1118,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 0,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "adjacent": {
+        "questions": 7,
+        "complete_input": 2,
+        "input_supports": 8,
+        "complete_candidates": 5,
+        "candidate_supports": 12,
+        "gold_in_pages5": 7,
+        "wrong_condition": 2,
+        "off_page_excerpts": 20,
+        "excerpts": 56,
+        "off_page_fraction": 0.3571,
+        "candidate_chars_median": 3095,
+        "excerpt_chars_median": 1118,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 0.466,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "page_fusion": {
+        "questions": 7,
+        "complete_input": 2,
+        "input_supports": 8,
+        "complete_candidates": 5,
+        "candidate_supports": 13,
+        "gold_in_pages5": 7,
+        "wrong_condition": 2,
+        "off_page_excerpts": 20,
+        "excerpts": 56,
+        "off_page_fraction": 0.3571,
+        "candidate_chars_median": 3769,
+        "excerpt_chars_median": 1132,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 1.578,
+        "gained_input": [],
+        "lost_input": []
+      }
+    },
+    "zh": {
+      "baseline": {
+        "questions": 6,
+        "complete_input": 0,
+        "input_supports": 3,
+        "complete_candidates": 3,
+        "candidate_supports": 7,
+        "gold_in_pages5": 6,
+        "wrong_condition": 1,
+        "off_page_excerpts": 26,
+        "excerpts": 48,
+        "off_page_fraction": 0.5417,
+        "candidate_chars_median": 2838.5,
+        "excerpt_chars_median": 993.5,
+        "excerpt_chars_max": 1208,
+        "additional_ms_median": 0.0,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "adjacent": {
+        "questions": 6,
+        "complete_input": 0,
+        "input_supports": 2,
+        "complete_candidates": 2,
+        "candidate_supports": 6,
+        "gold_in_pages5": 6,
+        "wrong_condition": 1,
+        "off_page_excerpts": 26,
+        "excerpts": 48,
+        "off_page_fraction": 0.5417,
+        "candidate_chars_median": 2898.0,
+        "excerpt_chars_median": 993.5,
+        "excerpt_chars_max": 1292,
+        "additional_ms_median": 0.466,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "page_fusion": {
+        "questions": 6,
+        "complete_input": 0,
+        "input_supports": 2,
+        "complete_candidates": 4,
+        "candidate_supports": 11,
+        "gold_in_pages5": 6,
+        "wrong_condition": 1,
+        "off_page_excerpts": 27,
+        "excerpts": 48,
+        "off_page_fraction": 0.5625,
+        "candidate_chars_median": 3826.0,
+        "excerpt_chars_median": 993.5,
+        "excerpt_chars_max": 1357,
+        "additional_ms_median": 1.658,
+        "gained_input": [],
+        "lost_input": []
+      }
+    },
+    "en": {
+      "baseline": {
+        "questions": 6,
+        "complete_input": 3,
+        "input_supports": 8,
+        "complete_candidates": 5,
+        "candidate_supports": 11,
+        "gold_in_pages5": 6,
+        "wrong_condition": 1,
+        "off_page_excerpts": 14,
+        "excerpts": 48,
+        "off_page_fraction": 0.2917,
+        "candidate_chars_median": 4173.5,
+        "excerpt_chars_median": 1153.0,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 0.0,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "adjacent": {
+        "questions": 6,
+        "complete_input": 3,
+        "input_supports": 8,
+        "complete_candidates": 6,
+        "candidate_supports": 12,
+        "gold_in_pages5": 6,
+        "wrong_condition": 1,
+        "off_page_excerpts": 14,
+        "excerpts": 48,
+        "off_page_fraction": 0.2917,
+        "candidate_chars_median": 3670.5,
+        "excerpt_chars_median": 1153.0,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 0.5175,
+        "gained_input": [],
+        "lost_input": []
+      },
+      "page_fusion": {
+        "questions": 6,
+        "complete_input": 3,
+        "input_supports": 8,
+        "complete_candidates": 5,
+        "candidate_supports": 11,
+        "gold_in_pages5": 6,
+        "wrong_condition": 1,
+        "off_page_excerpts": 13,
+        "excerpts": 48,
+        "off_page_fraction": 0.2708,
+        "candidate_chars_median": 3813.0,
+        "excerpt_chars_median": 1153.0,
+        "excerpt_chars_max": 1411,
+        "additional_ms_median": 1.4435,
+        "gained_input": [],
+        "lost_input": []
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "S1",
+      "paper": "simclr",
+      "language": "zh",
+      "gold_pages": [
+        3
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 1013.89,
+      "methods": [
+        "bm25-recall",
+        "multilingual-e5-small"
+      ],
+      "translation_used": true,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          true
+        ],
+        "complete_input": false,
+        "pages5": [
+          3,
+          2,
+          1,
+          6
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3071,
+        "candidate_anchors": [
+          [
+            3,
+            12,
+            1
+          ],
+          [
+            3,
+            10,
+            1
+          ],
+          [
+            2,
+            6,
+            1
+          ],
+          [
+            3,
+            22,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            3,
+            2,
+            1
+          ],
+          [
+            6,
+            9,
+            1
+          ],
+          [
+            6,
+            29,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 876,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            3,
+            12,
+            1,
+            0,
+            108
+          ],
+          [
+            3,
+            10,
+            1,
+            0,
+            99
+          ],
+          [
+            3,
+            10,
+            1,
+            100,
+            160
+          ],
+          [
+            3,
+            10,
+            1,
+            161,
+            262
+          ],
+          [
+            2,
+            6,
+            1,
+            161,
+            325
+          ],
+          [
+            2,
+            6,
+            1,
+            326,
+            468
+          ],
+          [
+            2,
+            6,
+            1,
+            469,
+            655
+          ],
+          [
+            3,
+            22,
+            1,
+            0,
+            16
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          true
+        ],
+        "complete_input": false,
+        "pages5": [
+          3,
+          2,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 2951,
+        "candidate_anchors": [
+          [
+            3,
+            12,
+            1
+          ],
+          [
+            3,
+            10,
+            1
+          ],
+          [
+            2,
+            6,
+            1
+          ],
+          [
+            3,
+            22,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            3,
+            2,
+            1
+          ],
+          [
+            3,
+            11,
+            1
+          ],
+          [
+            2,
+            5,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            3,
+            11,
+            1
+          ],
+          [
+            2,
+            5,
+            1
+          ]
+        ],
+        "excerpt_chars": 876,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            3,
+            12,
+            1,
+            0,
+            108
+          ],
+          [
+            3,
+            10,
+            1,
+            0,
+            99
+          ],
+          [
+            3,
+            10,
+            1,
+            100,
+            160
+          ],
+          [
+            3,
+            10,
+            1,
+            161,
+            262
+          ],
+          [
+            2,
+            6,
+            1,
+            161,
+            325
+          ],
+          [
+            2,
+            6,
+            1,
+            326,
+            468
+          ],
+          [
+            2,
+            6,
+            1,
+            469,
+            655
+          ],
+          [
+            3,
+            22,
+            1,
+            0,
+            16
+          ]
+        ],
+        "additional_ms": 0.433
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          true
+        ],
+        "complete_input": false,
+        "pages5": [
+          3,
+          2,
+          1,
+          6
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3769,
+        "candidate_anchors": [
+          [
+            3,
+            12,
+            1
+          ],
+          [
+            3,
+            10,
+            1
+          ],
+          [
+            2,
+            6,
+            1
+          ],
+          [
+            3,
+            22,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            3,
+            2,
+            1
+          ],
+          [
+            3,
+            21,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            3,
+            21,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ]
+        ],
+        "excerpt_chars": 876,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            3,
+            12,
+            1,
+            0,
+            108
+          ],
+          [
+            3,
+            10,
+            1,
+            0,
+            99
+          ],
+          [
+            3,
+            10,
+            1,
+            100,
+            160
+          ],
+          [
+            3,
+            10,
+            1,
+            161,
+            262
+          ],
+          [
+            2,
+            6,
+            1,
+            161,
+            325
+          ],
+          [
+            2,
+            6,
+            1,
+            326,
+            468
+          ],
+          [
+            2,
+            6,
+            1,
+            469,
+            655
+          ],
+          [
+            3,
+            22,
+            1,
+            0,
+            16
+          ]
+        ],
+        "additional_ms": 1.623
+      }
+    },
+    {
+      "id": "S2",
+      "paper": "simclr",
+      "language": "en",
+      "gold_pages": [
+        2
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 22.531,
+      "methods": [
+        "bm25",
+        "multilingual-e5-small"
+      ],
+      "translation_used": false,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          true
+        ],
+        "complete_input": false,
+        "pages5": [
+          2,
+          4,
+          6,
+          5,
+          8
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 4,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 5228,
+        "candidate_anchors": [
+          [
+            2,
+            22,
+            1
+          ],
+          [
+            2,
+            10,
+            1
+          ],
+          [
+            4,
+            5,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ],
+          [
+            2,
+            5,
+            1
+          ],
+          [
+            5,
+            8,
+            1
+          ],
+          [
+            8,
+            8,
+            1
+          ],
+          [
+            6,
+            37,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1174,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            2,
+            22,
+            1,
+            255,
+            369
+          ],
+          [
+            2,
+            22,
+            1,
+            370,
+            501
+          ],
+          [
+            2,
+            22,
+            1,
+            81,
+            254
+          ],
+          [
+            2,
+            10,
+            1,
+            0,
+            203
+          ],
+          [
+            5,
+            8,
+            1,
+            94,
+            269
+          ],
+          [
+            4,
+            5,
+            1,
+            280,
+            411
+          ],
+          [
+            4,
+            5,
+            1,
+            434,
+            550
+          ],
+          [
+            4,
+            5,
+            1,
+            768,
+            899
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          true
+        ],
+        "complete_input": false,
+        "pages5": [
+          2,
+          4,
+          6,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 4,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 4052,
+        "candidate_anchors": [
+          [
+            2,
+            22,
+            1
+          ],
+          [
+            2,
+            10,
+            1
+          ],
+          [
+            4,
+            5,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ],
+          [
+            2,
+            5,
+            1
+          ],
+          [
+            5,
+            8,
+            1
+          ],
+          [
+            2,
+            23,
+            1
+          ],
+          [
+            4,
+            4,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            2,
+            23,
+            1
+          ],
+          [
+            4,
+            4,
+            1
+          ]
+        ],
+        "excerpt_chars": 1174,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            2,
+            22,
+            1,
+            255,
+            369
+          ],
+          [
+            2,
+            22,
+            1,
+            370,
+            501
+          ],
+          [
+            2,
+            22,
+            1,
+            81,
+            254
+          ],
+          [
+            2,
+            10,
+            1,
+            0,
+            203
+          ],
+          [
+            5,
+            8,
+            1,
+            94,
+            269
+          ],
+          [
+            4,
+            5,
+            1,
+            280,
+            411
+          ],
+          [
+            4,
+            5,
+            1,
+            434,
+            550
+          ],
+          [
+            4,
+            5,
+            1,
+            768,
+            899
+          ]
+        ],
+        "additional_ms": 0.465
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          true
+        ],
+        "complete_input": false,
+        "pages5": [
+          2,
+          4,
+          6,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 4,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 4275,
+        "candidate_anchors": [
+          [
+            2,
+            22,
+            1
+          ],
+          [
+            2,
+            10,
+            1
+          ],
+          [
+            4,
+            5,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ],
+          [
+            2,
+            5,
+            1
+          ],
+          [
+            5,
+            8,
+            1
+          ],
+          [
+            2,
+            9,
+            1
+          ],
+          [
+            6,
+            33,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            2,
+            9,
+            1
+          ],
+          [
+            6,
+            33,
+            1
+          ]
+        ],
+        "excerpt_chars": 1174,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            2,
+            22,
+            1,
+            255,
+            369
+          ],
+          [
+            2,
+            22,
+            1,
+            370,
+            501
+          ],
+          [
+            2,
+            22,
+            1,
+            81,
+            254
+          ],
+          [
+            2,
+            10,
+            1,
+            0,
+            203
+          ],
+          [
+            5,
+            8,
+            1,
+            94,
+            269
+          ],
+          [
+            4,
+            5,
+            1,
+            280,
+            411
+          ],
+          [
+            4,
+            5,
+            1,
+            434,
+            550
+          ],
+          [
+            4,
+            5,
+            1,
+            768,
+            899
+          ]
+        ],
+        "additional_ms": 1.527
+      }
+    },
+    {
+      "id": "S3",
+      "paper": "simclr",
+      "language": "en",
+      "gold_pages": [
+        6
+      ],
+      "gold_blocks": 1,
+      "initial_retrieval_ms": 23.375,
+      "methods": [
+        "bm25",
+        "multilingual-e5-small"
+      ],
+      "translation_used": false,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          6,
+          9,
+          2,
+          7
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 1,
+        "wrong_condition_matches": [],
+        "candidate_chars": 2970,
+        "candidate_anchors": [
+          [
+            6,
+            29,
+            1
+          ],
+          [
+            6,
+            28,
+            1
+          ],
+          [
+            6,
+            27,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ],
+          [
+            9,
+            2,
+            1
+          ],
+          [
+            2,
+            24,
+            1
+          ],
+          [
+            7,
+            40,
+            1
+          ],
+          [
+            7,
+            38,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1245,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            29,
+            1,
+            617,
+            880
+          ],
+          [
+            6,
+            29,
+            1,
+            398,
+            521
+          ],
+          [
+            6,
+            29,
+            1,
+            72,
+            389
+          ],
+          [
+            6,
+            28,
+            1,
+            5,
+            91
+          ],
+          [
+            6,
+            27,
+            1,
+            10,
+            121
+          ],
+          [
+            6,
+            30,
+            1,
+            0,
+            160
+          ],
+          [
+            6,
+            27,
+            1,
+            122,
+            188
+          ],
+          [
+            2,
+            24,
+            1,
+            0,
+            119
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          6,
+          9,
+          2,
+          7
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 1,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3269,
+        "candidate_anchors": [
+          [
+            6,
+            29,
+            1
+          ],
+          [
+            6,
+            28,
+            1
+          ],
+          [
+            6,
+            27,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ],
+          [
+            9,
+            2,
+            1
+          ],
+          [
+            2,
+            24,
+            1
+          ],
+          [
+            9,
+            4,
+            1
+          ],
+          [
+            7,
+            40,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            9,
+            4,
+            1
+          ]
+        ],
+        "excerpt_chars": 1245,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            29,
+            1,
+            617,
+            880
+          ],
+          [
+            6,
+            29,
+            1,
+            398,
+            521
+          ],
+          [
+            6,
+            29,
+            1,
+            72,
+            389
+          ],
+          [
+            6,
+            28,
+            1,
+            5,
+            91
+          ],
+          [
+            6,
+            27,
+            1,
+            10,
+            121
+          ],
+          [
+            6,
+            30,
+            1,
+            0,
+            160
+          ],
+          [
+            6,
+            27,
+            1,
+            122,
+            188
+          ],
+          [
+            2,
+            24,
+            1,
+            0,
+            119
+          ]
+        ],
+        "additional_ms": 0.148
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          6,
+          9,
+          2,
+          7
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 1,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3223,
+        "candidate_anchors": [
+          [
+            6,
+            29,
+            1
+          ],
+          [
+            6,
+            28,
+            1
+          ],
+          [
+            6,
+            27,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ],
+          [
+            9,
+            2,
+            1
+          ],
+          [
+            2,
+            24,
+            1
+          ],
+          [
+            6,
+            33,
+            1
+          ],
+          [
+            7,
+            31,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            6,
+            33,
+            1
+          ],
+          [
+            7,
+            31,
+            1
+          ]
+        ],
+        "excerpt_chars": 1245,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            29,
+            1,
+            617,
+            880
+          ],
+          [
+            6,
+            29,
+            1,
+            398,
+            521
+          ],
+          [
+            6,
+            29,
+            1,
+            72,
+            389
+          ],
+          [
+            6,
+            28,
+            1,
+            5,
+            91
+          ],
+          [
+            6,
+            27,
+            1,
+            10,
+            121
+          ],
+          [
+            6,
+            30,
+            1,
+            0,
+            160
+          ],
+          [
+            6,
+            27,
+            1,
+            122,
+            188
+          ],
+          [
+            2,
+            24,
+            1,
+            0,
+            119
+          ]
+        ],
+        "additional_ms": 1.362
+      }
+    },
+    {
+      "id": "S4",
+      "paper": "simclr",
+      "language": "zh",
+      "gold_pages": [
+        7
+      ],
+      "gold_blocks": 1,
+      "initial_retrieval_ms": 352.134,
+      "methods": [
+        "bm25-recall",
+        "multilingual-e5-small"
+      ],
+      "translation_used": true,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          6,
+          1,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 5,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 2848,
+        "candidate_anchors": [
+          [
+            7,
+            26,
+            1
+          ],
+          [
+            6,
+            8,
+            1
+          ],
+          [
+            1,
+            4,
+            1
+          ],
+          [
+            6,
+            9,
+            1
+          ],
+          [
+            7,
+            37,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            5,
+            44,
+            1
+          ],
+          [
+            5,
+            7,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 859,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            26,
+            1,
+            0,
+            96
+          ],
+          [
+            7,
+            26,
+            1,
+            97,
+            159
+          ],
+          [
+            7,
+            26,
+            1,
+            160,
+            242
+          ],
+          [
+            6,
+            8,
+            1,
+            0,
+            78
+          ],
+          [
+            1,
+            4,
+            1,
+            0,
+            98
+          ],
+          [
+            1,
+            4,
+            1,
+            959,
+            1191
+          ],
+          [
+            1,
+            4,
+            1,
+            99,
+            239
+          ],
+          [
+            6,
+            9,
+            1,
+            0,
+            71
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          6,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 5,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 2637,
+        "candidate_anchors": [
+          [
+            7,
+            26,
+            1
+          ],
+          [
+            6,
+            8,
+            1
+          ],
+          [
+            1,
+            4,
+            1
+          ],
+          [
+            6,
+            9,
+            1
+          ],
+          [
+            7,
+            37,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            7,
+            25,
+            1
+          ],
+          [
+            6,
+            10,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            7,
+            25,
+            1
+          ],
+          [
+            6,
+            10,
+            1
+          ]
+        ],
+        "excerpt_chars": 859,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            26,
+            1,
+            0,
+            96
+          ],
+          [
+            7,
+            26,
+            1,
+            97,
+            159
+          ],
+          [
+            7,
+            26,
+            1,
+            160,
+            242
+          ],
+          [
+            6,
+            8,
+            1,
+            0,
+            78
+          ],
+          [
+            1,
+            4,
+            1,
+            0,
+            98
+          ],
+          [
+            1,
+            4,
+            1,
+            959,
+            1191
+          ],
+          [
+            1,
+            4,
+            1,
+            99,
+            239
+          ],
+          [
+            6,
+            9,
+            1,
+            0,
+            71
+          ]
+        ],
+        "additional_ms": 0.466
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          6,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 5,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3195,
+        "candidate_anchors": [
+          [
+            7,
+            26,
+            1
+          ],
+          [
+            6,
+            8,
+            1
+          ],
+          [
+            1,
+            4,
+            1
+          ],
+          [
+            6,
+            9,
+            1
+          ],
+          [
+            7,
+            37,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            7,
+            25,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            7,
+            25,
+            1
+          ],
+          [
+            6,
+            30,
+            1
+          ]
+        ],
+        "excerpt_chars": 859,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            26,
+            1,
+            0,
+            96
+          ],
+          [
+            7,
+            26,
+            1,
+            97,
+            159
+          ],
+          [
+            7,
+            26,
+            1,
+            160,
+            242
+          ],
+          [
+            6,
+            8,
+            1,
+            0,
+            78
+          ],
+          [
+            1,
+            4,
+            1,
+            0,
+            98
+          ],
+          [
+            1,
+            4,
+            1,
+            959,
+            1191
+          ],
+          [
+            1,
+            4,
+            1,
+            99,
+            239
+          ],
+          [
+            6,
+            9,
+            1,
+            0,
+            71
+          ]
+        ],
+        "additional_ms": 2.511
+      }
+    },
+    {
+      "id": "D1",
+      "paper": "diffusion",
+      "language": "zh",
+      "gold_pages": [
+        3
+      ],
+      "gold_blocks": 1,
+      "initial_retrieval_ms": 339.288,
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "translation_used": true,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          6,
+          3,
+          4,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 5,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 2829,
+        "candidate_anchors": [
+          [
+            6,
+            2,
+            1
+          ],
+          [
+            6,
+            7,
+            1
+          ],
+          [
+            3,
+            5,
+            1
+          ],
+          [
+            4,
+            3,
+            1
+          ],
+          [
+            1,
+            9,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            3,
+            6,
+            1
+          ],
+          [
+            6,
+            42,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1208,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            2,
+            1,
+            9,
+            111
+          ],
+          [
+            6,
+            2,
+            1,
+            112,
+            140
+          ],
+          [
+            6,
+            2,
+            1,
+            141,
+            281
+          ],
+          [
+            6,
+            7,
+            1,
+            391,
+            574
+          ],
+          [
+            3,
+            6,
+            1,
+            25,
+            186
+          ],
+          [
+            3,
+            5,
+            1,
+            448,
+            710
+          ],
+          [
+            6,
+            7,
+            1,
+            0,
+            131
+          ],
+          [
+            3,
+            5,
+            1,
+            0,
+            201
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          6,
+          3,
+          4,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 5,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3718,
+        "candidate_anchors": [
+          [
+            6,
+            2,
+            1
+          ],
+          [
+            6,
+            7,
+            1
+          ],
+          [
+            3,
+            5,
+            1
+          ],
+          [
+            4,
+            3,
+            1
+          ],
+          [
+            1,
+            9,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            6,
+            4,
+            1
+          ],
+          [
+            3,
+            4,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            6,
+            4,
+            1
+          ],
+          [
+            3,
+            4,
+            1
+          ]
+        ],
+        "excerpt_chars": 1292,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            2,
+            1,
+            9,
+            111
+          ],
+          [
+            6,
+            2,
+            1,
+            112,
+            140
+          ],
+          [
+            6,
+            2,
+            1,
+            141,
+            281
+          ],
+          [
+            6,
+            7,
+            1,
+            391,
+            574
+          ],
+          [
+            3,
+            5,
+            1,
+            448,
+            710
+          ],
+          [
+            6,
+            7,
+            1,
+            0,
+            131
+          ],
+          [
+            3,
+            5,
+            1,
+            0,
+            201
+          ],
+          [
+            3,
+            5,
+            1,
+            202,
+            447
+          ]
+        ],
+        "additional_ms": 0.452
+      },
+      "page_fusion": {
+        "candidate_support": [
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          6,
+          3,
+          4,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 5,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3949,
+        "candidate_anchors": [
+          [
+            6,
+            2,
+            1
+          ],
+          [
+            6,
+            7,
+            1
+          ],
+          [
+            3,
+            5,
+            1
+          ],
+          [
+            4,
+            3,
+            1
+          ],
+          [
+            1,
+            9,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            6,
+            43,
+            1
+          ],
+          [
+            3,
+            4,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            6,
+            43,
+            1
+          ],
+          [
+            3,
+            4,
+            1
+          ]
+        ],
+        "excerpt_chars": 1292,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            2,
+            1,
+            9,
+            111
+          ],
+          [
+            6,
+            2,
+            1,
+            112,
+            140
+          ],
+          [
+            6,
+            2,
+            1,
+            141,
+            281
+          ],
+          [
+            6,
+            7,
+            1,
+            391,
+            574
+          ],
+          [
+            3,
+            5,
+            1,
+            448,
+            710
+          ],
+          [
+            6,
+            7,
+            1,
+            0,
+            131
+          ],
+          [
+            3,
+            5,
+            1,
+            0,
+            201
+          ],
+          [
+            3,
+            5,
+            1,
+            202,
+            447
+          ]
+        ],
+        "additional_ms": 1.62
+      }
+    },
+    {
+      "id": "D2",
+      "paper": "diffusion",
+      "language": "en",
+      "gold_pages": [
+        4
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 29.053,
+      "methods": [
+        "bm25-recall",
+        "multilingual-e5-small"
+      ],
+      "translation_used": false,
+      "baseline": {
+        "candidate_support": [
+          true,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          true,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          4,
+          8,
+          3
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3430,
+        "candidate_anchors": [
+          [
+            4,
+            38,
+            1
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            4,
+            29,
+            1
+          ],
+          [
+            8,
+            25,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ],
+          [
+            4,
+            10,
+            1
+          ],
+          [
+            4,
+            19,
+            1
+          ],
+          [
+            3,
+            28,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1030,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            4,
+            38,
+            1,
+            0,
+            200
+          ],
+          [
+            4,
+            2,
+            1,
+            10,
+            129
+          ],
+          [
+            4,
+            2,
+            1,
+            130,
+            260
+          ],
+          [
+            4,
+            38,
+            1,
+            201,
+            254
+          ],
+          [
+            4,
+            38,
+            1,
+            255,
+            305
+          ],
+          [
+            4,
+            29,
+            1,
+            0,
+            91
+          ],
+          [
+            8,
+            25,
+            1,
+            13,
+            159
+          ],
+          [
+            8,
+            25,
+            1,
+            471,
+            712
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          4,
+          8
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3095,
+        "candidate_anchors": [
+          [
+            4,
+            38,
+            1
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            4,
+            29,
+            1
+          ],
+          [
+            8,
+            25,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ],
+          [
+            4,
+            10,
+            1
+          ],
+          [
+            4,
+            37,
+            1
+          ],
+          [
+            8,
+            26,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            4,
+            37,
+            1
+          ],
+          [
+            8,
+            26,
+            1
+          ]
+        ],
+        "excerpt_chars": 1030,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            4,
+            38,
+            1,
+            0,
+            200
+          ],
+          [
+            4,
+            2,
+            1,
+            10,
+            129
+          ],
+          [
+            4,
+            2,
+            1,
+            130,
+            260
+          ],
+          [
+            4,
+            38,
+            1,
+            201,
+            254
+          ],
+          [
+            4,
+            38,
+            1,
+            255,
+            305
+          ],
+          [
+            4,
+            29,
+            1,
+            0,
+            91
+          ],
+          [
+            8,
+            25,
+            1,
+            13,
+            159
+          ],
+          [
+            8,
+            25,
+            1,
+            471,
+            712
+          ]
+        ],
+        "additional_ms": 0.57
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          true,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          4,
+          8
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 1,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3351,
+        "candidate_anchors": [
+          [
+            4,
+            38,
+            1
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            4,
+            29,
+            1
+          ],
+          [
+            8,
+            25,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ],
+          [
+            4,
+            10,
+            1
+          ],
+          [
+            4,
+            30,
+            1
+          ],
+          [
+            8,
+            23,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            4,
+            30,
+            1
+          ],
+          [
+            8,
+            23,
+            1
+          ]
+        ],
+        "excerpt_chars": 999,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            4,
+            38,
+            1,
+            0,
+            200
+          ],
+          [
+            4,
+            2,
+            1,
+            10,
+            129
+          ],
+          [
+            4,
+            2,
+            1,
+            130,
+            260
+          ],
+          [
+            4,
+            38,
+            1,
+            201,
+            254
+          ],
+          [
+            4,
+            38,
+            1,
+            255,
+            305
+          ],
+          [
+            4,
+            29,
+            1,
+            0,
+            91
+          ],
+          [
+            4,
+            30,
+            1,
+            122,
+            332
+          ],
+          [
+            8,
+            25,
+            1,
+            13,
+            159
+          ]
+        ],
+        "additional_ms": 1.3
+      }
+    },
+    {
+      "id": "D3",
+      "paper": "diffusion",
+      "language": "zh",
+      "gold_pages": [
+        5
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 608.75,
+      "methods": [
+        "bm25-recall",
+        "multilingual-e5-small"
+      ],
+      "translation_used": true,
+      "baseline": {
+        "candidate_support": [
+          true,
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          true,
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          1,
+          5,
+          9,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 4,
+        "wrong_condition_matches": [],
+        "candidate_chars": 2163,
+        "candidate_anchors": [
+          [
+            1,
+            11,
+            1
+          ],
+          [
+            5,
+            37,
+            1
+          ],
+          [
+            5,
+            28,
+            1
+          ],
+          [
+            9,
+            13,
+            1
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            4,
+            18,
+            1
+          ],
+          [
+            1,
+            4,
+            1
+          ],
+          [
+            4,
+            10,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 928,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            1,
+            11,
+            1,
+            0,
+            241
+          ],
+          [
+            1,
+            11,
+            1,
+            242,
+            394
+          ],
+          [
+            5,
+            37,
+            1,
+            0,
+            34
+          ],
+          [
+            5,
+            28,
+            1,
+            0,
+            80
+          ],
+          [
+            5,
+            28,
+            1,
+            81,
+            226
+          ],
+          [
+            5,
+            28,
+            1,
+            227,
+            333
+          ],
+          [
+            9,
+            13,
+            1,
+            0,
+            88
+          ],
+          [
+            9,
+            13,
+            1,
+            89,
+            171
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          true,
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          1,
+          5,
+          9,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 4,
+        "wrong_condition_matches": [],
+        "candidate_chars": 1854,
+        "candidate_anchors": [
+          [
+            1,
+            11,
+            1
+          ],
+          [
+            5,
+            37,
+            1
+          ],
+          [
+            5,
+            28,
+            1
+          ],
+          [
+            9,
+            13,
+            1
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            4,
+            18,
+            1
+          ],
+          [
+            1,
+            10,
+            1
+          ],
+          [
+            5,
+            35,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            1,
+            10,
+            1
+          ],
+          [
+            5,
+            35,
+            1
+          ]
+        ],
+        "excerpt_chars": 928,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            1,
+            11,
+            1,
+            0,
+            241
+          ],
+          [
+            1,
+            11,
+            1,
+            242,
+            394
+          ],
+          [
+            5,
+            37,
+            1,
+            0,
+            34
+          ],
+          [
+            5,
+            28,
+            1,
+            0,
+            80
+          ],
+          [
+            5,
+            28,
+            1,
+            81,
+            226
+          ],
+          [
+            5,
+            28,
+            1,
+            227,
+            333
+          ],
+          [
+            9,
+            13,
+            1,
+            0,
+            88
+          ],
+          [
+            9,
+            13,
+            1,
+            89,
+            171
+          ]
+        ],
+        "additional_ms": 0.676
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          1,
+          5,
+          9,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 4,
+        "wrong_condition_matches": [],
+        "candidate_chars": 2049,
+        "candidate_anchors": [
+          [
+            1,
+            11,
+            1
+          ],
+          [
+            5,
+            37,
+            1
+          ],
+          [
+            5,
+            28,
+            1
+          ],
+          [
+            9,
+            13,
+            1
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            4,
+            18,
+            1
+          ],
+          [
+            5,
+            46,
+            1
+          ],
+          [
+            1,
+            10,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            5,
+            46,
+            1
+          ],
+          [
+            1,
+            10,
+            1
+          ]
+        ],
+        "excerpt_chars": 928,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            1,
+            11,
+            1,
+            0,
+            241
+          ],
+          [
+            1,
+            11,
+            1,
+            242,
+            394
+          ],
+          [
+            5,
+            37,
+            1,
+            0,
+            34
+          ],
+          [
+            5,
+            28,
+            1,
+            0,
+            80
+          ],
+          [
+            5,
+            28,
+            1,
+            81,
+            226
+          ],
+          [
+            5,
+            28,
+            1,
+            227,
+            333
+          ],
+          [
+            9,
+            13,
+            1,
+            0,
+            88
+          ],
+          [
+            9,
+            13,
+            1,
+            89,
+            171
+          ]
+        ],
+        "additional_ms": 1.693
+      }
+    },
+    {
+      "id": "D4",
+      "paper": "diffusion",
+      "language": "en",
+      "gold_pages": [
+        6
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 45.596,
+      "methods": [
+        "bm25",
+        "multilingual-e5-small"
+      ],
+      "translation_used": false,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          6,
+          4,
+          1,
+          2
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3436,
+        "candidate_anchors": [
+          [
+            6,
+            44,
+            1
+          ],
+          [
+            6,
+            43,
+            1
+          ],
+          [
+            4,
+            30,
+            1
+          ],
+          [
+            1,
+            12,
+            1
+          ],
+          [
+            6,
+            42,
+            1
+          ],
+          [
+            6,
+            12,
+            1
+          ],
+          [
+            6,
+            7,
+            1
+          ],
+          [
+            2,
+            32,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1132,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            44,
+            1,
+            214,
+            385
+          ],
+          [
+            6,
+            43,
+            1,
+            547,
+            654
+          ],
+          [
+            6,
+            44,
+            1,
+            386,
+            506
+          ],
+          [
+            4,
+            30,
+            1,
+            122,
+            332
+          ],
+          [
+            6,
+            44,
+            1,
+            34,
+            213
+          ],
+          [
+            1,
+            12,
+            1,
+            0,
+            175
+          ],
+          [
+            6,
+            42,
+            1,
+            10,
+            114
+          ],
+          [
+            6,
+            43,
+            1,
+            0,
+            66
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          6,
+          4,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3289,
+        "candidate_anchors": [
+          [
+            6,
+            44,
+            1
+          ],
+          [
+            6,
+            43,
+            1
+          ],
+          [
+            4,
+            30,
+            1
+          ],
+          [
+            1,
+            12,
+            1
+          ],
+          [
+            6,
+            42,
+            1
+          ],
+          [
+            6,
+            12,
+            1
+          ],
+          [
+            4,
+            29,
+            1
+          ],
+          [
+            6,
+            7,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            4,
+            29,
+            1
+          ]
+        ],
+        "excerpt_chars": 1132,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            44,
+            1,
+            214,
+            385
+          ],
+          [
+            6,
+            43,
+            1,
+            547,
+            654
+          ],
+          [
+            6,
+            44,
+            1,
+            386,
+            506
+          ],
+          [
+            4,
+            30,
+            1,
+            122,
+            332
+          ],
+          [
+            6,
+            44,
+            1,
+            34,
+            213
+          ],
+          [
+            1,
+            12,
+            1,
+            0,
+            175
+          ],
+          [
+            6,
+            42,
+            1,
+            10,
+            114
+          ],
+          [
+            6,
+            43,
+            1,
+            0,
+            66
+          ]
+        ],
+        "additional_ms": 0.23
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          6,
+          4,
+          1
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 3230,
+        "candidate_anchors": [
+          [
+            6,
+            44,
+            1
+          ],
+          [
+            6,
+            43,
+            1
+          ],
+          [
+            4,
+            30,
+            1
+          ],
+          [
+            1,
+            12,
+            1
+          ],
+          [
+            6,
+            42,
+            1
+          ],
+          [
+            6,
+            12,
+            1
+          ],
+          [
+            6,
+            8,
+            1
+          ],
+          [
+            4,
+            37,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            6,
+            8,
+            1
+          ],
+          [
+            4,
+            37,
+            1
+          ]
+        ],
+        "excerpt_chars": 1132,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            6,
+            44,
+            1,
+            214,
+            385
+          ],
+          [
+            6,
+            43,
+            1,
+            547,
+            654
+          ],
+          [
+            6,
+            44,
+            1,
+            386,
+            506
+          ],
+          [
+            4,
+            30,
+            1,
+            122,
+            332
+          ],
+          [
+            6,
+            44,
+            1,
+            34,
+            213
+          ],
+          [
+            1,
+            12,
+            1,
+            0,
+            175
+          ],
+          [
+            6,
+            42,
+            1,
+            10,
+            114
+          ],
+          [
+            6,
+            43,
+            1,
+            0,
+            66
+          ]
+        ],
+        "additional_ms": 1.755
+      }
+    },
+    {
+      "id": "R1",
+      "paper": "sac",
+      "language": "en",
+      "gold_pages": [
+        5
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 43.04,
+      "methods": [
+        "bm25",
+        "multilingual-e5-small"
+      ],
+      "translation_used": false,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          5,
+          8,
+          7,
+          2,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          true
+        ],
+        "candidate_chars": 4911,
+        "candidate_anchors": [
+          [
+            5,
+            25,
+            1
+          ],
+          [
+            8,
+            29,
+            1
+          ],
+          [
+            5,
+            18,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            2,
+            7,
+            2
+          ],
+          [
+            4,
+            11,
+            1
+          ],
+          [
+            5,
+            16,
+            1
+          ],
+          [
+            4,
+            24,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1411,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            5,
+            25,
+            1,
+            45,
+            263
+          ],
+          [
+            8,
+            29,
+            1,
+            144,
+            330
+          ],
+          [
+            8,
+            29,
+            1,
+            331,
+            477
+          ],
+          [
+            8,
+            29,
+            1,
+            751,
+            974
+          ],
+          [
+            5,
+            25,
+            1,
+            264,
+            504
+          ],
+          [
+            5,
+            25,
+            1,
+            505,
+            584
+          ],
+          [
+            5,
+            18,
+            1,
+            0,
+            197
+          ],
+          [
+            5,
+            18,
+            1,
+            198,
+            320
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          5,
+          8,
+          7,
+          2,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          true
+        ],
+        "candidate_chars": 4668,
+        "candidate_anchors": [
+          [
+            5,
+            25,
+            1
+          ],
+          [
+            8,
+            29,
+            1
+          ],
+          [
+            5,
+            18,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            2,
+            7,
+            2
+          ],
+          [
+            4,
+            11,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ],
+          [
+            5,
+            16,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            8,
+            28,
+            1
+          ]
+        ],
+        "excerpt_chars": 1411,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            5,
+            25,
+            1,
+            45,
+            263
+          ],
+          [
+            8,
+            29,
+            1,
+            144,
+            330
+          ],
+          [
+            8,
+            29,
+            1,
+            331,
+            477
+          ],
+          [
+            8,
+            29,
+            1,
+            751,
+            974
+          ],
+          [
+            5,
+            25,
+            1,
+            264,
+            504
+          ],
+          [
+            5,
+            25,
+            1,
+            505,
+            584
+          ],
+          [
+            5,
+            18,
+            1,
+            0,
+            197
+          ],
+          [
+            5,
+            18,
+            1,
+            198,
+            320
+          ]
+        ],
+        "additional_ms": 0.67
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          true,
+          true
+        ],
+        "complete_input": true,
+        "pages5": [
+          5,
+          8,
+          7,
+          2,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          true
+        ],
+        "candidate_chars": 5584,
+        "candidate_anchors": [
+          [
+            5,
+            25,
+            1
+          ],
+          [
+            8,
+            29,
+            1
+          ],
+          [
+            5,
+            18,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            2,
+            7,
+            2
+          ],
+          [
+            4,
+            11,
+            1
+          ],
+          [
+            5,
+            40,
+            1
+          ],
+          [
+            4,
+            17,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            5,
+            40,
+            1
+          ],
+          [
+            4,
+            17,
+            1
+          ]
+        ],
+        "excerpt_chars": 1411,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            5,
+            25,
+            1,
+            45,
+            263
+          ],
+          [
+            8,
+            29,
+            1,
+            144,
+            330
+          ],
+          [
+            8,
+            29,
+            1,
+            331,
+            477
+          ],
+          [
+            8,
+            29,
+            1,
+            751,
+            974
+          ],
+          [
+            5,
+            25,
+            1,
+            264,
+            504
+          ],
+          [
+            5,
+            25,
+            1,
+            505,
+            584
+          ],
+          [
+            5,
+            18,
+            1,
+            0,
+            197
+          ],
+          [
+            5,
+            18,
+            1,
+            198,
+            320
+          ]
+        ],
+        "additional_ms": 1.525
+      }
+    },
+    {
+      "id": "R2",
+      "paper": "sac",
+      "language": "zh",
+      "gold_pages": [
+        7
+      ],
+      "gold_blocks": 2,
+      "initial_retrieval_ms": 393.781,
+      "methods": [
+        "bm25",
+        "multilingual-e5-small"
+      ],
+      "translation_used": true,
+      "baseline": {
+        "candidate_support": [
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          6,
+          8,
+          3,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          true
+        ],
+        "candidate_chars": 2111,
+        "candidate_anchors": [
+          [
+            7,
+            16,
+            1
+          ],
+          [
+            6,
+            49,
+            1
+          ],
+          [
+            7,
+            4,
+            1
+          ],
+          [
+            8,
+            8,
+            1
+          ],
+          [
+            3,
+            9,
+            1
+          ],
+          [
+            7,
+            6,
+            1
+          ],
+          [
+            6,
+            58,
+            1
+          ],
+          [
+            5,
+            34,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1118,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            16,
+            1,
+            10,
+            163
+          ],
+          [
+            7,
+            16,
+            1,
+            164,
+            316
+          ],
+          [
+            6,
+            49,
+            1,
+            0,
+            33
+          ],
+          [
+            7,
+            4,
+            1,
+            220,
+            393
+          ],
+          [
+            7,
+            4,
+            1,
+            0,
+            219
+          ],
+          [
+            7,
+            4,
+            1,
+            394,
+            550
+          ],
+          [
+            8,
+            8,
+            1,
+            0,
+            46
+          ],
+          [
+            7,
+            6,
+            1,
+            0,
+            186
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          6,
+          8,
+          3
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          true
+        ],
+        "candidate_chars": 2845,
+        "candidate_anchors": [
+          [
+            7,
+            16,
+            1
+          ],
+          [
+            6,
+            49,
+            1
+          ],
+          [
+            7,
+            4,
+            1
+          ],
+          [
+            8,
+            8,
+            1
+          ],
+          [
+            3,
+            9,
+            1
+          ],
+          [
+            7,
+            6,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            6,
+            51,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            6,
+            51,
+            1
+          ]
+        ],
+        "excerpt_chars": 1118,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            16,
+            1,
+            10,
+            163
+          ],
+          [
+            7,
+            16,
+            1,
+            164,
+            316
+          ],
+          [
+            6,
+            49,
+            1,
+            0,
+            33
+          ],
+          [
+            7,
+            4,
+            1,
+            220,
+            393
+          ],
+          [
+            7,
+            4,
+            1,
+            0,
+            219
+          ],
+          [
+            7,
+            4,
+            1,
+            394,
+            550
+          ],
+          [
+            8,
+            8,
+            1,
+            0,
+            46
+          ],
+          [
+            7,
+            6,
+            1,
+            0,
+            186
+          ]
+        ],
+        "additional_ms": 0.466
+      },
+      "page_fusion": {
+        "candidate_support": [
+          false,
+          true
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          6,
+          8,
+          3
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 3,
+        "wrong_condition_matches": [
+          true
+        ],
+        "candidate_chars": 3883,
+        "candidate_anchors": [
+          [
+            7,
+            16,
+            1
+          ],
+          [
+            6,
+            49,
+            1
+          ],
+          [
+            7,
+            4,
+            1
+          ],
+          [
+            8,
+            8,
+            1
+          ],
+          [
+            3,
+            9,
+            1
+          ],
+          [
+            7,
+            6,
+            1
+          ],
+          [
+            7,
+            7,
+            1
+          ],
+          [
+            6,
+            54,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            7,
+            7,
+            1
+          ],
+          [
+            6,
+            54,
+            1
+          ]
+        ],
+        "excerpt_chars": 1357,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            16,
+            1,
+            10,
+            163
+          ],
+          [
+            7,
+            16,
+            1,
+            164,
+            316
+          ],
+          [
+            6,
+            49,
+            1,
+            0,
+            33
+          ],
+          [
+            7,
+            4,
+            1,
+            220,
+            393
+          ],
+          [
+            7,
+            4,
+            1,
+            0,
+            219
+          ],
+          [
+            7,
+            4,
+            1,
+            394,
+            550
+          ],
+          [
+            6,
+            54,
+            1,
+            198,
+            431
+          ],
+          [
+            6,
+            54,
+            1,
+            432,
+            670
+          ]
+        ],
+        "additional_ms": 1.578
+      }
+    },
+    {
+      "id": "R3",
+      "paper": "sac",
+      "language": "en",
+      "gold_pages": [
+        8
+      ],
+      "gold_blocks": 1,
+      "initial_retrieval_ms": 24.304,
+      "methods": [
+        "bm25",
+        "multilingual-e5-small"
+      ],
+      "translation_used": false,
+      "baseline": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          8,
+          7,
+          1,
+          5,
+          4
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 5137,
+        "candidate_anchors": [
+          [
+            8,
+            29,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            8,
+            27,
+            1
+          ],
+          [
+            8,
+            26,
+            1
+          ],
+          [
+            1,
+            8,
+            1
+          ],
+          [
+            5,
+            18,
+            1
+          ],
+          [
+            5,
+            25,
+            1
+          ],
+          [
+            4,
+            24,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1016,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            17,
+            1,
+            395,
+            651
+          ],
+          [
+            8,
+            29,
+            1,
+            144,
+            330
+          ],
+          [
+            8,
+            29,
+            1,
+            0,
+            22
+          ],
+          [
+            8,
+            29,
+            1,
+            23,
+            143
+          ],
+          [
+            8,
+            27,
+            1,
+            556,
+            626
+          ],
+          [
+            8,
+            27,
+            1,
+            627,
+            757
+          ],
+          [
+            8,
+            26,
+            1,
+            0,
+            35
+          ],
+          [
+            1,
+            8,
+            1,
+            0,
+            197
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          8,
+          7,
+          1,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 4992,
+        "candidate_anchors": [
+          [
+            8,
+            29,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            8,
+            27,
+            1
+          ],
+          [
+            8,
+            26,
+            1
+          ],
+          [
+            1,
+            8,
+            1
+          ],
+          [
+            5,
+            18,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ],
+          [
+            7,
+            18,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            8,
+            28,
+            1
+          ],
+          [
+            7,
+            18,
+            1
+          ]
+        ],
+        "excerpt_chars": 1016,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            17,
+            1,
+            395,
+            651
+          ],
+          [
+            8,
+            29,
+            1,
+            144,
+            330
+          ],
+          [
+            8,
+            29,
+            1,
+            0,
+            22
+          ],
+          [
+            8,
+            29,
+            1,
+            23,
+            143
+          ],
+          [
+            8,
+            27,
+            1,
+            556,
+            626
+          ],
+          [
+            8,
+            27,
+            1,
+            627,
+            757
+          ],
+          [
+            8,
+            26,
+            1,
+            0,
+            35
+          ],
+          [
+            1,
+            8,
+            1,
+            0,
+            197
+          ]
+        ],
+        "additional_ms": 0.626
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          8,
+          7,
+          1,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 2,
+        "wrong_condition_matches": [
+          false
+        ],
+        "candidate_chars": 4728,
+        "candidate_anchors": [
+          [
+            8,
+            29,
+            1
+          ],
+          [
+            7,
+            17,
+            1
+          ],
+          [
+            8,
+            27,
+            1
+          ],
+          [
+            8,
+            26,
+            1
+          ],
+          [
+            1,
+            8,
+            1
+          ],
+          [
+            5,
+            18,
+            1
+          ],
+          [
+            5,
+            2,
+            1
+          ],
+          [
+            5,
+            25,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            5,
+            2,
+            1
+          ]
+        ],
+        "excerpt_chars": 1016,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            17,
+            1,
+            395,
+            651
+          ],
+          [
+            8,
+            29,
+            1,
+            144,
+            330
+          ],
+          [
+            8,
+            29,
+            1,
+            0,
+            22
+          ],
+          [
+            8,
+            29,
+            1,
+            23,
+            143
+          ],
+          [
+            8,
+            27,
+            1,
+            556,
+            626
+          ],
+          [
+            8,
+            27,
+            1,
+            627,
+            757
+          ],
+          [
+            8,
+            26,
+            1,
+            0,
+            35
+          ],
+          [
+            1,
+            8,
+            1,
+            0,
+            197
+          ]
+        ],
+        "additional_ms": 0.938
+      }
+    },
+    {
+      "id": "R4",
+      "paper": "sac",
+      "language": "zh",
+      "gold_pages": [
+        6
+      ],
+      "gold_blocks": 1,
+      "initial_retrieval_ms": 425.24,
+      "methods": [
+        "bm25-recall",
+        "multilingual-e5-small"
+      ],
+      "translation_used": true,
+      "baseline": {
+        "candidate_support": [
+          false,
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          8,
+          6,
+          5
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 7,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3923,
+        "candidate_anchors": [
+          [
+            7,
+            6,
+            1
+          ],
+          [
+            7,
+            4,
+            1
+          ],
+          [
+            8,
+            27,
+            1
+          ],
+          [
+            6,
+            49,
+            1
+          ],
+          [
+            6,
+            51,
+            1
+          ],
+          [
+            6,
+            58,
+            1
+          ],
+          [
+            6,
+            56,
+            1
+          ],
+          [
+            5,
+            34,
+            1
+          ]
+        ],
+        "added_anchors": [],
+        "excerpt_chars": 1059,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            6,
+            1,
+            187,
+            295
+          ],
+          [
+            7,
+            6,
+            1,
+            296,
+            445
+          ],
+          [
+            7,
+            6,
+            1,
+            0,
+            186
+          ],
+          [
+            7,
+            4,
+            1,
+            0,
+            219
+          ],
+          [
+            7,
+            4,
+            1,
+            394,
+            550
+          ],
+          [
+            7,
+            4,
+            1,
+            551,
+            683
+          ],
+          [
+            6,
+            49,
+            1,
+            0,
+            33
+          ],
+          [
+            8,
+            27,
+            1,
+            10,
+            86
+          ]
+        ],
+        "additional_ms": 0
+      },
+      "adjacent": {
+        "candidate_support": [
+          false,
+          false,
+          false
+        ],
+        "complete_candidates": false,
+        "input_support": [
+          false,
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          8,
+          6
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 7,
+        "wrong_condition_matches": [],
+        "candidate_chars": 3978,
+        "candidate_anchors": [
+          [
+            7,
+            6,
+            1
+          ],
+          [
+            7,
+            4,
+            1
+          ],
+          [
+            8,
+            27,
+            1
+          ],
+          [
+            6,
+            49,
+            1
+          ],
+          [
+            6,
+            51,
+            1
+          ],
+          [
+            6,
+            58,
+            1
+          ],
+          [
+            7,
+            7,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            7,
+            7,
+            1
+          ],
+          [
+            8,
+            28,
+            1
+          ]
+        ],
+        "excerpt_chars": 1059,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            6,
+            1,
+            187,
+            295
+          ],
+          [
+            7,
+            6,
+            1,
+            296,
+            445
+          ],
+          [
+            7,
+            6,
+            1,
+            0,
+            186
+          ],
+          [
+            7,
+            4,
+            1,
+            0,
+            219
+          ],
+          [
+            7,
+            4,
+            1,
+            394,
+            550
+          ],
+          [
+            7,
+            4,
+            1,
+            551,
+            683
+          ],
+          [
+            6,
+            49,
+            1,
+            0,
+            33
+          ],
+          [
+            8,
+            27,
+            1,
+            10,
+            86
+          ]
+        ],
+        "additional_ms": 0.802
+      },
+      "page_fusion": {
+        "candidate_support": [
+          true,
+          true,
+          true
+        ],
+        "complete_candidates": true,
+        "input_support": [
+          false,
+          false,
+          false
+        ],
+        "complete_input": false,
+        "pages5": [
+          7,
+          8,
+          6
+        ],
+        "gold_in_pages5": true,
+        "off_page_excerpts": 7,
+        "wrong_condition_matches": [],
+        "candidate_chars": 4305,
+        "candidate_anchors": [
+          [
+            7,
+            6,
+            1
+          ],
+          [
+            7,
+            4,
+            1
+          ],
+          [
+            8,
+            27,
+            1
+          ],
+          [
+            6,
+            49,
+            1
+          ],
+          [
+            6,
+            51,
+            1
+          ],
+          [
+            6,
+            58,
+            1
+          ],
+          [
+            7,
+            18,
+            1
+          ],
+          [
+            6,
+            54,
+            1
+          ]
+        ],
+        "added_anchors": [
+          [
+            7,
+            18,
+            1
+          ],
+          [
+            6,
+            54,
+            1
+          ]
+        ],
+        "excerpt_chars": 1059,
+        "excerpt_count": 8,
+        "excerpt_anchors": [
+          [
+            7,
+            6,
+            1,
+            187,
+            295
+          ],
+          [
+            7,
+            6,
+            1,
+            296,
+            445
+          ],
+          [
+            7,
+            6,
+            1,
+            0,
+            186
+          ],
+          [
+            7,
+            4,
+            1,
+            0,
+            219
+          ],
+          [
+            7,
+            4,
+            1,
+            394,
+            550
+          ],
+          [
+            7,
+            4,
+            1,
+            551,
+            683
+          ],
+          [
+            6,
+            49,
+            1,
+            0,
+            33
+          ],
+          [
+            8,
+            27,
+            1,
+            10,
+            86
+          ]
+        ],
+        "additional_ms": 2.353
+      }
+    }
+  ]
+}

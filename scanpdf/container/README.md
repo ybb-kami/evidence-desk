@@ -51,7 +51,7 @@ docker run --rm --init --network=host \
   evidence-desk-rag:local
 ```
 
-容器用户需要具备对应模型目录的读取权限。只启用部分模型时，设置对应环境变量即可。已有离线文件可通过各安装器的 `--files`、`--archives`、`--source` 重新校验。生成模型可按本机说明在宿主机回环地址独立启动，再提供 `EVIDENCE_LOCAL_QA_URL` 与 `EVIDENCE_LOCAL_QA_MODEL`。 [E5](../semantic/README.md) · [OPUS-MT](../bilingual/README.md) · [MobileBERT](../qa_reader/README.md) · [本机 Qwen](../local_llm/README.md)
+容器用户需要具备对应模型目录的读取权限。只启用部分模型时，设置对应环境变量即可。已有离线文件可通过各安装器的 `--files`、`--archives`、`--source` 重新校验。评委生成模型由工作台通过 DeepSeek Flash 调用，配置方式见评委交接。 [E5](../semantic/README.md) · [OPUS-MT](../bilingual/README.md) · [MobileBERT](../qa_reader/README.md) · [评委交接](../DEEPSEEK-JUDGE.md)
 
 公式候选推理需要用 `python3 scanpdf/container/build.py --formula --tag evidence-desk-rag:formula` 构建可选版本。RapidLaTeXOCR 使用独立 Python 环境，兼容其 NumPy 1.x 依赖。将已校验的权重目录置于挂载内，例如 `/models/formula`，运行时设置 `EVIDENCE_FORMULA_PYTHON=/opt/evidence-formula/bin/python` 和 `EVIDENCE_FORMULA_WEIGHTS=/models/formula`。基础镜像已含本地公式区检测与图像核对。 [扫描工作台与公式权重说明](../README.md)
 
@@ -73,4 +73,4 @@ python3 scanpdf/container/smoke.py \
 
 跨篇问答的浏览器验收可从本机源码运行。用真实 Attention 两个版本逐个核对英法 BLEU 单元格，同时检查 BERT 缺少训练 GPU 的证据和同条件样本的差值。 [跨篇验收脚本](../acceptance/architecture_general.py)
 
-在 Linux x86-64、rootless Docker Engine 29.9.2 上实际构建并启动了基本镜像与公式镜像。基本镜像以 UID `10001` 首启和重启；重挂同一命名卷后仍能回读同 SHA 的演示原件。只读模型挂载实测 E5 返回 Attention v7 第 6 页第 5 块，MobileBERT 进入 `ready`，OPUS-MT 完成英译中。扫描版 v1 的第 7 页第 3 块可回查 OCR 词框。公式版通过分离的 NumPy 1.26.4 环境推理，返回扫描 v1 的 `p7-r1` 未校对候选。同机容器验收涵盖这两个镜像，评委隔离代理和容器到宿主机 Qwen 的联机路径仍待在目标环境单独复核。
+在 Linux x86-64、rootless Docker Engine 29.9.2 上实际构建并启动了基本镜像与公式镜像。基本镜像以 UID `10001` 首启和重启；重挂同一命名卷后仍能回读同 SHA 的演示原件。只读模型挂载实测 E5 返回 Attention v7 第 6 页第 5 块，MobileBERT 进入 `ready`，OPUS-MT 完成英译中。扫描版 v1 的第 7 页第 3 块可回查 OCR 词框。公式版通过分离的 NumPy 1.26.4 环境推理，返回扫描 v1 的 `p7-r1` 未校对候选。同机容器验收涵盖这两个镜像，公网代理与 DeepSeek 凭据需在评委环境单独验收。

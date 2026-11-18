@@ -1,0 +1,1253 @@
+{
+  "controls": {
+    "order": [
+      "1.7b",
+      "4b-instruct-2507"
+    ],
+    "identical_request_hashes_excluding_model": 9,
+    "runtime": "llama.cpp b7940",
+    "1.7b": {
+      "port": 39348,
+      "threads": 4,
+      "context": 4096,
+      "cache_ram_mib": 8192
+    },
+    "4b-instruct-2507": {
+      "port": 39350,
+      "threads": 3,
+      "threads_batch": 3,
+      "context": 4096,
+      "poll": 0,
+      "cache_ram_mib": 128
+    }
+  },
+  "manual_review": {
+    "epochs": "Both cited answers state 40 and 100 respectively in the order specified by the Chinese question. The frozen automated rubric required explicit repeating of both labels.",
+    "1.7b": {
+      "correct": 3,
+      "complete": 3,
+      "refused": 2,
+      "unsupported_answer_emitted": 0
+    },
+    "4b-instruct-2507": {
+      "correct": 4,
+      "complete": 4,
+      "refused": 2,
+      "unsupported_answer_emitted": 1
+    }
+  },
+  "arms": {
+    "1.7b": {
+      "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+      "fixture_sha256": "f6dd7afe7ac74a6ff282ee586ab6b3d078ff3f4419873482e21349c6c1e41cdc",
+      "frozen_revision": "c94c6285d7a1a4e9764644dd35ca6469b3378efe",
+      "summary": {
+        "answerable": 6,
+        "negative": 3,
+        "correct": 2,
+        "complete": 2,
+        "refused": 2,
+        "unsafe_answers": 0,
+        "median_seconds": 5.72,
+        "maximum_seconds": 8.658
+      },
+      "results": [
+        {
+          "id": "similarity",
+          "kind": "supported",
+          "pdf": "dpr-dev.pdf",
+          "question": "What vector similarity did standard DPR use at retrieval time?",
+          "english": "",
+          "hits": [
+            [
+              3,
+              2,
+              1
+            ],
+            [
+              6,
+              11,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            3,
+            2,
+            1
+          ],
+          "required_facts": [
+            "\\bdot product\\b|\\binner product\\b"
+          ],
+          "quote_patterns": [
+            "dot product"
+          ],
+          "forbidden_answer": [],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 1,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "validation_failed",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf"
+          },
+          "input_sha256": "0c7b688822094ab213ac1cb4b5f8fb1f7d3ac80401cb72c46a713d920bfbe193",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"dot product\", \"source\": 2, \"quote\": \"Similarity and loss\\nBesides dot product, cosine and Euclidean L2 distance are also commonly used as decomposable similarity functions.\" }",
+          "finish_reason": "stop",
+          "seconds": 7.102,
+          "usage": {
+            "completion_tokens": 52,
+            "prompt_tokens": 332,
+            "total_tokens": 384
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 209,
+            "prompt_ms": 2529.524,
+            "prompt_per_token_ms": 12.102985645933014,
+            "prompt_per_second": 82.62424076624693,
+            "predicted_n": 52,
+            "predicted_ms": 4095.484,
+            "predicted_per_token_ms": 78.75930769230769,
+            "predicted_per_second": 12.696912013329804
+          }
+        },
+        {
+          "id": "epochs",
+          "kind": "supported-two-conditions",
+          "pdf": "dpr-dev.pdf",
+          "question": "用于训练的大小数据集，最多分别训练多少轮？",
+          "english": "What are the respective maximum training epochs for large and small datasets?",
+          "hits": [
+            [
+              5,
+              7,
+              1
+            ],
+            [
+              6,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            5,
+            7,
+            1
+          ],
+          "required_facts": [
+            "大(?:型|数据集)[^\\d]{0,20}(?<!\\d)40(?!\\d)",
+            "小(?:型|数据集)[^\\d]{0,20}(?<!\\d)100(?!\\d)"
+          ],
+          "quote_patterns": [
+            "40\\s+epochs",
+            "100\\s+epochs"
+          ],
+          "forbidden_answer": [],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 2,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+            "claims": [
+              {
+                "text": "用于训练的大小数据集，最多分别训练了40轮和100轮。",
+                "quote": "We trained\nthe question and passage encoders for up to 40\nepochs for large datasets (NQ, TriviaQA, SQuAD)\nand 100 epochs for small datasets (TREC, WQ),\nwith a learning rate of 10−5 using Adam, linear\nscheduling with warm-up and dropout rate 0.1.",
+                "id": "2abfc7991519be2b8ce30215905516fdb593218b7bf59e50ece0d8a088a7c4d5",
+                "page": 5,
+                "block": 7,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 287,
+                "answer_end": 532,
+                "span": "We trained\nthe question and passage encoders for up to 40\nepochs for large datasets (NQ, TriviaQA, SQuAD)\nand 100 epochs for small datasets (TREC, WQ),\nwith a learning rate of 10−5 using Adam, linear\nscheduling with warm-up and dropout rate 0.1."
+              }
+            ]
+          },
+          "input_sha256": "846c2a1447db4e2fee92d8b8a8569a191de24a8632402ea9defa889115038320",
+          "raw_model_output": "{\n  \"status\": \"answered\",\n  \"answer\": \"用于训练的大小数据集，最多分别训练了40轮和100轮。\",\n  \"source\": 1,\n  \"quote\": \"We trained the question and passage encoders for up to 40 epochs for large datasets (NQ, TriviaQA, SQuAD) and 100 epochs for small datasets (TREC, WQ), with a learning rate of 10−5 using Adam, linear scheduling with warm-up and dropout rate 0.1.\"\n}",
+          "finish_reason": "stop",
+          "seconds": 7.955,
+          "usage": {
+            "completion_tokens": 119,
+            "prompt_tokens": 441,
+            "total_tokens": 560
+          },
+          "timings": {
+            "cache_n": 143,
+            "prompt_n": 298,
+            "prompt_ms": 2913.784,
+            "prompt_per_token_ms": 9.77779865771812,
+            "prompt_per_second": 102.27250887505731,
+            "predicted_n": 119,
+            "predicted_ms": 4917.126,
+            "predicted_per_token_ms": 41.32038655462185,
+            "predicted_per_second": 24.201128870807867
+          }
+        },
+        {
+          "id": "source-vocabulary",
+          "kind": "specified-condition",
+          "pdf": "repr.pdf",
+          "question": "How many entries were kept in the source-language vocabulary?",
+          "english": "",
+          "hits": [
+            [
+              4,
+              3,
+              1
+            ],
+            [
+              4,
+              2,
+              1
+            ],
+            [
+              5,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            4,
+            3,
+            1
+          ],
+          "required_facts": [
+            "\\b160[ ,]?000\\b"
+          ],
+          "quote_patterns": [
+            "160,000",
+            "source language"
+          ],
+          "forbidden_answer": [
+            "\\b80[ ,]?000\\b"
+          ],
+          "correct": true,
+          "complete": true,
+          "facts_matched": 1,
+          "facts_required": 1,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+            "claims": [
+              {
+                "text": "160,000",
+                "quote": "We used 160,000 of the most frequent words for the source language\nand 80,000 of the most frequent words for the target language.",
+                "id": "de493aa7b13e9d61813cec52ff751aedc869ce9ba56ea3dfd4e54297b99195b9",
+                "page": 4,
+                "block": 3,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 127,
+                "answer_end": 193,
+                "span": "We used 160,000 of the most frequent words for the source language"
+              }
+            ]
+          },
+          "input_sha256": "32075bb10acf9a7093c02b9a83884a637864c6f2a368ac1293bfccc9dc85d479",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"160,000\", \"source\": 2, \"quote\": \"We used 160,000 of the most frequent words for the source language\" }",
+          "finish_reason": "stop",
+          "seconds": 5.416,
+          "usage": {
+            "completion_tokens": 51,
+            "prompt_tokens": 426,
+            "total_tokens": 477
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 303,
+            "prompt_ms": 2808.91,
+            "prompt_per_token_ms": 9.2703300330033,
+            "prompt_per_second": 107.8710247035327,
+            "predicted_n": 51,
+            "predicted_ms": 2445.3,
+            "predicted_per_token_ms": 47.94705882352942,
+            "predicted_per_second": 20.85633664581033
+          }
+        },
+        {
+          "id": "ap-validation",
+          "kind": "specified-condition",
+          "pdf": "language-model-holdout.pdf",
+          "question": "AP News 语料的验证集准确有多少词？",
+          "english": "How many words are in the AP News validation set exactly?",
+          "hits": [
+            [
+              11,
+              6,
+              1
+            ],
+            [
+              12,
+              5,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            11,
+            6,
+            1
+          ],
+          "required_facts": [
+            "(?<!\\d)963[ ,]?138(?!\\d)"
+          ],
+          "quote_patterns": [
+            "963,138",
+            "validation"
+          ],
+          "forbidden_answer": [
+            "\\b200[ ,]?000\\b",
+            "\\b963[ ,]?071\\b"
+          ],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 1,
+          "language_ok": false,
+          "wrong_condition": false,
+          "result": {
+            "status": "insufficient_evidence",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf"
+          },
+          "input_sha256": "f1ef595f329cd847e081c59228e3975a22ee50d7717749e00276050c511d4053",
+          "raw_model_output": "{\n  \"status\": \"insufficient\",\n  \"answer\": \"\",\n  \"source\": 0,\n  \"quote\": \"\"\n}",
+          "finish_reason": "stop",
+          "seconds": 5.417,
+          "usage": {
+            "completion_tokens": 28,
+            "prompt_tokens": 435,
+            "total_tokens": 463
+          },
+          "timings": {
+            "cache_n": 143,
+            "prompt_n": 292,
+            "prompt_ms": 3594.171,
+            "prompt_per_token_ms": 12.308804794520547,
+            "prompt_per_second": 81.24265651244751,
+            "predicted_n": 28,
+            "predicted_ms": 1691.453,
+            "predicted_per_token_ms": 60.409035714285714,
+            "predicted_per_second": 16.553814974462785
+          }
+        },
+        {
+          "id": "ambiguous-validation",
+          "kind": "ambiguous-condition",
+          "pdf": "language-model-holdout.pdf",
+          "question": "Exactly how many words were reserved for validation?",
+          "english": "",
+          "hits": [
+            [
+              11,
+              6,
+              1
+            ],
+            [
+              12,
+              5,
+              1
+            ]
+          ],
+          "expected_anchor": null,
+          "required_facts": [],
+          "quote_patterns": [],
+          "forbidden_answer": [],
+          "refused": false,
+          "unsafe_answer": false,
+          "result": {
+            "status": "validation_failed",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf"
+          },
+          "input_sha256": "87f922e9383ae377fef9c54398c80bdbefc6b24b00f7bc0f58b35f3a4765ab0c",
+          "raw_model_output": "{\n  \"status\": \"answered\",\n  \"answer\": \"120,000\",\n  \"source\": 1,\n  \"quote\": \"The first 800,000 words were used for training, the following 200,000 for validation (model selection, weight decay, early stopping) and the remaining 181,041 for testing.\"\n}",
+          "finish_reason": "stop",
+          "seconds": 8.658,
+          "usage": {
+            "completion_tokens": 87,
+            "prompt_tokens": 421,
+            "total_tokens": 508
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 298,
+            "prompt_ms": 4093.233,
+            "prompt_per_token_ms": 13.735681208053691,
+            "prompt_per_second": 72.80308743724093,
+            "predicted_n": 87,
+            "predicted_ms": 4119.901,
+            "predicted_per_token_ms": 47.35518390804597,
+            "predicted_per_second": 21.11701227772221
+          }
+        },
+        {
+          "id": "gpu-memory",
+          "kind": "missing-field",
+          "pdf": "dpr-dev.pdf",
+          "question": "What GPU memory capacity in GiB was reported for the DPR training hardware?",
+          "english": "",
+          "hits": [
+            [
+              5,
+              7,
+              1
+            ],
+            [
+              6,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": null,
+          "required_facts": [],
+          "quote_patterns": [],
+          "forbidden_answer": [],
+          "refused": true,
+          "unsafe_answer": false,
+          "result": {
+            "status": "insufficient_evidence",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf"
+          },
+          "input_sha256": "fabccc3e26dc125dd92c2accd2e8cfb5e6584c83e375086ab092c4c309a7719e",
+          "raw_model_output": "{\"status\": \"insufficient\", \"answer\": \"\", \"source\": 0, \"quote\": \"\"}",
+          "finish_reason": "stop",
+          "seconds": 5.024,
+          "usage": {
+            "completion_tokens": 23,
+            "prompt_tokens": 409,
+            "total_tokens": 432
+          },
+          "timings": {
+            "cache_n": 124,
+            "prompt_n": 285,
+            "prompt_ms": 3579.827,
+            "prompt_per_token_ms": 12.560796491228071,
+            "prompt_per_second": 79.61278575752404,
+            "predicted_n": 23,
+            "predicted_ms": 1378.073,
+            "predicted_per_token_ms": 59.91621739130435,
+            "predicted_per_second": 16.689972156772537
+          }
+        },
+        {
+          "id": "gpu-model",
+          "kind": "missing-field",
+          "pdf": "repr.pdf",
+          "question": "作者用来训练的 GPU 是什么型号？",
+          "english": "What GPU model was used for training?",
+          "hits": [
+            [
+              5,
+              11,
+              1
+            ],
+            [
+              5,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": null,
+          "required_facts": [],
+          "quote_patterns": [],
+          "forbidden_answer": [],
+          "refused": true,
+          "unsafe_answer": false,
+          "result": {
+            "status": "insufficient_evidence",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf"
+          },
+          "input_sha256": "5daae5bac4ffd93a3f27d7eb335c26e70abe4f7d0a74b76568ee907e24578cad",
+          "raw_model_output": "{\n  \"status\": \"insufficient\",\n  \"answer\": \"\",\n  \"source\": 0,\n  \"quote\": \"\"\n}",
+          "finish_reason": "stop",
+          "seconds": 4.914,
+          "usage": {
+            "completion_tokens": 28,
+            "prompt_tokens": 352,
+            "total_tokens": 380
+          },
+          "timings": {
+            "cache_n": 143,
+            "prompt_n": 209,
+            "prompt_ms": 3153.182,
+            "prompt_per_token_ms": 15.086995215311005,
+            "prompt_per_second": 66.28225075495168,
+            "predicted_n": 28,
+            "predicted_ms": 1708.118,
+            "predicted_per_token_ms": 61.00421428571428,
+            "predicted_per_second": 16.392310133140686
+          }
+        },
+        {
+          "id": "lstm-structure",
+          "kind": "supported-two-fields",
+          "pdf": "repr.pdf",
+          "question": "How many layers did the deep LSTM have, and how many cells were in each layer?",
+          "english": "",
+          "hits": [
+            [
+              5,
+              3,
+              1
+            ],
+            [
+              5,
+              11,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            5,
+            3,
+            1
+          ],
+          "required_facts": [
+            "\\b(?:4|four)\\s+layers?\\b",
+            "\\b(?:1[ ,]?000|one thousand)\\s+cells?\\b"
+          ],
+          "quote_patterns": [
+            "4\\s+layers",
+            "1000\\s+cells"
+          ],
+          "forbidden_answer": [],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 2,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "validation_failed",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf"
+          },
+          "input_sha256": "b886a1eb04a1f2f06cba3470c5b11ab82fe6d3fbf4dc804b28dac54e98f338f4",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"4\", \"source\": 4, \"quote\": \"Each layer of the LSTM was executed on a different GPU and communicated its activations to the next GPU (or layer) as soon as they were computed.\" }",
+          "finish_reason": "stop",
+          "seconds": 8.089,
+          "usage": {
+            "completion_tokens": 55,
+            "prompt_tokens": 373,
+            "total_tokens": 428
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 250,
+            "prompt_ms": 3920.625,
+            "prompt_per_token_ms": 15.6825,
+            "prompt_per_second": 63.765343535788304,
+            "predicted_n": 55,
+            "predicted_ms": 4091.279,
+            "predicted_per_token_ms": 74.38689090909091,
+            "predicted_per_second": 13.44322887781547
+          }
+        },
+        {
+          "id": "topic-score",
+          "kind": "specified-condition",
+          "pdf": "sbert-dev.pdf",
+          "question": "What Topic Coherence score did the Doc2Vec baseline achieve with a minimum of 3 documents per cluster?",
+          "english": "",
+          "hits": [
+            [
+              2,
+              4,
+              1
+            ],
+            [
+              4,
+              12,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            2,
+            4,
+            1
+          ],
+          "required_facts": [
+            "\\b0\\.448\\b"
+          ],
+          "quote_patterns": [
+            "0\\.448",
+            "Doc2Vec",
+            "3 documents"
+          ],
+          "forbidden_answer": [
+            "\\b0\\.455\\b"
+          ],
+          "correct": true,
+          "complete": true,
+          "facts_matched": 1,
+          "facts_required": 1,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "ai-qwen3-1.7b-q4_K_M.gguf",
+            "claims": [
+              {
+                "text": "0.448",
+                "quote": "Compared to the baseline of topic clusters formed from a Doc2Vec embedding model for the same\ninput web pages, the SBERT-based embedding cluster-topics receive a better Topic Coherence score\nof 0.455 compared to the Doc2Vec embedding score of 0.448 for clusters created with a minimum\nsize of 3 documents each.",
+                "id": "7f987d9b23e9b3ea6016d55c34dc4af33ebb94e878b7acaa84a18141ede191d8",
+                "page": 2,
+                "block": 4,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 212,
+                "answer_end": 309,
+                "span": "the Doc2Vec embedding score of 0.448 for clusters created with a minimum\nsize of 3 documents each"
+              }
+            ]
+          },
+          "input_sha256": "5d43243e3c6daf686ab7c63024c57e384abb20945960238e389bc222c4b8089c",
+          "raw_model_output": "{\n  \"status\": \"answered\",\n  \"answer\": \"0.448\",\n  \"source\": 1,\n  \"quote\": \"the Doc2Vec embedding score of 0.448 for clusters created with a minimum size of 3 documents each\"\n}",
+          "finish_reason": "stop",
+          "seconds": 5.72,
+          "usage": {
+            "completion_tokens": 59,
+            "prompt_tokens": 382,
+            "total_tokens": 441
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 259,
+            "prompt_ms": 3111.233,
+            "prompt_per_token_ms": 12.012482625482626,
+            "prompt_per_second": 83.24673851170901,
+            "predicted_n": 59,
+            "predicted_ms": 2565.345,
+            "predicted_per_token_ms": 43.480423728813555,
+            "predicted_per_second": 22.99885590437154
+          }
+        }
+      ]
+    },
+    "4b-instruct-2507": {
+      "model": "qwen3-4b-instruct-2507",
+      "fixture_sha256": "f6dd7afe7ac74a6ff282ee586ab6b3d078ff3f4419873482e21349c6c1e41cdc",
+      "frozen_revision": "c94c6285d7a1a4e9764644dd35ca6469b3378efe",
+      "summary": {
+        "answerable": 6,
+        "negative": 3,
+        "correct": 3,
+        "complete": 3,
+        "refused": 2,
+        "unsafe_answers": 1,
+        "median_seconds": 13.983,
+        "maximum_seconds": 19.653
+      },
+      "results": [
+        {
+          "id": "similarity",
+          "kind": "supported",
+          "pdf": "dpr-dev.pdf",
+          "question": "What vector similarity did standard DPR use at retrieval time?",
+          "english": "",
+          "hits": [
+            [
+              3,
+              2,
+              1
+            ],
+            [
+              6,
+              11,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            3,
+            2,
+            1
+          ],
+          "required_facts": [
+            "\\bdot product\\b|\\binner product\\b"
+          ],
+          "quote_patterns": [
+            "dot product"
+          ],
+          "forbidden_answer": [],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 1,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "validation_failed",
+            "model": "qwen3-4b-instruct-2507"
+          },
+          "input_sha256": "0c7b688822094ab213ac1cb4b5f8fb1f7d3ac80401cb72c46a713d920bfbe193",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"dot product\", \"source\": 2, \"quote\": \"We define the similarity between the question and the passage using the dot product of their vectors:\" }",
+          "finish_reason": "stop",
+          "seconds": 12.503,
+          "usage": {
+            "completion_tokens": 44,
+            "prompt_tokens": 328,
+            "total_tokens": 372
+          },
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 328,
+            "prompt_ms": 8690.578,
+            "prompt_per_token_ms": 26.49566463414634,
+            "prompt_per_second": 37.742023603033076,
+            "predicted_n": 44,
+            "predicted_ms": 3748.84,
+            "predicted_per_token_ms": 85.2009090909091,
+            "predicted_per_second": 11.736963967520618
+          }
+        },
+        {
+          "id": "epochs",
+          "kind": "supported-two-conditions",
+          "pdf": "dpr-dev.pdf",
+          "question": "用于训练的大小数据集，最多分别训练多少轮？",
+          "english": "What are the respective maximum training epochs for large and small datasets?",
+          "hits": [
+            [
+              5,
+              7,
+              1
+            ],
+            [
+              6,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            5,
+            7,
+            1
+          ],
+          "required_facts": [
+            "大(?:型|数据集)[^\\d]{0,20}(?<!\\d)40(?!\\d)",
+            "小(?:型|数据集)[^\\d]{0,20}(?<!\\d)100(?!\\d)"
+          ],
+          "quote_patterns": [
+            "40\\s+epochs",
+            "100\\s+epochs"
+          ],
+          "forbidden_answer": [],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 2,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "qwen3-4b-instruct-2507",
+            "claims": [
+              {
+                "text": "用于训练的大小数据集，最多分别训练40轮和100轮。",
+                "quote": "We trained\nthe question and passage encoders for up to 40\nepochs for large datasets (NQ, TriviaQA, SQuAD)\nand 100 epochs for small datasets (TREC, WQ),\nwith a learning rate of 10−5 using Adam, linear\nscheduling with warm-up and dropout rate 0.1.",
+                "id": "2abfc7991519be2b8ce30215905516fdb593218b7bf59e50ece0d8a088a7c4d5",
+                "page": 5,
+                "block": 7,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 287,
+                "answer_end": 438,
+                "span": "We trained\nthe question and passage encoders for up to 40\nepochs for large datasets (NQ, TriviaQA, SQuAD)\nand 100 epochs for small datasets (TREC, WQ),"
+              }
+            ]
+          },
+          "input_sha256": "846c2a1447db4e2fee92d8b8a8569a191de24a8632402ea9defa889115038320",
+          "raw_model_output": "{\"status\": \"answered\", \"answer\": \"用于训练的大小数据集，最多分别训练40轮和100轮。\", \"source\": 1, \"quote\": \"We trained the question and passage encoders for up to 40 epochs for large datasets (NQ, TriviaQA, SQuAD) and 100 epochs for small datasets (TREC, WQ),\"}",
+          "finish_reason": "stop",
+          "seconds": 19.653,
+          "usage": {
+            "completion_tokens": 88,
+            "prompt_tokens": 437,
+            "total_tokens": 525
+          },
+          "timings": {
+            "cache_n": 3,
+            "prompt_n": 434,
+            "prompt_ms": 11809.739,
+            "prompt_per_token_ms": 27.211380184331798,
+            "prompt_per_second": 36.74933036200038,
+            "predicted_n": 88,
+            "predicted_ms": 7725.926,
+            "predicted_per_token_ms": 87.79461363636364,
+            "predicted_per_second": 11.390220408530963
+          }
+        },
+        {
+          "id": "source-vocabulary",
+          "kind": "specified-condition",
+          "pdf": "repr.pdf",
+          "question": "How many entries were kept in the source-language vocabulary?",
+          "english": "",
+          "hits": [
+            [
+              4,
+              3,
+              1
+            ],
+            [
+              4,
+              2,
+              1
+            ],
+            [
+              5,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            4,
+            3,
+            1
+          ],
+          "required_facts": [
+            "\\b160[ ,]?000\\b"
+          ],
+          "quote_patterns": [
+            "160,000",
+            "source language"
+          ],
+          "forbidden_answer": [
+            "\\b80[ ,]?000\\b"
+          ],
+          "correct": true,
+          "complete": true,
+          "facts_matched": 1,
+          "facts_required": 1,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "qwen3-4b-instruct-2507",
+            "claims": [
+              {
+                "text": "160,000",
+                "quote": "We used 160,000 of the most frequent words for the source language\nand 80,000 of the most frequent words for the target language.",
+                "id": "de493aa7b13e9d61813cec52ff751aedc869ce9ba56ea3dfd4e54297b99195b9",
+                "page": 4,
+                "block": 3,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 127,
+                "answer_end": 193,
+                "span": "We used 160,000 of the most frequent words for the source language"
+              }
+            ]
+          },
+          "input_sha256": "32075bb10acf9a7093c02b9a83884a637864c6f2a368ac1293bfccc9dc85d479",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"160,000\", \"source\": 2, \"quote\": \"We used 160,000 of the most frequent words for the source language\" }",
+          "finish_reason": "stop",
+          "seconds": 14.411,
+          "usage": {
+            "completion_tokens": 51,
+            "prompt_tokens": 422,
+            "total_tokens": 473
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 299,
+            "prompt_ms": 9569.89,
+            "prompt_per_token_ms": 32.006321070234115,
+            "prompt_per_second": 31.243828298966864,
+            "predicted_n": 51,
+            "predicted_ms": 4587.324,
+            "predicted_per_token_ms": 89.9475294117647,
+            "predicted_per_second": 11.117592740342737
+          }
+        },
+        {
+          "id": "ap-validation",
+          "kind": "specified-condition",
+          "pdf": "language-model-holdout.pdf",
+          "question": "AP News 语料的验证集准确有多少词？",
+          "english": "How many words are in the AP News validation set exactly?",
+          "hits": [
+            [
+              11,
+              6,
+              1
+            ],
+            [
+              12,
+              5,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            11,
+            6,
+            1
+          ],
+          "required_facts": [
+            "(?<!\\d)963[ ,]?138(?!\\d)"
+          ],
+          "quote_patterns": [
+            "963,138",
+            "validation"
+          ],
+          "forbidden_answer": [
+            "\\b200[ ,]?000\\b",
+            "\\b963[ ,]?071\\b"
+          ],
+          "correct": false,
+          "complete": false,
+          "facts_matched": 0,
+          "facts_required": 1,
+          "language_ok": false,
+          "wrong_condition": false,
+          "result": {
+            "status": "validation_failed",
+            "model": "qwen3-4b-instruct-2507"
+          },
+          "input_sha256": "f1ef595f329cd847e081c59228e3975a22ee50d7717749e00276050c511d4053",
+          "raw_model_output": "{\"status\": \"answered\", \"answer\": \"AP News 语料的验证集有200,000词\", \"source\": 3, \"quote\": \"The first 800,000 words were used for training, the following 200,000 for validation (model selection, weight decay, early stopping) and the remaining 181,041 for testing.\"}",
+          "finish_reason": "stop",
+          "seconds": 16.11,
+          "usage": {
+            "completion_tokens": 92,
+            "prompt_tokens": 431,
+            "total_tokens": 523
+          },
+          "timings": {
+            "cache_n": 143,
+            "prompt_n": 288,
+            "prompt_ms": 8571.53,
+            "prompt_per_token_ms": 29.762256944444445,
+            "prompt_per_second": 33.599602404704875,
+            "predicted_n": 92,
+            "predicted_ms": 7423.004,
+            "predicted_per_token_ms": 80.68482608695652,
+            "predicted_per_second": 12.393904139079003
+          }
+        },
+        {
+          "id": "ambiguous-validation",
+          "kind": "ambiguous-condition",
+          "pdf": "language-model-holdout.pdf",
+          "question": "Exactly how many words were reserved for validation?",
+          "english": "",
+          "hits": [
+            [
+              11,
+              6,
+              1
+            ],
+            [
+              12,
+              5,
+              1
+            ]
+          ],
+          "expected_anchor": null,
+          "required_facts": [],
+          "quote_patterns": [],
+          "forbidden_answer": [],
+          "refused": false,
+          "unsafe_answer": true,
+          "result": {
+            "status": "cited_draft",
+            "model": "qwen3-4b-instruct-2507",
+            "claims": [
+              {
+                "text": "200,000",
+                "quote": "The ﬁrst 800,000 words were used for\ntraining, the following 200,000 for validation (model selection, weight decay, early stopping) and\nthe remaining 181,041 for testing.",
+                "id": "0bddf9a608d62da449a6413d86cbf6e8b206212595efe0e0a14da0d79d5f4976",
+                "page": 11,
+                "block": 6,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 193,
+                "answer_end": 277,
+                "span": "the following 200,000 for validation (model selection, weight decay, early stopping)"
+              }
+            ]
+          },
+          "input_sha256": "87f922e9383ae377fef9c54398c80bdbefc6b24b00f7bc0f58b35f3a4765ab0c",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"200,000\", \"source\": 1, \"quote\": \"the following 200,000 for validation (model selection, weight decay, early stopping)\" }",
+          "finish_reason": "stop",
+          "seconds": 12.911,
+          "usage": {
+            "completion_tokens": 53,
+            "prompt_tokens": 417,
+            "total_tokens": 470
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 294,
+            "prompt_ms": 8449.501,
+            "prompt_per_token_ms": 28.739799319727894,
+            "prompt_per_second": 34.7949541635654,
+            "predicted_n": 53,
+            "predicted_ms": 4237.648,
+            "predicted_per_token_ms": 79.95562264150944,
+            "predicted_per_second": 12.506937810785605
+          }
+        },
+        {
+          "id": "gpu-memory",
+          "kind": "missing-field",
+          "pdf": "dpr-dev.pdf",
+          "question": "What GPU memory capacity in GiB was reported for the DPR training hardware?",
+          "english": "",
+          "hits": [
+            [
+              5,
+              7,
+              1
+            ],
+            [
+              6,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": null,
+          "required_facts": [],
+          "quote_patterns": [],
+          "forbidden_answer": [],
+          "refused": true,
+          "unsafe_answer": false,
+          "result": {
+            "status": "insufficient_evidence",
+            "model": "qwen3-4b-instruct-2507"
+          },
+          "input_sha256": "fabccc3e26dc125dd92c2accd2e8cfb5e6584c83e375086ab092c4c309a7719e",
+          "raw_model_output": "{ \"status\": \"insufficient\", \"answer\": \"\", \"source\": 0, \"quote\": \"\" }",
+          "finish_reason": "stop",
+          "seconds": 9.809,
+          "usage": {
+            "completion_tokens": 24,
+            "prompt_tokens": 405,
+            "total_tokens": 429
+          },
+          "timings": {
+            "cache_n": 124,
+            "prompt_n": 281,
+            "prompt_ms": 7881.581,
+            "prompt_per_token_ms": 28.04833096085409,
+            "prompt_per_second": 35.652745305795875,
+            "predicted_n": 24,
+            "predicted_ms": 1783.702,
+            "predicted_per_token_ms": 74.32091666666666,
+            "predicted_per_second": 13.455162353352748
+          }
+        },
+        {
+          "id": "gpu-model",
+          "kind": "missing-field",
+          "pdf": "repr.pdf",
+          "question": "作者用来训练的 GPU 是什么型号？",
+          "english": "What GPU model was used for training?",
+          "hits": [
+            [
+              5,
+              11,
+              1
+            ],
+            [
+              5,
+              3,
+              1
+            ]
+          ],
+          "expected_anchor": null,
+          "required_facts": [],
+          "quote_patterns": [],
+          "forbidden_answer": [],
+          "refused": true,
+          "unsafe_answer": false,
+          "result": {
+            "status": "insufficient_evidence",
+            "model": "qwen3-4b-instruct-2507"
+          },
+          "input_sha256": "5daae5bac4ffd93a3f27d7eb335c26e70abe4f7d0a74b76568ee907e24578cad",
+          "raw_model_output": "{ \"status\": \"insufficient\", \"answer\": \"\", \"source\": 0, \"quote\": \"\" }",
+          "finish_reason": "stop",
+          "seconds": 11.083,
+          "usage": {
+            "completion_tokens": 24,
+            "prompt_tokens": 348,
+            "total_tokens": 372
+          },
+          "timings": {
+            "cache_n": 3,
+            "prompt_n": 345,
+            "prompt_ms": 8975.289,
+            "prompt_per_token_ms": 26.015330434782612,
+            "prompt_per_second": 38.438873667466304,
+            "predicted_n": 24,
+            "predicted_ms": 1992.294,
+            "predicted_per_token_ms": 83.01225000000001,
+            "predicted_per_second": 12.046414836364512
+          }
+        },
+        {
+          "id": "lstm-structure",
+          "kind": "supported-two-fields",
+          "pdf": "repr.pdf",
+          "question": "How many layers did the deep LSTM have, and how many cells were in each layer?",
+          "english": "",
+          "hits": [
+            [
+              5,
+              3,
+              1
+            ],
+            [
+              5,
+              11,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            5,
+            3,
+            1
+          ],
+          "required_facts": [
+            "\\b(?:4|four)\\s+layers?\\b",
+            "\\b(?:1[ ,]?000|one thousand)\\s+cells?\\b"
+          ],
+          "quote_patterns": [
+            "4\\s+layers",
+            "1000\\s+cells"
+          ],
+          "forbidden_answer": [],
+          "correct": true,
+          "complete": true,
+          "facts_matched": 2,
+          "facts_required": 2,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "qwen3-4b-instruct-2507",
+            "claims": [
+              {
+                "text": "The deep LSTM had 4 layers, with 1000 cells at each layer.",
+                "quote": "We used deep LSTMs with 4 layers,\nwith 1000 cells at each layer and 1000 dimensional word embeddings, with an input vocabulary\nof 160,000 and an output vocabulary of 80,000.",
+                "id": "de493aa7b13e9d61813cec52ff751aedc869ce9ba56ea3dfd4e54297b99195b9",
+                "page": 5,
+                "block": 3,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 56,
+                "answer_end": 229,
+                "span": "We used deep LSTMs with 4 layers,\nwith 1000 cells at each layer and 1000 dimensional word embeddings, with an input vocabulary\nof 160,000 and an output vocabulary of 80,000."
+              }
+            ]
+          },
+          "input_sha256": "b886a1eb04a1f2f06cba3470c5b11ab82fe6d3fbf4dc804b28dac54e98f338f4",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"The deep LSTM had 4 layers, with 1000 cells at each layer.\", \"source\": 1, \"quote\": \"We used deep LSTMs with 4 layers, with 1000 cells at each layer and 1000 dimensional word embeddings, with an input vocabulary of 160,000 and an output vocabulary of 80,000.\" }",
+          "finish_reason": "stop",
+          "seconds": 14.562,
+          "usage": {
+            "completion_tokens": 99,
+            "prompt_tokens": 369,
+            "total_tokens": 468
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 246,
+            "prompt_ms": 6833.485,
+            "prompt_per_token_ms": 27.77839430894309,
+            "prompt_per_second": 35.999200993343806,
+            "predicted_n": 99,
+            "predicted_ms": 7677.106,
+            "predicted_per_token_ms": 77.54652525252526,
+            "predicted_per_second": 12.895484314011036
+          }
+        },
+        {
+          "id": "topic-score",
+          "kind": "specified-condition",
+          "pdf": "sbert-dev.pdf",
+          "question": "What Topic Coherence score did the Doc2Vec baseline achieve with a minimum of 3 documents per cluster?",
+          "english": "",
+          "hits": [
+            [
+              2,
+              4,
+              1
+            ],
+            [
+              4,
+              12,
+              1
+            ]
+          ],
+          "expected_anchor": [
+            2,
+            4,
+            1
+          ],
+          "required_facts": [
+            "\\b0\\.448\\b"
+          ],
+          "quote_patterns": [
+            "0\\.448",
+            "Doc2Vec",
+            "3 documents"
+          ],
+          "forbidden_answer": [
+            "\\b0\\.455\\b"
+          ],
+          "correct": true,
+          "complete": true,
+          "facts_matched": 1,
+          "facts_required": 1,
+          "language_ok": true,
+          "wrong_condition": false,
+          "result": {
+            "status": "cited_draft",
+            "model": "qwen3-4b-instruct-2507",
+            "claims": [
+              {
+                "text": "0.448",
+                "quote": "Compared to the baseline of topic clusters formed from a Doc2Vec embedding model for the same\ninput web pages, the SBERT-based embedding cluster-topics receive a better Topic Coherence score\nof 0.455 compared to the Doc2Vec embedding score of 0.448 for clusters created with a minimum\nsize of 3 documents each.",
+                "id": "7f987d9b23e9b3ea6016d55c34dc4af33ebb94e878b7acaa84a18141ede191d8",
+                "page": 2,
+                "block": 4,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 111,
+                "answer_end": 310,
+                "span": "the SBERT-based embedding cluster-topics receive a better Topic Coherence score\nof 0.455 compared to the Doc2Vec embedding score of 0.448 for clusters created with a minimum\nsize of 3 documents each."
+              }
+            ]
+          },
+          "input_sha256": "5d43243e3c6daf686ab7c63024c57e384abb20945960238e389bc222c4b8089c",
+          "raw_model_output": "{ \"status\": \"answered\", \"answer\": \"0.448\", \"source\": 1, \"quote\": \"the SBERT-based embedding cluster-topics receive a better Topic Coherence score of 0.455 compared to the Doc2Vec embedding score of 0.448 for clusters created with a minimum size of 3 documents each.\" }",
+          "finish_reason": "stop",
+          "seconds": 13.983,
+          "usage": {
+            "completion_tokens": 79,
+            "prompt_tokens": 378,
+            "total_tokens": 457
+          },
+          "timings": {
+            "cache_n": 123,
+            "prompt_n": 255,
+            "prompt_ms": 7266.446,
+            "prompt_per_token_ms": 28.495866666666668,
+            "prompt_per_second": 35.09280878162447,
+            "predicted_n": 79,
+            "predicted_ms": 6535.754,
+            "predicted_per_token_ms": 82.73106329113924,
+            "predicted_per_second": 12.087358245123669
+          }
+        }
+      ]
+    }
+  }
+}

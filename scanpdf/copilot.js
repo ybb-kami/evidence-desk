@@ -13,10 +13,23 @@ function link(title, href) {
 }
 const labels = {
   answer_paper:'单篇证据问答', compare_papers:'逐篇比较', citation_graph:'引用与未来工作',
-  scan_coverage:'扫描覆盖', publication_metadata:'JOSS 题录'
+  scan_coverage:'扫描覆盖', publication_metadata:'JOSS 题录', web_search:'DeepSeek 联网检索'
 };
 function appendStep(message) {get('steps').append(element('li', message));}
 function render(data) {
+  if (data.web) {
+    const panel = element('article');
+    panel.append(element('h3', '公开网页检索结果'));
+    if (data.web.error) panel.append(element('p',data.web.error.message));
+    for (const item of data.web.items) {
+      panel.append(link(item.title || item.url, item.url),element('p', item.snippet || item.summary));
+    }
+    if (data.web.fetch) {
+      const detail=element('details'); detail.append(element('summary','查看抓取的网页摘录'),element('p',data.web.fetch.text));
+      panel.append(detail);
+    }
+    get('reports').append(panel);
+  }
   for (const group of data.reports) {
     const panel = element('article');
     panel.append(element('h3', group.name));
@@ -74,7 +87,7 @@ function eventReceived(event) {
   switch(event.event) {
   case 'stage': appendStep(event.label+(event.detail?' · '+event.detail:'')); break;
   case 'plan': {
-    const status = {not_requested:'已选择规则编排',disabled:'未配置本机模型，使用规则编排',busy:'本机模型正在使用，使用规则编排',
+    const status = {not_requested:'已选择规则编排',disabled:'DeepSeek 未启用，使用规则编排',busy:'模型正在使用，使用规则编排',
       invalid:'模型工具参数未通过校验，使用规则编排',unavailable:'模型工具接口不可用，使用规则编排'};
     appendStep(event.planner === 'model_tool_calls' ? '模型 '+event.model+' 返回工具调用 · '+event.proposed.map(n=>labels[n]).join('、') : status[event.planner]);
     appendStep('执行顺序 · '+event.tools.map(n=>labels[n]).join(' → '));
@@ -98,17 +111,19 @@ get('task').onsubmit = async event => {
   event.preventDefault();
   const ids = Array.from(get('documents').querySelectorAll(':checked')).map(n=>n.value);
   const question = get('question').value.trim();
-  if (!ids.length || ids.length > 6 || !question) {get('state').textContent='请选择 1 至 6 篇论文并输入问题。'; return;}
+  const searchTerms = get('web-terms').value.trim();
+  if ((!ids.length && !searchTerms) || ids.length > 6 || !question) {get('state').textContent='请选择论文或填写公开检索词，并输入问题。'; return;}
   get('steps').replaceChildren(); get('reports').replaceChildren(); get('draft').replaceChildren();
   get('result').hidden = true; get('preview').hidden = true; get('waiting').hidden = true;
   get('run').disabled = true; get('state').textContent = '正在执行…';
   try {
     const response = await fetch('/api/copilot', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ids, question, model_planner:get('planning').checked, publisher_consent:get('publisher').checked})});
+      body:JSON.stringify({ids, question, model_planner:get('planning').checked, model_consent:get('planning').checked,
+        publisher_consent:false, search_terms:searchTerms, fetch_first:get('fetch-first').checked})});
     await readEvents(response, eventReceived);
   } catch(error) {
     get('state').textContent=error.message; get('draft').replaceChildren(); get('preview').hidden=true;
-  } finally {get('run').disabled = false; get('publisher').checked = false;}
+  } finally {get('run').disabled = false; get('planning').checked = false; get('fetch-first').checked = false;}
 };
 (async () => {
   try {
@@ -120,6 +135,6 @@ get('task').onsubmit = async event => {
       box.type='checkbox'; box.value=doc.id; box.checked=i===0;
       row.append(box,element('span',doc.name+' · '+doc.pages+' 页')); get('documents').append(row);
     }
-    if (!docs.length) {get('documents').append(link('先在工作台上传 PDF','/')); get('run').disabled=true;}
+    if (!docs.length) get('documents').append(link('在工作台上传 PDF','/'));
   } catch(error) {get('state').textContent=error.message;}
 })();

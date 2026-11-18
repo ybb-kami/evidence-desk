@@ -1,6 +1,7 @@
 """Conservative checks on an anchored answer's field and experimental conditions."""
 import re
 
+from condition_support import assess_conditions
 from evidence_context import sentences, terms
 from grounded_draft import _numbers
 from passage_answer import FIELD
@@ -46,6 +47,9 @@ def check(question, english, hits, claim):
         mentioned = [p for p in group if re.search(p,raw,re.I)]
         if len(asked) == 1 and mentioned and asked[0] not in mentioned:
             return "different_condition"
+    scope = assess_conditions(question, english, hits, claim)
+    if scope.reason:
+        return scope.reason
     # For a single stated measurement, look for another independently scoped
     # sentence supporting the same question at least as well but with a
     # different reading. Require the same unit and strong lexical overlap.
@@ -57,10 +61,10 @@ def check(question, english, hits, claim):
     valid = _scalars(raw)
     if len(agreement) < 2 or len(valid) != 1:
         return None
-    for entry in hits:
+    for i,entry in enumerate(hits):
         for a,b in sentences(entry["text"]):
             other = entry["text"][a:b]
-            if other == raw:
+            if other == raw or (i, a, b) in scope.excluded_sentences:
                 continue
             readings = _scalars(other)
             if (len(readings) != 1 or readings[0][1] != valid[0][1]

@@ -1,0 +1,172 @@
+{
+  "fresh_http": {
+    "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+    "figures": {
+      "3": {
+        "label": "1",
+        "caption": "Figure 1: The Transformer - model architecture.",
+        "caption_bbox": [
+          701,
+          1350,
+          1338,
+          1381
+        ],
+        "caption_lines": [
+          "41.1.1"
+        ],
+        "bbox": [
+          651,
+          239,
+          1389,
+          1318
+        ],
+        "method": "ocr_caption_and_graphic_strokes",
+        "id": "p3-f1",
+        "type": "figure",
+        "status": "detected_only",
+        "physical_page": 3,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "bbox_pt": [
+          195.3,
+          71.7,
+          416.7,
+          395.4
+        ],
+        "caption_bbox_pt": [
+          210.3,
+          405.0,
+          401.4,
+          414.3
+        ]
+      },
+      "4": {
+        "label": "2",
+        "caption": "Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several\nattention layers running in parallel.",
+        "caption_bbox": [
+          361,
+          841,
+          1678,
+          909
+        ],
+        "caption_lines": [
+          "12.1.1",
+          "12.1.2"
+        ],
+        "bbox": [
+          489,
+          235,
+          1561,
+          812
+        ],
+        "method": "ocr_caption_and_graphic_strokes",
+        "id": "p4-f1",
+        "type": "figure",
+        "status": "detected_only",
+        "physical_page": 4,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "bbox_pt": [
+          146.7,
+          70.5,
+          468.3,
+          243.6
+        ],
+        "caption_bbox_pt": [
+          108.3,
+          252.3,
+          503.4,
+          272.7
+        ]
+      }
+    },
+    "caption_only": {
+      "label": "3",
+      "caption": "Figure 3: An example of the attention mechanism following long-distance dependencies in the\nencoder self-attention in layer 5 of 6. Many of the attention heads attend to a distant dependency of\nthe verb ‘making’, completing the phrase ‘making...more difficult’. Attentions here shown only for\nthe word ‘making’. Different colors represent different heads. Best viewed in color.",
+      "caption_bbox": [
+        360,
+        1043,
+        1682,
+        1182
+      ],
+      "caption_lines": [
+        "4.1.1",
+        "4.1.2",
+        "4.1.3",
+        "4.1.4"
+      ],
+      "reason": "insufficient_panel_span",
+      "id": "p13-fc1",
+      "type": "figure_caption",
+      "status": "caption_only",
+      "physical_page": 13,
+      "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+      "caption_bbox_pt": [
+        108.0,
+        312.9,
+        504.6,
+        354.6
+      ]
+    },
+    "table_control": {
+      "page": 8,
+      "id": "p8-r1",
+      "status": "structure_recognized"
+    },
+    "independent_raster_page": {
+      "label": "1",
+      "caption": "Figure 1: Left: FLASHATTENTION uses tiling to prevent materialization of the large N x N attention matrix\n(dotted box) on (relatively) slow GPU HBM. In the outer loop (red arrows), FLASHATTENTION loops through\nblocks of the K and V matrices and loads them to fast on-chip SRAM. In each block, FLASHATTENTION\nloops over blocks of Q matrix (blue arrows), loading them to SRAM, and writing the output of the attention\ncomputation back to HBM. Right: Speedup over the PyTorch implementation of attention on GPT-2.\nFLASHATTENTION does not read and write the large N x N attention matrix to HBM, resulting in an 7.6x\nspeedup on the attention computation.",
+      "caption_bbox": [
+        239,
+        797,
+        1803,
+        1066
+      ],
+      "caption_lines": [
+        "10.1.1",
+        "10.1.2",
+        "10.1.3",
+        "10.1.4",
+        "10.1.5",
+        "10.1.6",
+        "10.1.7"
+      ],
+      "bbox": [
+        358,
+        242,
+        1684,
+        755
+      ],
+      "method": "ocr_caption_and_graphic_strokes",
+      "id": "p1-f1",
+      "type": "figure",
+      "status": "detected_only",
+      "physical_page": 1,
+      "source_sha256": "93ceb18c2f03f866e96a76a4fb04b4b7e597921d4d9c50b77a3d9c28563fc209",
+      "bbox_pt": [
+        107.4,
+        72.6,
+        505.2,
+        226.5
+      ],
+      "caption_bbox_pt": [
+        71.7,
+        239.1,
+        540.9,
+        319.8
+      ]
+    },
+    "flash_original_physical_page": 2,
+    "archived_and_unknown_links_stay_closed": true
+  },
+  "refresh_http": {
+    "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+    "pages": [
+      3,
+      9
+    ],
+    "from_revision": 2,
+    "to_revision": 3,
+    "unchanged_existing_regions_and_ocr": true,
+    "confirmed_crop_locators_after_refresh": 15,
+    "stable_after_restart_and_repeat": true
+  }
+}

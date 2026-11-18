@@ -49,6 +49,8 @@
       <p id="anchor"></p>
       <div class="actions">
         <button type="button" id="jump" hidden>转到高亮位置</button>
+        <a id="ask-here" hidden>在此段追问</a>
+        <a id="bilingual">在双语精读中打开</a>
         <a id="pdf" target="_blank" rel="noopener noreferrer">打开原始 PDF</a>
       </div>
       <div class="layout">
@@ -62,6 +64,7 @@
           <h2 id="excerpt-title">所引原文</h2>
           <p id="precision"></p>
           <p id="excerpt"></p>
+          <details id="context" hidden><summary>查看本页相邻摘录</summary><ul id="neighbors"></ul></details>
           <div id="identity" title="原始 PDF 的 SHA-256"></div>
         </aside>
       </div>

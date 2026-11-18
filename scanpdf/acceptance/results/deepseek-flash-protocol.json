@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "protocol_passed",
+  "expected_model": "DeepSeek-V4.1-Flash-1017",
+  "model_calls_requested": 0,
+  "scope": "generated public fictional fixture only",
+  "pdf_sha256": "cbc5cc37834a4f39695a2cf2e1393ac5d0ec36c676c70933a45180cbf34e4e49",
+  "search_enabled": false,
+  "fetch_enabled": false,
+  "planned": [
+    "tool_plan",
+    "page_answer",
+    "missing_field"
+  ],
+  "cases": {},
+  "model_status_endpoint": {
+    "provider_matches": true,
+    "expected_model_matches": true,
+    "configured": false
+  },
+  "protocol_checks": {
+    "local_citation_graph_completed": true,
+    "provider_did_not_plan": true,
+    "followup_returned_local_hits": true,
+    "no_provider_answer": true,
+    "model_not_configured_reported": true,
+    "missing_field_did_not_guess": true
+  },
+  "workbench_protocol_requests": 4,
+  "model_status_http_status": 200,
+  "followup_model_status": "not_configured"
+}

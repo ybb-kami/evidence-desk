@@ -1,0 +1,103 @@
+{
+  "scope": "local Linux loopback, uncommitted candidate workspace, no external deployment or live paid service validation",
+  "source_base_commit": "49fb098ae7ecfce4ac5b2fe39a7cf5f85f86b2a7",
+  "source_worktree_dirty": true,
+  "verified_runtime_source_sha256": {
+    "scanpdf/workbench.py": "bf6b2e3534603efcfa80dd34dbf0a9d96fc9c0826f71b39cab79feab4634408d",
+    "scanpdf/direct_coverage.py": "58a7bcd3086c8c398d2c8878fa387cb935ffacfb0b0d89729e6ee32efe93c49c",
+    "scanpdf/flash_transport.py": "2490642cfaac1796c866987566a525179f4b864fc75dda2680f42482a421cd1e",
+    "scanpdf/scanpdf/figures.py": "c76a5fd2b9026e5c44a49bdf4329a91b85b0f0e2ee3a0670e14478933f18d551"
+  },
+  "build_command": [
+    "python",
+    "scanpdf/container/build.py",
+    "--tag",
+    "evidence-desk-rag:handoff-candidate-49fb098-20261118"
+  ],
+  "docker_engine": "29.9.2",
+  "image_tag": "evidence-desk-rag:handoff-candidate-49fb098-20261118",
+  "image_id": "sha256:3fc99f746bec9d491ae42cf7711f7368dbadd621445bf5ef855a9733d6adcb02",
+  "platform": "linux/amd64",
+  "runtime_uid": 10001,
+  "general_smoke": {
+    "sample_sha256": "77efb2eec85911fe21efddcbaff66fca9497a5038367459efdac184695a32caa",
+    "sample_already_in_library": false,
+    "sample_page": 2,
+    "native_locator": "glyph",
+    "foreign_host_status": 403,
+    "foreign_origin_status": 403,
+    "ocr": {
+      "id": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+      "page": 7,
+      "block": 3,
+      "locator": "word"
+    }
+  },
+  "model_smoke": {
+    "default": {
+      "mode": "default, no key or runtime model settings",
+      "port": 18783,
+      "key_absent": true,
+      "status": {
+        "provider": "deepseek",
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "api_model": "deepseek-flash",
+        "configured": false,
+        "release_verified": false,
+        "verification": "before_each_paid_model_call",
+        "model_price_configured": false,
+        "search_price_configured": false,
+        "budget_usd": "0.71",
+        "max_rounds": 100
+      },
+      "offline_hits": 2,
+      "consented_followup": "not_configured",
+      "generation": {
+        "status": "disabled"
+      },
+      "explicit_model": {
+        "status": "not_configured",
+        "claims": []
+      },
+      "verify": {
+        "status": "not_configured",
+        "quotes": [],
+        "answer": "未启用 DeepSeek。离线检索仍可使用。"
+      },
+      "consent_required_http": 403
+    },
+    "qwen_control": {
+      "mode": "DeepSeek flag enabled without key, legacy local Qwen stub configured",
+      "port": 18784,
+      "key_absent": true,
+      "status": {
+        "provider": "deepseek",
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "api_model": "deepseek-flash",
+        "configured": false,
+        "release_verified": false,
+        "verification": "before_each_paid_model_call",
+        "model_price_configured": false,
+        "search_price_configured": false,
+        "budget_usd": "0.71",
+        "max_rounds": 100
+      },
+      "offline_hits": 2,
+      "consented_followup": "not_configured",
+      "generation": {
+        "status": "disabled"
+      },
+      "explicit_model": {
+        "status": "not_configured",
+        "claims": []
+      },
+      "verify": {
+        "status": "not_configured",
+        "quotes": [],
+        "answer": "未启用 DeepSeek。离线检索仍可使用。"
+      },
+      "consent_required_http": 403,
+      "stub_http_requests": 0
+    }
+  }
+}

@@ -33,6 +33,24 @@
       : `块 ${page.block} · 分段 ${page.part}`;
     item("anchor").textContent = `物理页 ${page.page}${printed} · ${anchor}`;
     item("pdf").href = page.pdf_url;
+    const reader = new URLSearchParams({doc: page.doc.id, page: page.page});
+    if (page.block) {
+      reader.set("block", page.block);
+      const here = new URLSearchParams({id: page.doc.id, page: page.page, block: page.block, part: page.part});
+      item("ask-here").href = "/followup?" + here;
+      item("ask-here").hidden = false;
+    }
+    item("bilingual").href = "/translation?" + reader;
+    for (const neighbor of page.neighbors || []) {
+      const entry = document.createElement("li"), link = document.createElement("a");
+      const query = new URLSearchParams({id: page.doc.id, page: page.page, block: neighbor.block, part: neighbor.part});
+      link.href = "/source?" + query;
+      link.textContent = (neighbor.direction === "previous" ? "上一摘录" : "下一摘录")
+        + ` · 块 ${neighbor.block} · 分段 ${neighbor.part}`;
+      entry.append(link, document.createTextNode(" " + neighbor.preview));
+      item("neighbors").append(entry);
+    }
+    item("context").hidden = !item("neighbors").childElementCount;
     item("identity").textContent = `SHA-256 ${page.doc.id}`;
     const labels = { glyph: "PDF 字符", word: "OCR 词框", line: "OCR 行框", block: "原文块", cell: "表格单元格" };
     const precision = page.selection?.boxes.length ? page.selection.precision : page.passage.precision;

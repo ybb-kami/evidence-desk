@@ -26,6 +26,7 @@ PACKAGES = {
     "scanpdf/scanpdf": (".py",),
     "scanpdf/semantic": (".py",),
     "scanpdf/tools": (".py",),
+    "scanpdf/version_evidence": (".py", ".html", ".js"),
 }
 REQUIREMENTS = (
     "scanpdf/requirements.txt", "scanpdf/requirements-rag.txt", "scanpdf/bilingual/requirements.txt",

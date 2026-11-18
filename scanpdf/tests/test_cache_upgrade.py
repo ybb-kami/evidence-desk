@@ -38,6 +38,43 @@ def write_old_page(store, docid, page, revision=None):
 
 
 class CacheUpgradeTests(TestCase):
+    def test_revision_two_adds_figures_using_original_ocr_and_existing_regions(self):
+        with TemporaryDirectory() as folder, pymupdf.open() as pdf:
+            page = pdf.new_page(width=120, height=180)
+            store = workbench.ScanLibrary(Path(folder))
+            docid = store.add(pdf.tobytes(), "figure-anchors.pdf")["doc"]["id"]
+            caption = {"text": "Figure 1: Actual caption.", "line_id": "7.1.1", "bbox": [17, 310, 290, 342],
+                       "bbox_pt": [5.1, 93, 87, 102.6], "words": []}
+            legacy = {"physical_page": 1, "width_px": 400, "height_px": 600, "width_pt": 120,
+                      "height_pt": 180, "rotation": 0, "cropbox": list(page.cropbox), "lines": [caption],
+                      "regions": [{"id": "p1-r1", "type": "table", "status": "structure_recognized",
+                                   "bbox": [12, 460, 380, 590], "bbox_pt": [3.6, 138, 114, 177], "cells": []},
+                                  {"id": "p1-r2", "type": "formula", "status": "detected_only",
+                                   "bbox": [12, 393, 240, 429], "bbox_pt": [3.6, 117.9, 72, 128.7]}]}
+            result = {"source": {"sha256": docid}, "pages": [legacy],
+                      "render": {"dpi": 240, "lang": "eng", "frame": "rotated_visible_page_top_left"}}
+            with patch.object(workbench.ScanLibrary, "REGION_REVISION", 2), patch.object(
+                    workbench, "recognize_pdf", return_value=deepcopy(result)):
+                self.assertEqual(store.recognize(docid, 1)["region_revision"], 2)
+            original_document = store.records([docid])
+            detected = {"label": "1", "caption": caption["text"], "caption_lines": [caption["line_id"]],
+                        "caption_bbox": caption["bbox"], "bbox": [20, 60, 330, 295],
+                        "method": "ocr_caption_and_graphic_strokes"}
+            with patch("scanpdf.figures.detect_figures", return_value=([detected], [])) as detector, patch.object(
+                    workbench, "recognize_pdf") as full_parser:
+                added = store.recognize(docid, 1, region_revision=2)
+                self.assertEqual(store.recognize(docid, 1, region_revision=2), added)
+                full_parser.assert_not_called()
+                args = detector.call_args.args
+                self.assertEqual(args[1:], ([caption], 240, [legacy["regions"][0]]))
+            self.assertEqual(added["region_revision"], 3)
+            self.assertEqual(added["page"]["regions"], legacy["regions"])
+            self.assertEqual(added["page"]["lines"], [caption])
+            self.assertEqual(store.records([docid]), original_document)
+            self.assertEqual(added["page"]["figures"][0]["id"], "p1-f1")
+            self.assertEqual(added["page"]["figures"][0]["bbox_pt"], [6, 18, 99, 88.5])
+            self.assertEqual(added["page"]["figures"][0]["source_sha256"], docid)
+
     def test_region_refresh_keeps_original_crop_locator_after_restart(self):
         with TemporaryDirectory() as folder, pymupdf.open() as pdf:
             page = pdf.new_page(width=120, height=180)
@@ -127,7 +164,8 @@ class CacheUpgradeTests(TestCase):
                 self.assertFalse(upgraded["region_update_available"])
                 self.assertEqual(store.recognize(docid, 1, region_revision=0), upgraded)
                 self.assertEqual(render.call_count, 2)
-                self.assertEqual(render.call_args.kwargs, {"pages": "1", "lang": "eng", "dpi": 240})
+                self.assertEqual(render.call_args.kwargs, {"pages": "1", "lang": "eng", "dpi": 240,
+                                                           "figure_ocr": {1: old["lines"]}})
             self.assertEqual(store.records([docid])[0], before)
             self.assertEqual(store.pdf(docid), data)
             self.assertEqual(scan_segments(upgraded["page"]), scan_segments(old))

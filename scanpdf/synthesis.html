@@ -320,12 +320,13 @@ function show(data) {
   area.append(navigation);
   const messages = {unconfigured:'此服务尚未启用 DeepSeek。',
     unavailable:'本次未取得 DeepSeek 草稿，页面提供本地证据。',
+    budget_unavailable:'无法为本次 DeepSeek 请求预留预算。页面仍提供本地证据。',
     unverified:'模型输出未通过来源编号和格式检查，页面提供本地证据。',
     insufficient:'至少需要两部作品的摘要证据才能起草比较综述。'};
-  if (messages[data.mode]) area.append(node('p', messages[data.mode]));
+  if (messages[data.mode]) area.append(node('p', data.model_error || messages[data.mode]));
   if (data.paragraphs.length) {
     const draft = section(area, 'draft', '模型综述草稿');
-    draft.append(node('p', '草稿使用最多六部作品的摘录。引用编号已通过检查，请逐段核对论断。'));
+    draft.append(node('p', `${data.model ? data.model + '。' : ''}草稿使用最多六部作品的摘录。引用编号已通过检查，请逐段核对论断。`));
     for (const row of data.paragraphs) {
       const paragraph = node('p', row.text + ' ');
       for (const ref of row.refs) paragraph.append(link('[' + ref + '] ', ref));

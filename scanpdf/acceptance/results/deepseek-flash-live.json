@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "expected_model": "DeepSeek-V4.1-Flash-1017",
+  "model_calls_requested": 0,
+  "scope": "generated public fictional fixture only",
+  "pdf_sha256": "cbc5cc37834a4f39695a2cf2e1393ac5d0ec36c676c70933a45180cbf34e4e49",
+  "search_enabled": false,
+  "fetch_enabled": false,
+  "planned": [
+    "tool_plan",
+    "page_answer",
+    "missing_field"
+  ],
+  "cases": {},
+  "reason": "deepseek_credential_not_configured"
+}

@@ -1,0 +1,311 @@
+{
+  "frozen_revision": "c94c6285d7a1a4e9764644dd35ca6469b3378efe",
+  "sources": {
+    "dpr-dev.pdf": {
+      "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+      "sha256": "2abfc7991519be2b8ce30215905516fdb593218b7bf59e50ece0d8a088a7c4d5",
+      "url": "https://raw.githubusercontent.com/jasleenjk07/research-paper-rag/a47111944d0f5f0923995e12c3d1ae0831c6584f/data/papers/2020.emnlp-main.550-Dense-Passage-Retrieval.pdf"
+    },
+    "sbert-dev.pdf": {
+      "title": "Sentence-BERT for Interpretable Topic Modeling in Web Browsing Data",
+      "sha256": "7f987d9b23e9b3ea6016d55c34dc4af33ebb94e878b7acaa84a18141ede191d8",
+      "url": "https://raw.githubusercontent.com/jasleenjk07/research-paper-rag/a47111944d0f5f0923995e12c3d1ae0831c6584f/data/papers/report017-sentence-bert.pdf"
+    },
+    "repr.pdf": {
+      "title": "Sequence to Sequence Learning with Neural Networks",
+      "sha256": "de493aa7b13e9d61813cec52ff751aedc869ce9ba56ea3dfd4e54297b99195b9",
+      "url": "https://raw.githubusercontent.com/NLPcourse/Representation/6c063e520f4496834d7a944fade39bfa6d2c5cd4/Sequence%20to%20Sequence%20Learning%20with%20Neural%20Networks.pdf"
+    },
+    "language-model-holdout.pdf": {
+      "title": "A Neural Probabilistic Language Model",
+      "sha256": "0bddf9a608d62da449a6413d86cbf6e8b206212595efe0e0a14da0d79d5f4976",
+      "url": "https://raw.githubusercontent.com/tkrsh/Deep-Learning-Papers/40de8d74df9658bf6b775836a3a89379915f3638/A%20Neural%20Probabilistic%20Language%20Model.pdf"
+    }
+  },
+  "cases": [
+    {
+      "id": "similarity",
+      "kind": "supported",
+      "pdf": "dpr-dev.pdf",
+      "question": "What vector similarity did standard DPR use at retrieval time?",
+      "english": "",
+      "hits": [
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          6,
+          11,
+          1
+        ]
+      ],
+      "expected_anchor": [
+        3,
+        2,
+        1
+      ],
+      "required_facts": [
+        "\\bdot product\\b|\\binner product\\b"
+      ],
+      "quote_patterns": [
+        "dot product"
+      ],
+      "forbidden_answer": []
+    },
+    {
+      "id": "epochs",
+      "kind": "supported-two-conditions",
+      "pdf": "dpr-dev.pdf",
+      "question": "用于训练的大小数据集，最多分别训练多少轮？",
+      "english": "What are the respective maximum training epochs for large and small datasets?",
+      "hits": [
+        [
+          5,
+          7,
+          1
+        ],
+        [
+          6,
+          3,
+          1
+        ]
+      ],
+      "expected_anchor": [
+        5,
+        7,
+        1
+      ],
+      "required_facts": [
+        "大(?:型|数据集)[^\\d]{0,20}(?<!\\d)40(?!\\d)",
+        "小(?:型|数据集)[^\\d]{0,20}(?<!\\d)100(?!\\d)"
+      ],
+      "quote_patterns": [
+        "40\\s+epochs",
+        "100\\s+epochs"
+      ],
+      "forbidden_answer": []
+    },
+    {
+      "id": "source-vocabulary",
+      "kind": "specified-condition",
+      "pdf": "repr.pdf",
+      "question": "How many entries were kept in the source-language vocabulary?",
+      "english": "",
+      "hits": [
+        [
+          4,
+          3,
+          1
+        ],
+        [
+          4,
+          2,
+          1
+        ],
+        [
+          5,
+          3,
+          1
+        ]
+      ],
+      "expected_anchor": [
+        4,
+        3,
+        1
+      ],
+      "required_facts": [
+        "\\b160[ ,]?000\\b"
+      ],
+      "quote_patterns": [
+        "160,000",
+        "source language"
+      ],
+      "forbidden_answer": [
+        "\\b80[ ,]?000\\b"
+      ]
+    },
+    {
+      "id": "ap-validation",
+      "kind": "specified-condition",
+      "pdf": "language-model-holdout.pdf",
+      "question": "AP News 语料的验证集准确有多少词？",
+      "english": "How many words are in the AP News validation set exactly?",
+      "hits": [
+        [
+          11,
+          6,
+          1
+        ],
+        [
+          12,
+          5,
+          1
+        ]
+      ],
+      "expected_anchor": [
+        11,
+        6,
+        1
+      ],
+      "required_facts": [
+        "(?<!\\d)963[ ,]?138(?!\\d)"
+      ],
+      "quote_patterns": [
+        "963,138",
+        "validation"
+      ],
+      "forbidden_answer": [
+        "\\b200[ ,]?000\\b",
+        "\\b963[ ,]?071\\b"
+      ]
+    },
+    {
+      "id": "ambiguous-validation",
+      "kind": "ambiguous-condition",
+      "pdf": "language-model-holdout.pdf",
+      "question": "Exactly how many words were reserved for validation?",
+      "english": "",
+      "hits": [
+        [
+          11,
+          6,
+          1
+        ],
+        [
+          12,
+          5,
+          1
+        ]
+      ],
+      "expected_anchor": null,
+      "required_facts": [],
+      "quote_patterns": [],
+      "forbidden_answer": []
+    },
+    {
+      "id": "gpu-memory",
+      "kind": "missing-field",
+      "pdf": "dpr-dev.pdf",
+      "question": "What GPU memory capacity in GiB was reported for the DPR training hardware?",
+      "english": "",
+      "hits": [
+        [
+          5,
+          7,
+          1
+        ],
+        [
+          6,
+          3,
+          1
+        ]
+      ],
+      "expected_anchor": null,
+      "required_facts": [],
+      "quote_patterns": [],
+      "forbidden_answer": []
+    },
+    {
+      "id": "gpu-model",
+      "kind": "missing-field",
+      "pdf": "repr.pdf",
+      "question": "作者用来训练的 GPU 是什么型号？",
+      "english": "What GPU model was used for training?",
+      "hits": [
+        [
+          5,
+          11,
+          1
+        ],
+        [
+          5,
+          3,
+          1
+        ]
+      ],
+      "expected_anchor": null,
+      "required_facts": [],
+      "quote_patterns": [],
+      "forbidden_answer": []
+    },
+    {
+      "id": "lstm-structure",
+      "kind": "supported-two-fields",
+      "pdf": "repr.pdf",
+      "question": "How many layers did the deep LSTM have, and how many cells were in each layer?",
+      "english": "",
+      "hits": [
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          11,
+          1
+        ]
+      ],
+      "expected_anchor": [
+        5,
+        3,
+        1
+      ],
+      "required_facts": [
+        "\\b(?:4|four)\\s+layers?\\b",
+        "\\b(?:1[ ,]?000|one thousand)\\s+cells?\\b"
+      ],
+      "quote_patterns": [
+        "4\\s+layers",
+        "1000\\s+cells"
+      ],
+      "forbidden_answer": []
+    },
+    {
+      "id": "topic-score",
+      "kind": "specified-condition",
+      "pdf": "sbert-dev.pdf",
+      "question": "What Topic Coherence score did the Doc2Vec baseline achieve with a minimum of 3 documents per cluster?",
+      "english": "",
+      "hits": [
+        [
+          2,
+          4,
+          1
+        ],
+        [
+          4,
+          12,
+          1
+        ]
+      ],
+      "expected_anchor": [
+        2,
+        4,
+        1
+      ],
+      "required_facts": [
+        "\\b0\\.448\\b"
+      ],
+      "quote_patterns": [
+        "0\\.448",
+        "Doc2Vec",
+        "3 documents"
+      ],
+      "forbidden_answer": [
+        "\\b0\\.455\\b"
+      ]
+    }
+  ],
+  "generation_sources": {
+    "engine.py": "5d7ffc08e51f57190c4105f247dc51d92d4287297e306b31a97f9128473a62f4",
+    "scanpdf/local_generation.py": "c1ab946f194350a7d8dce23fce666e04ba85bebd9a4910eb491d4975c7b6f345",
+    "scanpdf/evidence_context.py": "381c70db6203af12631525df45746c7f93c5e330933b5347e2a9942a6711fab5",
+    "scanpdf/claim_support.py": "930576a66e117f6fe415489c2da521255d4f796e193e7916447a19b0b88bd095",
+    "scanpdf/grounded_draft.py": "edeb278b44b586b86f115b097639f216d2f3db1e6a085a59fe0db59a63229954",
+    "scanpdf/passage_answer.py": "8d09699eb1d7f94e7325cecf871bfb279aa48abd16bc1db766112e1ae8d4156c",
+    "scanpdf/hybrid_retrieval.py": "dc1e4c118c2b4e8743266fcd3cf17540407b4c3366d85d6ad0328411561e3957"
+  }
+}
