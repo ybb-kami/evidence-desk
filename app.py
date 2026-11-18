@@ -1,11 +1,13 @@
 """Evidence Desk: local single-user PDF workbench; no telemetry or background network."""
 from __future__ import annotations
-import argparse, hashlib, json, os, re, sqlite3, threading
+import argparse, hashlib, json, re, sqlite3, threading
 from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from engine import parse_pdf, find_evidence, duplicates
+from graph import build_graph
+import discover
 import provider
 
 HERE = Path(__file__).resolve().parent
@@ -77,6 +79,12 @@ class Handler(BaseHTTPRequestHandler):
         data=self.rfile.read(n)
         if len(data)!=n: raise Bad(400,'上传未完成。')
         return data
+    def json_request(self):
+        if self.headers.get_content_type()!='application/json': raise Bad(415,'需要 JSON 请求。')
+        try: req=json.loads(self.body(16384))
+        except (ValueError,RecursionError): raise Bad(400,'无法读取 JSON。')
+        if not isinstance(req,dict): raise Bad(400,'请求格式错误。')
+        return req
     def serve(self, post):
         actual_port=self.server.server_port
         known={f'127.0.0.1:{actual_port}',f'localhost:{actual_port}'}
@@ -92,6 +100,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.payload(200,(HERE/filename).read_bytes(),'application/pdf' if path=='/sample.pdf' else 'text/html; charset=utf-8')
             if path=='/api/library':
                 return self.payload(200,{'docs':[summary(d) for d in store.records()], 'deepseek_enabled':self.server.enable_model and provider.configured()})
+            if path=='/api/graph':
+                docs=store.records()
+                return self.payload(200,build_graph(docs) if docs else {'nodes':[],'edges':[]})
             if path.startswith('/pdf/') and ID.fullmatch(path[5:]):
                 data=store.pdf(path[5:])
                 if data is not None: return self.payload(200,data,'application/pdf')
@@ -100,22 +111,36 @@ class Handler(BaseHTTPRequestHandler):
             name=re.sub(r'[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]','_',name.replace('\\','/').split('/')[-1])[:160] or 'document.pdf'
             if self.headers.get_content_type() not in ('application/pdf','application/octet-stream'): raise Bad(415,'请上传 PDF 字节。')
             return self.payload(200,store.add(self.body(UPLOAD_LIMIT),name))
-        elif path in ('/api/search','/api/verify'):
-            if self.headers.get_content_type()!='application/json': raise Bad(415,'需要 JSON 请求。')
-            try: req=json.loads(self.body(16384))
-            except (ValueError,UnicodeError): raise Bad(400,'无法读取 JSON。')
-            if not isinstance(req,dict): raise Bad(400,'请求格式错误。')
+        elif path=='/api/discover':
+            req=self.json_request()
+            if req.get('consent') is not True:
+                raise Bad(403,'请先确认可将本次填写的公开检索词发送给 Crossref。')
+            if set(req)!={'query','consent'}:
+                raise Bad(400,'公开检索只接受手动输入的检索词和本次确认。')
+            result=discover.search_public(req['query'])
+            return self.payload(400 if (result['error'] or {}).get('code')=='invalid_query' else 200,result)
+        elif path in ('/api/search','/api/verify','/api/compare'):
+            req=self.json_request()
             query=req.get('query'); ids=req.get('ids',[])
             if not isinstance(query,str) or not 1<=len(query.strip())<=500: raise Bad(400,'请输入 1 到 500 字的检索词。')
+            try: query=query.strip().encode('utf-8').decode('utf-8')
+            except UnicodeError: raise Bad(400,'检索词包含无效字符。')
             if not isinstance(ids,list) or len(ids)>MAX_DOCS or any(not isinstance(i,str) or not ID.fullmatch(i) for i in ids): raise Bad(400,'文献选择无效。')
+            if path=='/api/compare':
+                if len(ids)!=2 or ids[0]==ids[1]: raise Bad(400,'请选择两篇不同的文献。')
+                by_id={d['id']:d for d in store.records(ids)}
+                if len(by_id)!=2: raise Bad(404,'所选文献不在本地文库中。')
+                return self.payload(200,{'papers':[
+                    {'id':i,'name':by_id[i]['name'],'hits':find_evidence([by_id[i]],query)} for i in ids
+                ]})
             if path=='/api/verify':
                 if req.get('consent') is not True: raise Bad(403,'请先确认可将问题和公开原文摘录发送给 DeepSeek。')
                 if not self.server.enable_model or not provider.configured():
                     return self.payload(200,{'status':'not_configured','quotes':[],'answer':'未启用 DeepSeek。离线检索仍可使用。'})
-            hits=find_evidence(store.records(ids),query.strip())
+            hits=find_evidence(store.records(ids),query)
             if path=='/api/search': return self.payload(200,{'hits':hits})
             if not hits: return self.payload(200,{'status':'insufficient_evidence','quotes':[],'answer':'没有足够原文证据；没有发起模型请求。'})
-            return self.payload(200,provider.summarize(query.strip(),hits))
+            return self.payload(200,provider.summarize(query,hits))
         raise Bad(404,'没有找到资源。')
     def run_request(self,post):
         try: self.serve(post)

@@ -7,6 +7,8 @@ import unicodedata
 
 import fitz
 
+from graph import extract_identity
+
 MAX_BYTES = 24 * 1024 * 1024
 MAX_PAGES = 650
 MAX_CHARS = 2_000_000
@@ -94,6 +96,7 @@ def parse_pdf(data: bytes, name: str) -> dict:
             pages = len(pdf)
             if not 1 <= pages <= MAX_PAGES:
                 raise ValueError("PDF must contain between 1 and 650 pages.")
+            identity = extract_identity(pdf[0])
             for page in pdf:
                 page_num = page.number + 1
                 page_labels.append(page.get_label() or str(page_num))
@@ -139,7 +142,7 @@ def parse_pdf(data: bytes, name: str) -> dict:
         arxiv = {"id": arxiv_id, "version": version}
     return {"id": hashlib.sha256(data).hexdigest(), "name": str(name), "pages": pages,
             "chunks": chunks, "size": len(data), "textless_pages": textless_pages,
-            "page_labels": page_labels, "arxiv": arxiv, "text_hash": content.hexdigest(), "text_chars": chars}
+            "page_labels": page_labels, "arxiv": arxiv, "bibliographic_identity": identity, "text_hash": content.hexdigest(), "text_chars": chars}
 
 
 def find_evidence(docs: list[dict], query: str) -> list[dict]:

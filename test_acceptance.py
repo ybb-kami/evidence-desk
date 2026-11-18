@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent
 SAMPLE = (ROOT / "sample.pdf").read_bytes()
 
 
-class EvidenceDeskAcceptance(unittest.TestCase):
+class LocalHTTPFixture:
     def setUp(self):
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
@@ -36,7 +36,7 @@ class EvidenceDeskAcceptance(unittest.TestCase):
                  "--data", str(self.data)],
                 cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
             )
-            launch.callback(self.stop_server)
+            launch.callback(self.stop_server, self.server)
             for _ in range(100):
                 if self.server.poll() is not None:
                     break
@@ -50,14 +50,15 @@ class EvidenceDeskAcceptance(unittest.TestCase):
             log.seek(0)
             self.fail("Application did not start:\n" + log.read().decode(errors="replace"))
 
-    def stop_server(self):
-        if self.server.poll() is None:
-            self.server.terminate()
+    def stop_server(self, server=None):
+        server = self.server if server is None else server
+        if server.poll() is None:
+            server.terminate()
             try:
-                self.server.wait(timeout=3)
+                server.wait(timeout=3)
             except subprocess.TimeoutExpired:
-                self.server.kill()
-                self.server.wait(timeout=3)
+                server.kill()
+                server.wait(timeout=3)
 
     def request(self, path, data=None, content_type=None):
         request = Request(self.base + path, data=data)
@@ -75,6 +76,7 @@ class EvidenceDeskAcceptance(unittest.TestCase):
         path = "/api/import?name=" + quote(name, safe="")
         return json.loads(self.request(path, content, "application/pdf")[0])
 
+class EvidenceDeskAcceptance(LocalHTTPFixture, unittest.TestCase):
     def test_import_search_source_and_restart(self):
         self.assertEqual(self.read_json("/api/library")["docs"], [])
         self.assertEqual(self.request("/sample.pdf")[0], SAMPLE)
