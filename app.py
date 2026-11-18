@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 from local_ocr_jobs import LocalOCRJobs, OCRJobError
 from reader_cache import ReaderCache
+from subscriptions import Subscriptions, SubscriptionError
 from engine import parse_pdf, find_evidence, duplicates
 from graph import build_graph
 from revisions import describe_revision
@@ -145,7 +146,7 @@ class Handler(BaseHTTPRequestHandler):
                     '/index.html':('index.html','text/html; charset=utf-8'),
                     '/sample.pdf':('sample.pdf','application/pdf'),
                     '/csv-stats.js':('csv-stats.js','application/javascript; charset=utf-8')}
-            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js','scan-sidecar.js','compare-matrix.js'):
+            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js','scan-sidecar.js','compare-matrix.js','workflow-panel.js','subscriptions-ui.js','research_plan.js','research-plan-ui.js','bibliography-ui.js','walkthrough-ui.js'):
                 assets['/'+name]=(name, 'text/css; charset=utf-8' if name.endswith('.css') else 'application/javascript; charset=utf-8')
             if path in assets:
                 filename,mime=assets[path]
@@ -163,6 +164,7 @@ class Handler(BaseHTTPRequestHandler):
                 data=self.server.reader_cache.get(store,path[12:],mode,int(value))
                 if data is None:raise Bad(404,'找不到指定文献。')
                 return self.payload(200,data)
+            if path=='/api/subscriptions':return self.payload(200,self.server.subscriptions.status())
             if path=='/api/ocr':return self.payload(200,self.server.ocr_jobs.status())
             if path.startswith('/api/ocr/result/'):
                 content,name=self.server.ocr_jobs.result(path[len('/api/ocr/result/'):])
@@ -197,6 +199,26 @@ class Handler(BaseHTTPRequestHandler):
             if len(pair)!=2: raise Bad(404,'所选文献不在本地文库中。')
             return self.payload(200,{'before':summary(pair[before]),'after':summary(pair[after]),
                                      **describe_revision(pair[before],pair[after])})
+        elif path=='/api/demo-import':
+            if self.json_request()!={'confirm':True}:raise Bad(400,'请明确确认将两篇原创虚构资料加入本机文库。')
+            records=[]
+            for name in ('A-lantern.pdf','B-cloud.pdf'):
+                entry=store.add((HERE/'demo'/name).read_bytes(),name)
+                if entry.get('archived'):raise Bad(409,'此样例先前已归档，请自行从文库恢复后再试。')
+                records.append(entry['doc'])
+            return self.payload(200,{'docs':records})
+        elif path=='/api/bibliography':
+            from bibliography import export_refs
+            req=self.json_request();ids=req.get('ids')
+            if set(req)!={'ids'} or not isinstance(ids,list) or not 1<=len(ids)<=8 or any(not isinstance(i,str) or not ID.fullmatch(i) for i in ids) or len(set(ids))!=len(ids):raise Bad(400,'请明确选择 1 至 8 篇文献。')
+            by_id={d['id']:d for d in store.records(ids)}
+            if len(by_id)!=len(ids):raise Bad(404,'所选文献不存在。')
+            return self.payload(200,export_refs([by_id[i] for i in ids]))
+        elif path=='/api/subscriptions':
+            return self.payload(200,self.server.subscriptions.configure(self.json_request()))
+        elif path=='/api/subscriptions/read':
+            if self.json_request():raise Bad(400,'清除未读标记不接受其他字段。')
+            return self.payload(200,self.server.subscriptions.mark_read())
         elif path=='/api/ocr':
             docid,=self.document_ids(self.json_request(),'id')
             docs=store.records([docid])
@@ -205,7 +227,7 @@ class Handler(BaseHTTPRequestHandler):
             if doc['pages']>20 or len(doc['textless_pages'])!=doc['pages']:
                 raise Bad(400,'仅支持不超过 20 页且无文本层的活动扫描件。')
             return self.payload(202,self.server.ocr_jobs.start(docid,doc['name'],store.pdf(docid)))
-        elif path in ('/api/questions','/api/compare-evidence'):
+        elif path in ('/api/questions','/api/compare-evidence','/api/workflow'):
             req=self.json_request(); q=req.get('query');ids=req.get('ids')
             if (set(req)!={'query','ids'} or not isinstance(q,str) or not 1<=len(q.strip())<=500 or
                     not isinstance(ids,list) or not (2 if path=='/api/compare-evidence' else 1)<=len(ids)<=8 or
@@ -215,6 +237,9 @@ class Handler(BaseHTTPRequestHandler):
             if len(docs)!=len(ids):raise Bad(404,'未找到所选活动文献。')
             positions={docid:i for i,docid in enumerate(ids)}
             docs.sort(key=lambda doc:positions[doc['id']])
+            if path=='/api/workflow':
+                from workflow import run_workflow
+                return self.payload(200,run_workflow(docs,q.strip(),store.pdf))
             if path=='/api/compare-evidence':
                 from compare_evidence import compare_evidence
                 return self.payload(200,compare_evidence(docs,q.strip()))
@@ -264,7 +289,7 @@ class Handler(BaseHTTPRequestHandler):
         raise Bad(404,'没有找到资源。')
     def run_request(self,post):
         try: self.serve(post)
-        except (Bad,OCRJobError) as e: self.payload(e.code,{'error':e.msg})
+        except (Bad,OCRJobError,SubscriptionError) as e: self.payload(e.code,{'error':e.msg})
         except ValueError as e: self.payload(400,{'error':str(e)})
         except (ConnectionError,TimeoutError): return
         except RuntimeError: self.payload(502,{'error':'操作未完成。模型或解析组件不可用，请检查本机设置。'})
@@ -279,6 +304,8 @@ def main():
     p.add_argument('--enable-deepseek',action='store_true',help='允许用户逐次确认向 DeepSeek 发送问题和证据摘录')
     args=p.parse_args()
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
+    server.subscriptions=Subscriptions(args.data/'arxiv-subscriptions.json')
+    server.subscriptions.start()
     server.reader_cache=ReaderCache()
     server.ocr_jobs=LocalOCRJobs()
     def on_term(*_):raise KeyboardInterrupt
@@ -288,6 +315,7 @@ def main():
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally:
+        server.subscriptions.close()
         server.ocr_jobs.close()
         server.server_close()
 
