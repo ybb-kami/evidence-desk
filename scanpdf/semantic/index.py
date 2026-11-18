@@ -3,10 +3,12 @@
 from collections import OrderedDict
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import threading
 
-from .assets import TOKENIZER, WEIGHTS, model_directory, validate
+from .assets import FILES, REVISION, TOKENIZER, WEIGHTS, model_directory, validate
+from .persistence import VectorCache
 
 
 DIMENSIONS = 384
@@ -20,6 +22,9 @@ MAX_RESULTS = 50
 MIN_PROSE_CHUNKS = 32
 MAX_SCORE_TEXTS = 32
 MAX_SCORE_CHARS = 800
+PASSAGE_PREFIX = "passage: "
+# Bump this when token preparation, pooling, normalization, or row selection changes.
+PREPROCESSING_VERSION = 1
 
 
 MESSAGES = {
@@ -106,6 +111,8 @@ class _Encoder:
 def _key(doc):
     digest = hashlib.sha256()
     for chunk in doc["chunks"]:
+        anchor = [chunk.get(field) for field in ("page", "block", "part", "offset", "source", "arxiv_stamp")]
+        digest.update(json.dumps(anchor, separators=(",", ":")).encode())
         text = chunk["text"].encode("utf-8")
         digest.update(len(text).to_bytes(8, "big"))
         digest.update(text)
@@ -129,10 +136,16 @@ def _passages(chunks):
 
 
 class DenseIndex:
-    """Local lazy singleton per workbench, with an in-memory document vector cache."""
+    """Local passage retrieval with optional, per-library vector persistence."""
 
-    def __init__(self, model_dir=None):
+    def __init__(self, model_dir=None, *, cache_dir=None):
         self.directory = Path(model_dir).expanduser() if model_dir is not None else model_directory()
+        self._storage = None
+        if cache_dir is not None:
+            encoder = [REVISION, FILES, PREPROCESSING_VERSION, MODEL_TOKENS, BATCH_SIZE,
+                       MIN_PROSE_CHUNKS, PASSAGE_PREFIX]
+            signature = hashlib.sha256(json.dumps(encoder, sort_keys=True).encode()).hexdigest()
+            self._storage = VectorCache(cache_dir, signature, DIMENSIONS)
         self._lock = threading.Lock()
         self._encoder = None
         self._cache = OrderedDict()
@@ -153,15 +166,19 @@ class DenseIndex:
             self._encoder = _Encoder(self.directory)
         return self._encoder
 
+    def _remember(self, key, vectors):
+        self._cache[key] = vectors
+        self._cache_bytes += vectors.nbytes
+        while self._cache_bytes > MAX_CACHE_BYTES:
+            _, oldest = self._cache.popitem(last=False)
+            self._cache_bytes -= oldest.nbytes
+
     def _build(self, missing):
-        encoder = self._runtime()
         for key, chunks in missing:
-            vectors = encoder.encode([chunk["text"] for chunk in chunks], "passage: ")
-            self._cache[key] = vectors
-            self._cache_bytes += vectors.nbytes
-            while self._cache_bytes > MAX_CACHE_BYTES:
-                _, oldest = self._cache.popitem(last=False)
-                self._cache_bytes -= oldest.nbytes
+            vectors = self._runtime().encode([chunk["text"] for chunk in chunks], PASSAGE_PREFIX)
+            self._remember(key, vectors)
+            if self._storage is not None:
+                self._storage.save(key, len(chunks), vectors)
 
     def _background(self, missing, scope):
         with self._lock:
@@ -219,8 +236,11 @@ class DenseIndex:
         try:
             if self._preparing:
                 raise DenseUnavailable("index_preparing")
-            candidates = [dict(doc, chunks=_passages(doc["chunks"])) for doc in docs]
-            documents = [(_key(doc), doc) for doc in candidates if doc["chunks"]]
+            documents = []
+            for doc in docs:
+                chunks = _passages(doc["chunks"])
+                if chunks:
+                    documents.append((_key(doc), dict(doc, chunks=chunks)))
             if not documents:
                 return []
             scope = frozenset(key for key, doc in documents)
@@ -230,10 +250,13 @@ class DenseIndex:
                 raise DenseUnavailable(reason)
             missing = {}
             for key, doc in documents:
-                if key in self._cache:
-                    self._cache.move_to_end(key)
-                else:
-                    missing[key] = doc["chunks"]
+                if key not in self._cache:
+                    vectors = self._storage.load(key, len(doc["chunks"])) if self._storage is not None else None
+                    if vectors is None:
+                        missing[key] = doc["chunks"]
+                        continue
+                    self._remember(key, vectors)
+                self._cache.move_to_end(key)
             if sum(map(len, missing.values())) > INLINE_CHUNKS:
                 _check(self.directory, checksum=False)
                 worker = threading.Thread(target=self._background, args=(tuple(missing.items()), scope),
@@ -283,7 +306,7 @@ class DenseIndex:
                 raise DenseUnavailable("index_preparing")
             encoder = self._runtime()
             query_vector = encoder.encode([question], "query: ")[0]
-            vectors = encoder.encode(texts, "passage: ")
+            vectors = encoder.encode(texts, PASSAGE_PREFIX)
             scores = encoder.np.einsum("nd,d->n", vectors, query_vector)
             return scores.clip(-1, 1).tolist()
         finally:

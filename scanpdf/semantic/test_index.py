@@ -1,5 +1,6 @@
 """Check offline dense retrieval and its degradation when the optional model is absent."""
 
+import hashlib
 from pathlib import Path
 import socket
 from tempfile import TemporaryDirectory
@@ -13,8 +14,7 @@ import numpy as np
 
 from engine import parse_pdf
 from . import DenseIndex, DenseUnavailable
-from . import index
-from .assets import WEIGHTS
+from . import assets, index
 
 
 def document(identity, text):
@@ -31,9 +31,11 @@ class DenseIndexTest(unittest.TestCase):
             with self.assertRaises(DenseUnavailable) as missing:
                 index.search([doc], "evidence")
             self.assertEqual(missing.exception.reason, "model_missing")
-            (Path(folder) / WEIGHTS).write_bytes(b"broken")
-            with self.assertRaises(DenseUnavailable) as invalid:
-                index.search([doc], "evidence")
+            (Path(folder) / assets.WEIGHTS).write_bytes(b"broken")
+            expected = hashlib.sha256(b"valid!").hexdigest()
+            with patch.dict(assets.FILES, {assets.WEIGHTS: (6, expected)}, clear=True):
+                with self.assertRaises(DenseUnavailable) as invalid:
+                    index.search([doc], "evidence")
             self.assertEqual(invalid.exception.reason, "model_invalid")
 
     def test_ocr_invalidation_and_selected_scope(self):
