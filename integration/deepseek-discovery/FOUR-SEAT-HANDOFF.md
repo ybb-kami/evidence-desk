@@ -52,7 +52,7 @@ python entry_patch.py "$ENTRY_COPY" --expect-sha256 "$ENTRY_SHA256" > judge-entr
 
 网关沿用 `PrivateNetwork=yes`。接线时设置 `EVIDENCE_JUDGE_PROVIDER`、`EVIDENCE_JUDGE_BUDGET_CONFIG`、`EVIDENCE_JUDGE_SOCKET` 和数字 `EVIDENCE_JUDGE_BROKER_UID`。后两项标识文件系统 AF_UNIX 套接字及代理 UID。套接字目录由代理用户或 root 管理，不得组写；两进程仅共享所需的套接字和唯一账本目录，按最小权限访问同一 SQLite 和 journal。相互核对 Linux SO_PEERCRED。各席 PDF 与浏览器 cookie 保留在原有运行环境。
 
-网关先预留精确发送字节及金额。代理用同一原账本核对模型/工具、请求编号、字节哈希、有效政策和固定价格，在事务中消耗一次性出站票后才发送。限制满、版本核验失败、断线或超时不会自动重试。网关和 worker 无需网络密钥。默认代理命令仅启动离线假供应商。将来获准的外部代理进程可用 `UnixProviderBroker(..., ledger=..., provider_mode="approved_unix", approved_sender=broker_sender.approved_sender(key))`，由该进程从受控运行环境读 key。真实模型 POST 前验证官方目录里的 `deepseek-flash`、Flash 展示名和 `1017` 标记。工具仅访问固定 DeepSeek 目的地，Fetch 限定同席已确认的学术结果。禁止同时启用旧 `ModelBridge`、旧直连工厂或其他单独记账的工作台实例。
+网关先预留精确发送字节及金额。代理用同一原账本核对模型/工具、请求编号、字节哈希、有效政策和固定价格，在事务中消耗一次性出站票后才发送。限制满、版本核验失败、断线或超时不会自动重试。网关和 worker 无需网络密钥。默认代理命令启动离线假供应商。批准模式的同一进程启动参数见[评委页面与供应商回执验收](JUDGE-API-CHECK.md)。将来获准的外部代理进程可用 `UnixProviderBroker(..., ledger=..., provider_mode="approved_unix", approved_sender=broker_sender.approved_sender(key))`，由该进程从受控运行环境读 key。真实模型 POST 前验证官方目录里的 `deepseek-flash`、Flash 展示名和 `1017` 标记。工具仅访问固定 DeepSeek 目的地，Fetch 限定同席已确认的学术结果。禁止同时启用旧 `ModelBridge`、旧直连工厂或其他单独记账的工作台实例。
 
 ## 免费复跑
 

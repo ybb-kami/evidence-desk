@@ -2,9 +2,9 @@
 
 One connection carries a framed JSON header and the exact approved wire bytes,
 followed by one framed JSON response. Dispatch and accounting remain in
-ApprovedGroupCaller and GroupBudget. This module's command runs offline fixtures
-only. A separately authorized process may explicitly inject a fixed-endpoint
-sender, such as broker_sender.approved_sender, without giving the gateway secrets.
+ApprovedGroupCaller and GroupBudget. The command defaults to offline fixtures.
+Explicit approved_unix mode validates the existing finance binding and gives
+only this broker process access to the fixed-endpoint sender's credential.
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -433,6 +433,26 @@ class UnixProviderBroker:
             self.capacity.release()
 
 
+def _broker_key(credential_file):
+    if credential_file is None:
+        key = os.environ.get("DEEPSEEK_API_KEY")
+    else:
+        if not credential_file.is_absolute():
+            raise Denied("invalid credential file")
+        flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK
+        with os.fdopen(os.open(credential_file, flags), "rb") as stream:
+            info = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_uid not in {0, os.geteuid()}
+                    or info.st_mode & 0o077 or not 1 <= info.st_size <= 4096):
+                raise Denied("invalid credential file")
+            key = stream.read(4097).decode("ascii")
+        if key.endswith("\n"):
+            key = key[:-1].removesuffix("\r")
+    if not isinstance(key, str) or not 1 <= len(key) <= 4096:
+        raise Denied("missing or invalid broker credential")
+    return key
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", required=True, type=Path)
@@ -440,6 +460,9 @@ def main():
     parser.add_argument("--socket-gid", type=int)
     parser.add_argument("--timeout", default=45, type=float)
     parser.add_argument("--ledger-config", required=True, type=Path)
+    parser.add_argument("--provider-mode", choices=sorted(PROVIDER_MODES), default="offline_fixture")
+    parser.add_argument("--credential-file", type=Path,
+                        help="Explicit private credential file for approved_unix, such as systemd %d/deepseek-api-key.")
     args = parser.parse_args()
 
     def stop(_signum, _frame):
@@ -457,14 +480,25 @@ def main():
         if (not isinstance(config, dict) or set(config) not in (fields, fields | {"cap_policy"}, fields | {"cap_policy","opening_evidence_sha256"})
                 or not Path(config["path"]).is_absolute()):
             raise ValueError("Invalid explicit ledger configuration.")
+        ledger = GroupBudget(**config)
+        sender = None
+        if args.provider_mode == "approved_unix":
+            with closing(ledger._connect()) as db, db:
+                db.execute("BEGIN")
+                _check_ledger(ledger, db, args.provider_mode)
+            from broker_sender import approved_sender
+            sender = approved_sender(_broker_key(args.credential_file))
         with UnixProviderBroker(args.socket, allow_uids=args.allow_uid, socket_gid=args.socket_gid,
-                                timeout=args.timeout, ledger=GroupBudget(**config)) as broker:
-            print("READY offline Unix provider fixture", flush=True)
+                                timeout=args.timeout, ledger=ledger, provider_mode=args.provider_mode,
+                                approved_sender=sender) as broker:
+            ready = "offline Unix provider fixture" if sender is None else "approved Unix provider broker"
+            print(f"READY {ready}", flush=True)
             broker.serve_forever()
     except KeyboardInterrupt:
         pass
     except (OSError, ValueError, TypeError, sqlite3.Error):
-        parser.exit(1, "Could not start offline Unix provider fixture.\n")
+        label = "offline Unix provider fixture" if args.provider_mode == "offline_fixture" else "approved Unix provider broker"
+        parser.exit(1, f"Could not start {label}.\n")
 
 
 if __name__ == "__main__":
