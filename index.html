@@ -12,13 +12,14 @@
 .search-row{display:flex;gap:8px;margin:8px 0}.search-row input{flex:1;min-width:0;background:white;color:var(--ink);border:1px solid #aeb8ac;border-radius:8px;padding:10px 12px}label[for=query]{font-weight:650;display:block}.rule{margin:22px 0 13px;border:0;border-top:1px solid var(--line)}.empty{border:1px dashed #adb9a9;border-radius:12px;padding:clamp(15px,3vw,30px);margin:12px 0;background:#fafbf5}.empty strong{display:block;margin-bottom:4px}.counter{color:var(--green);background:var(--pale);padding:5px 8px;border-radius:6px}.card-list{display:grid;gap:12px}.evidence{border:1px solid var(--line);border-radius:11px;padding:clamp(12px,1.7vw,20px);min-width:0;overflow-wrap:anywhere;background:white}.evidence h3{font-size:16px;margin:5px 0}.metadata{color:var(--green)}blockquote{margin:14px 0;padding:3px 0 3px 13px;border-left:2px solid #92a68f;white-space:pre-wrap}.compare{margin-top:20px}.compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.compare-grid .evidence{background:#f8faf5}footer{margin:25px 0;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}[hidden]{display:none!important}
 #paper-compare-form label,#discover-form label[for],#graph-node-label{display:block;font-weight:650}select{display:block;width:100%;min-width:0;margin:4px 0 10px;padding:8px;color:var(--ink);background:white;border:1px solid #aeb8ac;border-radius:8px}#graph-content h3,.paper-panel h3{font-size:16px;margin:12px 0}.paper-panel{min-width:0;overflow-wrap:anywhere}.paper-panel h4{margin:4px 0}.paper-panel .evidence h3{display:none}#graph-figure{margin:12px 0}#graph-canvas{background:#f8faf5;border:1px solid var(--line);border-radius:10px;overflow:hidden}#graph-canvas svg{width:100%;max-height:360px;display:block}#graph-canvas svg text{pointer-events:none;font:700 14px system-ui;fill:white}#graph-canvas svg g[data-node]{cursor:pointer}#graph-ranking{padding-left:24px}#graph-ranking li,#graph-key li{overflow-wrap:anywhere;margin:9px 0}.jump-links{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:12px}.hero .jump-links a{color:#e2ebdf}.hero .jump-links a:focus-visible{outline-color:#e2ebdf}#graph-content details{margin-top:14px}
 @media(max-width:760px){.workbench{grid-template-columns:minmax(0,1fr)}.hero{margin-top:20px}.doc-list{max-height:230px;overflow:auto}.compare-grid{grid-template-columns:minmax(0,1fr)}}@media(max-width:390px){.brand small{display:none}.search-row{flex-wrap:wrap}.search-row input{flex-basis:100%}}
+.workbench-tools{display:grid;gap:12px}#csv-workbench label[for=csv-file]{min-width:0}#csv-file{max-width:100%}.csv-scroll{max-width:100%;max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:8px}.csv-scroll table{border-collapse:collapse;width:100%;font-size:13px}.csv-scroll th,.csv-scroll td{white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;min-width:90px;max-width:230px;padding:6px 10px;border-bottom:1px solid var(--line)}.csv-scroll th{background:var(--pale);position:sticky;top:0}#csv-figure{margin:12px 0}#csv-chart svg{display:block;width:100%;min-width:460px;background:#f8faf5}#csv-chart text{fill:var(--ink);font:13px system-ui}#version-results blockquote{max-height:16em;overflow:auto}#version-results{margin-top:10px}#versions-list{max-height:280px;overflow:auto}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">跳转到检索区</a>
 <header><div class="shell mast"><div class="brand"><span class="glyph" aria-hidden="true">◫</span><span>证据台</span><small>EVIDENCE DESK</small></div><span class="tag">本地工作区</span></div></header>
 <div class="shell">
-<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#paper-compare">分篇检索</a><a href="#citation-graph">本地引文图</a><a href="#public-discovery">公开文献发现</a></nav></section>
+<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#paper-compare">分篇检索</a><a href="#citation-graph">本地引文图</a><a href="#public-discovery">公开文献发现</a><a href="#version-management">版本与归档</a><a href="#csv-workbench">CSV 图表</a></nav></section>
 <div class="workbench">
 <aside class="panel" aria-labelledby="library-title"><div class="library-head"><div><div class="eyebrow">01 / 文献库</div><h2 id="library-title">本地文献</h2></div><span class="counter" id="library-count">—</span></div>
 <input id="files" type="file" accept=".pdf,application/pdf" multiple hidden><button class="primary full" type="button" id="choose">＋ 导入 PDF</button>
@@ -75,8 +76,32 @@
 </section>
 </main>
 </div>
+<div class="workbench-tools">
+<section class="panel compare" id="version-management" tabindex="-1" aria-labelledby="version-title">
+<div class="eyebrow">07 / 版本管理</div><h2 id="version-title">版本差异与可恢复归档</h2>
+<p class="subtle">导入时保留各版本，不自动覆盖。归档会暂时移出活动检索和引文图，保留原件且可以恢复。</p>
+<details><summary>查看和恢复已归档原件</summary><ul class="doc-list" id="versions-list"></ul></details>
+<form id="version-form">
+<div class="compare-grid"><label for="version-before">旧版或比较起点<select id="version-before"></select></label><label for="version-after">新版或比较终点<select id="version-after"></select></label></div>
+<div class="actions"><button type="submit" id="version-diff" class="primary" disabled>比较文本差异</button><button type="button" id="version-supersede" disabled>保留终点，归档起点</button></div>
+<p class="subtle">比较由左到右，只核对提取文本的变化，不等同于作者修订说明。使用右侧按钮替换活动版本时，仍须通过服务端的同作品核验。</p>
+</form>
+<p id="version-status" role="status" class="subtle"></p><div id="version-results"></div>
+</section>
+<section class="panel compare" id="csv-workbench" tabindex="-1" aria-labelledby="csv-title">
+<div class="eyebrow">08 / 数据与图注</div><h2 id="csv-title">本地 CSV 图表</h2>
+<p class="subtle" id="csv-help">选择带首行列名的 UTF-8 逗号分隔文件。文件只在当前网页内读取，不上传、不保存。上限 512 KiB、5000 行、40 列；接受小数或科学计数法，不把逗号千分位、缩写或单位当作数值。</p>
+<div class="actions"><label for="csv-file">选择 CSV：<input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"></label><button id="csv-clear" type="button" class="compact">清空 CSV</button></div>
+<p id="csv-status" role="status" class="subtle">尚未选择数据。</p>
+<div id="csv-result" hidden>
+<div class="compare-grid"><label for="csv-column">数值列<select id="csv-column"></select></label><label for="csv-mode">图形<select id="csv-mode"><option value="line">折线图</option><option value="bar">柱状图</option></select></label></div>
+<figure id="csv-figure"><div id="csv-chart" class="csv-scroll" tabindex="0" aria-label="图形显示区，可横向滚动"></div><figcaption id="csv-caption"></figcaption></figure>
+<details><summary>查看 CSV 原始表格（最多前 100 行）</summary><div class="csv-scroll" id="csv-table" tabindex="0" aria-label="CSV 数据表，可滚动"></div></details>
+</div></section>
+</div>
 <footer class="subtle"><span>证据台 · 本地文献检索</span><span>摘录用于定位，引用前请核对 PDF 原页。</span></footer>
 </div>
+<script src="/csv-stats.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -126,6 +151,11 @@ function renderDocs() {
     label.append(checkbox, el('span', 'doc-title', doc.name));
     const detail = el('div', 'doc-detail subtle');
     detail.append(el('span', '', doc.pages + ' 页'), source(doc.id, null, '打开 PDF ↗'));
+    const archive = el('button','compact','归档');
+    archive.type = 'button';
+    archive.setAttribute('aria-label','归档 ' + doc.name);
+    archive.onclick = () => versionMutation('archive',{id:doc.id},'已归档：' + doc.name + '。可在「版本与归档」恢复。');
+    detail.append(archive);
     row.append(label, detail);
     if (doc.textless_pages?.length) {
       row.append(el('div', 'doc-detail subtle', doc.textless_pages.length === doc.pages ?
@@ -143,8 +173,11 @@ async function refreshDocs() {
   $('verify-form').hidden = !deepseekEnabled;
   renderVerifyEligibility();
   selected = new Set(docs.filter(doc => selected.has(doc.id) || !previous.has(doc.id)).map(doc => doc.id));
+  for (const [key,hit] of compared) if (!docs.some(doc => doc.id === hit.id)) compared.delete(key);
+  renderComparison();
   renderDocs();
   refreshPaperSelects();
+  await refreshArchive();
 }
 function state(head, detail, busy = false) {
   $('status').hidden = false;
@@ -190,7 +223,7 @@ $('files').onchange = async () => {
       const result = await api('/api/import?name=' + encodeURIComponent(file.name), {
         method:'POST', headers:{'Content-Type':'application/pdf'}, body:file
       });
-      notices.push(result.existing ? file.name + '：已存在，未重复导入。' : file.name + '：已导入。');
+      notices.push(result.existing ? file.name + (result.archived ? '：已有相同的归档原件，请从「版本与归档」恢复。' : '：已存在，未重复导入。') : file.name + '：已导入。');
       for (const match of result.duplicates || []) {
         const detail = Object.hasOwn(duplicateLabels, match.reason) ? duplicateLabels[match.reason] : '请复核是否为同一文献';
         const prefix = match.reason === 'identical_bytes' ? '重复文件：' : '可能重复：';
@@ -601,6 +634,271 @@ $('discover-form').onsubmit = async event => {
     }
   }
 };
+let archivedDocs = [], archiveRefreshVersion = 0, versionRun = 0, versionBusy = false, versionController;
+const versionIds = ['version-before','version-after'];
+const versionChoices = () => versionIds.map(id => $(id).value);
+const versionLookup = id => docs.concat(archivedDocs).find(doc => doc.id === id);
+function versionEligibility() {
+  const [before,after] = versionChoices();
+  const distinct = before && after && before !== after;
+  $('version-diff').disabled = versionBusy || !!versionController || !distinct;
+  $('version-supersede').disabled = versionBusy || !distinct || ![before,after].every(id => docs.some(doc => doc.id === id));
+}
+function resetVersionDiff(status = '') {
+  versionRun++;
+  versionController?.abort();
+  versionController = undefined;
+  $('version-results').replaceChildren();
+  $('version-status').textContent = status;
+  versionEligibility();
+}
+function refreshVersionChoices() {
+  for (const pickerId of versionIds) {
+    const picker = $(pickerId);
+    const previous = picker.value;
+    const placeholder = el('option','','请选择原件');
+    placeholder.value = '';
+    picker.replaceChildren(placeholder,...docs.concat(archivedDocs).map(doc => {
+      const opt = el('option','',(docs.some(active => active.id === doc.id) ? '' : '【归档】') + doc.name);
+      opt.value = doc.id;
+      return opt;
+    }));
+    picker.value = versionLookup(previous) ? previous : '';
+  }
+  versionEligibility();
+}
+async function refreshArchive() {
+  const run = ++archiveRefreshVersion;
+  try {
+    const data = await api('/api/archive');
+    if (run !== archiveRefreshVersion) return;
+    archivedDocs = data.docs;
+    $('versions-list').replaceChildren(...archivedDocs.map(doc => {
+      const row = el('li','');
+      const restore = el('button','compact','恢复');
+      restore.type = 'button';
+      restore.setAttribute('aria-label','恢复 ' + doc.name);
+      restore.onclick = () => versionMutation('restore',{id:doc.id},'已恢复到活动文库：' + doc.name);
+      const links = el('div','actions');
+      links.append(source(doc.id,null,'打开 PDF ↗'),restore);
+      row.append(el('strong','',doc.name),links);
+      return row;
+    }));
+    if (!archivedDocs.length) $('versions-list').append(el('li','subtle','暂无归档原件。'));
+  } catch (error) {
+    if (run !== archiveRefreshVersion) return;
+    $('versions-list').replaceChildren(el('li','subtle','暂时无法读取归档：' + error.message));
+  } finally {
+    if (run === archiveRefreshVersion) refreshVersionChoices();
+  }
+}
+function postJson(body,signal) {
+  return {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal};
+}
+async function versionMutation(action, payload, message) {
+  if (versionBusy) return;
+  versionBusy = true;
+  resetVersionDiff('正在更新本地版本状态…');
+  try {
+    await api('/api/' + action,postJson(payload));
+    invalidateGraph();
+    try { await refreshDocs(); scopeChanged(); }
+    catch (error) { message += ' 列表未刷新，请刷新页面：' + error.message; }
+    $('version-status').textContent = message;
+    $('import-log').className = 'subtle log';
+    $('import-log').textContent = message;
+  } catch (error) {
+    $('version-status').textContent = '未完成版本操作：' + error.message;
+    if (action === 'archive') {
+      $('import-log').className = 'subtle log';
+      $('import-log').textContent = $('version-status').textContent;
+    }
+  } finally {
+    versionBusy = false;
+    versionEligibility();
+  }
+}
+versionIds.forEach(id => $(id).addEventListener('change',() => resetVersionDiff()));
+$('version-supersede').onclick = () => {
+  const [archive_id,keep_id] = versionChoices();
+  if ($('version-supersede').disabled) return;
+  const prior = versionLookup(archive_id), next = versionLookup(keep_id);
+  if (!confirm('保留「' + next.name + '」为活动版本，并归档「' + prior.name + '」？归档可以恢复。')) return;
+  versionMutation('supersede',{keep_id,archive_id},'已保留 ' + next.name + '，并归档 ' + prior.name + '。');
+};
+$('version-form').onsubmit = async event => {
+  event.preventDefault();
+  if ($('version-diff').disabled) return;
+  const [before_id,after_id] = versionChoices();
+  resetVersionDiff('正在比较两份 PDF 的提取文本…');
+  const run = versionRun;
+  versionController = new AbortController();
+  versionEligibility();
+  try {
+    const data = await api('/api/revisions',postJson({before_id,after_id},versionController.signal));
+    if (run !== versionRun) return;
+    if (data.status === 'insufficient_text') {
+      $('version-status').textContent = '至少一份原件没有足够的可提取文字，无法比较；不代表两个版本相同。';
+      return;
+    }
+    const labels = {added:'增加',removed:'移除',replaced:'替换',equal:'相同'};
+    const items = Array.isArray(data.changes) ? data.changes : [];
+    const list = el('ul','card-list');
+    for (const item of items) {
+      const row = el('li','evidence');
+      const grid = el('div','compare-grid');
+      for (const [key,id,heading] of [['before',before_id,'起点'],['after',after_id,'终点']]) {
+        const part = el('div','paper-panel');
+        part.append(el('h4','',heading));
+        for (const anchor of item[key] || []) {
+          part.append(source(id,anchor.page,'第 ' + anchor.page + ' 页' +
+            (anchor.page_label && String(anchor.page_label) !== String(anchor.page) ? '（' + anchor.page_label + '）' : '') +
+            ' · 文本块 ' + anchor.block + ' ↗'),el('blockquote','',anchor.text));
+          if (anchor.clipped) part.append(el('p','subtle','仅展示块首摘录，请打开原页核对。'));
+        }
+        if (!item[key]?.length) part.append(el('p','subtle','此侧无对应文本块。'));
+        else if (item[key + '_blocks'] > item[key].length) part.append(el('p','subtle',
+          '本组共 ' + item[key + '_blocks'] + ' 块，仅展示前 ' + item[key].length + ' 块。'));
+        grid.append(part);
+      }
+      row.append(el('h3','',labels[item.kind] || '差异'),grid);
+      list.append(row);
+    }
+    $('version-results').replaceChildren(list);
+    const counts = Object.entries(labels).filter(([key]) => data.counts?.[key] !== undefined)
+      .map(([key,label]) => label + ' ' + data.counts[key]);
+    $('version-status').textContent = (counts.length ? '提取文本块计数：' + counts.join(' · ') + '。' : '') +
+      (items.length ? '打开页码链接可复核。' : '没有可列出的文本差异。') +
+      (data.truncated ? ' 结果有截断，未列出全部差异。' : '') +
+      ((data.text_coverage?.before_textless_pages || data.text_coverage?.after_textless_pages) ?
+        ' 起点/终点各有 ' + data.text_coverage.before_textless_pages + ' / ' +
+        data.text_coverage.after_textless_pages + ' 页无可检索文本。' : '');
+  } catch (error) {
+    if (run === versionRun) $('version-status').textContent = '无法比较：' + error.message;
+  } finally {
+    if (run === versionRun) {
+      versionController = undefined;
+      versionEligibility();
+    }
+  }
+};
+
+let csvData, csvRun = 0;
+function drawCSV() {
+  if (!csvData) return;
+  const csv = globalThis.EvidenceDeskCSV;
+  const mode = $('csv-mode').value || 'line';
+  const stats = csv.analyze(csvData,Number($('csv-column').value),mode);
+  $('csv-caption').textContent = stats.caption;
+  const available = stats.visible.filter(value => value !== null);
+  if (!available.length) {
+    $('csv-chart').replaceChildren(el('p','empty','图中没有可画的数值；请查看图注或表格。'));
+    return;
+  }
+  const W = 680, H = 310, L = 108, R = 24, T = 24, B = 57;
+  const floor = mode === 'bar' ? Math.min(0,...available) : Math.min(...available);
+  const ceiling = mode === 'bar' ? Math.max(0,...available) : Math.max(...available);
+  const lower = floor === ceiling ? floor - (Math.abs(floor) || 1) * .04 : floor;
+  const upper = floor === ceiling ? ceiling + (Math.abs(ceiling) || 1) * .04 : ceiling;
+  const count = stats.visible.length, dx = (W - L - R) / count;
+  const px = i => L + (i + .5) * dx;
+  const py = n => T + (upper - n) / (upper - lower) * (H - T - B);
+  const chart = svg('svg',{viewBox:'0 0 ' + W + ' ' + H,role:'img','aria-labelledby':'csv-svg-title csv-svg-desc'});
+  const title = svg('title',{id:'csv-svg-title'});
+  const desc = svg('desc',{id:'csv-svg-desc'});
+  title.textContent = mode === 'bar' ? '按原始行序的柱状图' : '按原始行序的折线图';
+  desc.textContent = stats.caption;
+  chart.append(title,desc);
+  function label(x,y,text,align) {
+    const t = svg('text',{x,y,'text-anchor':align});
+    t.textContent = text;
+    chart.append(t);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = T + i * (H - T - B) / 4;
+    const value = i === 4 ? lower : upper - i * (upper - lower) / 4;
+    chart.append(svg('line',{x1:L,y1:y,x2:W-R,y2:y,stroke:'#d9dcd3'}));
+    label(L-9,y+4,csv.format(value),'end');
+  }
+  if (lower < 0 && upper > 0) chart.append(svg('line',{x1:L,y1:py(0),x2:W-R,y2:py(0),stroke:'#8d978e'}));
+  let prev = null;
+  stats.visible.forEach((value,i) => {
+    const x = px(i);
+    if (i === 0 || i === count - 1 || (i + 1) % Math.max(3, Math.ceil(count / 8)) === 0)
+      label(x,H-B+23,String(i+1),'middle');
+    if (value === null) { prev = null; return; }
+    const y = py(value);
+    if (mode === 'line' && prev) chart.append(svg('line',{x1:prev[0],y1:prev[1],x2:x,y2:y,stroke:'#234e3c','stroke-width':2}));
+    const mark = mode === 'bar' && value !== 0
+      ? svg('rect',{x:x-Math.min(dx*.3,19),y:Math.min(y,py(0)),width:Math.min(dx*.6,38),height:Math.abs(y-py(0)),fill:'#234e3c'})
+      : svg('circle',{cx:x,cy:y,r:mode === 'bar' ? 2.5 : 3.8,fill:'#234e3c'});
+    const tip = svg('title');
+    tip.textContent = '数据第 ' + (i+1) + ' 行：' + csv.format(value);
+    mark.append(tip);
+    chart.append(mark);
+    prev = [x,y];
+  });
+  label((L+W-R)/2,H-8,'数据行序（表头不计入）','middle');
+  $('csv-chart').replaceChildren(chart);
+}
+function resetCSV(message) {
+  csvData = undefined;
+  $('csv-result').hidden = true;
+  $('csv-status').textContent = message;
+  $('csv-table').replaceChildren();
+  $('csv-chart').replaceChildren();
+  $('csv-caption').textContent = '';
+  $('csv-column').replaceChildren();
+}
+$('csv-clear').onclick = () => {
+  csvRun++; $('csv-file').value = ''; resetCSV('已清空 CSV。');
+};
+$('csv-file').onchange = async () => {
+  const file = $('csv-file').files[0];
+  const run = ++csvRun;
+  resetCSV(file ? '正在本机读取 CSV…' : '尚未选择数据。');
+  if (!file) return;
+  try {
+    const csv = globalThis.EvidenceDeskCSV;
+    if (!csv) throw Error('本地 CSV 组件未载入，请重启程序并刷新。');
+    if (file.size > csv.MAX_BYTES) throw Error('CSV 超过 512 KiB。');
+    const bytes = await file.arrayBuffer();
+    if (run !== csvRun) return;
+    let text;
+    try { text = new TextDecoder('utf-8',{fatal:true}).decode(bytes); }
+    catch { throw Error('无法按 UTF-8 读取，请将文件另存为 UTF-8 CSV。'); }
+    csvData = csv.parse(text);
+    const table = el('table');
+    const title = el('caption','subtle','原始数据预览（前 ' + Math.min(csvData.rows.length,100) + ' 行，共 ' + csvData.rows.length + ' 行）');
+    const head = el('thead'), labels = el('tr'), body = el('tbody');
+    for (const header of ['数据行',...csvData.headers]) {
+      const th = el('th','',header);
+      th.scope = 'col';
+      labels.append(th);
+    }
+    head.append(labels);
+    csvData.rows.slice(0,100).forEach((cells,i) => {
+      const tr = el('tr');
+      tr.append(...[i+1,...cells].map(value => el('td','',String(value))));
+      body.append(tr);
+    });
+    table.append(title,head,body);
+    $('csv-table').replaceChildren(table);
+    $('csv-column').replaceChildren(...csvData.headers.map((header,i) => {
+      const option = el('option','',header); option.value = String(i); return option;
+    }));
+    $('csv-column').value = String(Math.max(0,csvData.headers.findIndex((header,i) => csv.analyze(csvData,i,'line').used > 0)));
+    $('csv-status').textContent = file.name + '：' + csvData.rows.length + ' 行 × ' + csvData.headers.length + ' 列，数据未上传。';
+    drawCSV();
+    $('csv-result').hidden = false;
+  } catch (error) {
+    if (run === csvRun) resetCSV('无法读取：' + error.message);
+  } finally {
+    if (run === csvRun) $('csv-file').value = '';
+  }
+};
+$('csv-column').addEventListener('change',drawCSV);
+$('csv-mode').addEventListener('change',drawCSV);
 discoveryEligibility();
 refreshDocs().catch(error => {
   $('import-log').className = 'subtle log';

@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from engine import parse_pdf, find_evidence, duplicates
 from graph import build_graph
+from revisions import describe_revision
 import discover
 import provider
 
@@ -25,13 +26,19 @@ class Library:
         self.lock = threading.Lock()
         with closing(sqlite3.connect(self.db)) as c:
             c.execute('CREATE TABLE IF NOT EXISTS docs(id TEXT PRIMARY KEY, record TEXT NOT NULL, pdf BLOB NOT NULL)')
+            c.execute('CREATE TABLE IF NOT EXISTS archive(id TEXT PRIMARY KEY)')
             c.commit()
-    def records(self, ids=None):
+    def records(self, ids=None, *, archived=False):
         with closing(sqlite3.connect(self.db)) as c:
+            # None asks for both states; always bind document IDs separately.
+            filters, params = [], []
+            if archived is not None:
+                filters.append(('' if archived else 'NOT ') + 'EXISTS (SELECT 1 FROM archive WHERE archive.id=docs.id)')
             if ids:
-                rows = c.execute('SELECT record FROM docs WHERE id IN ('+','.join('?'*len(ids))+') ORDER BY rowid DESC',ids)
-            else:
-                rows = c.execute('SELECT record FROM docs ORDER BY rowid DESC')
+                filters.append('id IN ('+','.join('?'*len(ids))+')')
+                params.extend(ids)
+            where = ' WHERE ' + ' AND '.join(filters) if filters else ''
+            rows = c.execute('SELECT record FROM docs'+where+' ORDER BY rowid DESC',params)
             return [json.loads(x[0]) for x in rows]
     def pdf(self, docid):
         with closing(sqlite3.connect(self.db)) as c:
@@ -40,10 +47,15 @@ class Library:
     def add(self, data, name):
         digest = hashlib.sha256(data).hexdigest()
         with self.lock, closing(sqlite3.connect(self.db)) as c:
-            row = c.execute('SELECT record FROM docs WHERE id=?',(digest,)).fetchone()
+            c.execute('BEGIN IMMEDIATE')
+            row = c.execute('SELECT record, EXISTS (SELECT 1 FROM archive WHERE archive.id=docs.id) '
+                            'FROM docs WHERE id=?',(digest,)).fetchone()
             if row:
                 doc = summary(json.loads(row[0]))
-                return {'doc':doc,'duplicates':[{'id':doc['id'],'name':doc['name'],'reason':'identical_bytes'}],'existing':True}
+                result = {'doc':doc,'duplicates':[{'id':doc['id'],'name':doc['name'],'reason':'identical_bytes'}],'existing':True}
+                if row[1]:
+                    result['archived'] = True
+                return result
             count,total,chars = c.execute('SELECT COUNT(*), COALESCE(SUM(length(pdf)),0), COALESCE(SUM(length(record)),0) FROM docs').fetchone()
             if count >= MAX_DOCS or total+len(data)>MAX_STORAGE:
                 raise ValueError('本地文库达到容量上限。请换用新的数据目录。')
@@ -53,6 +65,31 @@ class Library:
             if len(record)+chars>MAX_TEXT: raise ValueError('文库索引达到容量上限，请使用新数据目录。')
             with c: c.execute('INSERT INTO docs VALUES (?,?,?)',(digest,record,data))
             return {'doc':summary(doc),'duplicates':related,'existing':False}
+    def set_archived(self, docid, archived):
+        with self.lock, closing(sqlite3.connect(self.db)) as c, c:
+            c.execute('BEGIN IMMEDIATE')
+            row = c.execute('SELECT record FROM docs WHERE id=?',(docid,)).fetchone()
+            if not row: raise Bad(404,'所选文献不在本地文库中。')
+            if archived:
+                c.execute('INSERT OR IGNORE INTO archive VALUES (?)',(docid,))
+            else:
+                c.execute('DELETE FROM archive WHERE id=?',(docid,))
+            return {'doc':summary(json.loads(row[0])),'archived':archived}
+    def supersede(self, keep, previous):
+        with self.lock, closing(sqlite3.connect(self.db)) as c, c:
+            c.execute('BEGIN IMMEDIATE')
+            rows = c.execute('SELECT id, record FROM docs WHERE id IN (?,?) '
+                             'AND NOT EXISTS (SELECT 1 FROM archive WHERE archive.id=docs.id)',(keep,previous))
+            pair = {docid:json.loads(record) for docid,record in rows}
+            if len(pair) != 2: raise Bad(409,'两份文献都必须仍在活动文库中。')
+            hints = duplicates(pair[keep],[pair[previous]])
+            if not any((h['reason']=='identical_extracted_text')
+                       or (h.get('arxiv_id') and h.get('new_version') and h.get('existing_version')
+                           and h['new_version']!=h['existing_version'] and h['score']>=0.65)
+                       for h in hints):
+                raise Bad(409,'没有足够的同作品线索。可保留两份，或单独归档指定文献。')
+            c.execute('INSERT INTO archive VALUES (?)',(previous,))
+            return {'doc':summary(pair[keep]),'archived_doc':summary(pair[previous])}
 
 class Bad(Exception):
     def __init__(self, code, msg): self.code,self.msg = code,msg
@@ -85,6 +122,12 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError,RecursionError): raise Bad(400,'无法读取 JSON。')
         if not isinstance(req,dict): raise Bad(400,'请求格式错误。')
         return req
+    def document_ids(self, req, *fields):
+        ids = [req.get(key) for key in fields]
+        if set(req)!=set(fields) or any(not isinstance(i,str) or not ID.fullmatch(i) for i in ids):
+            raise Bad(400,'文献选择无效。')
+        if len(set(ids))!=len(ids): raise Bad(400,'请选择两份不同的文献。')
+        return ids
     def serve(self, post):
         actual_port=self.server.server_port
         known={f'127.0.0.1:{actual_port}',f'localhost:{actual_port}'}
@@ -95,11 +138,17 @@ class Handler(BaseHTTPRequestHandler):
         u = urlsplit(self.path); path=u.path
         store=self.server.library
         if not post:
-            if path in ('/','/index.html','/sample.pdf'):
-                filename='sample.pdf' if path=='/sample.pdf' else 'index.html'
-                return self.payload(200,(HERE/filename).read_bytes(),'application/pdf' if path=='/sample.pdf' else 'text/html; charset=utf-8')
+            assets={'/':('index.html','text/html; charset=utf-8'),
+                    '/index.html':('index.html','text/html; charset=utf-8'),
+                    '/sample.pdf':('sample.pdf','application/pdf'),
+                    '/csv-stats.js':('csv-stats.js','application/javascript; charset=utf-8')}
+            if path in assets:
+                filename,mime=assets[path]
+                if (HERE/filename).is_file(): return self.payload(200,(HERE/filename).read_bytes(),mime)
             if path=='/api/library':
                 return self.payload(200,{'docs':[summary(d) for d in store.records()], 'deepseek_enabled':self.server.enable_model and provider.configured()})
+            if path=='/api/archive':
+                return self.payload(200,{'docs':[summary(d) for d in store.records(archived=True)]})
             if path=='/api/graph':
                 docs=store.records()
                 return self.payload(200,build_graph(docs) if docs else {'nodes':[],'edges':[]})
@@ -111,6 +160,18 @@ class Handler(BaseHTTPRequestHandler):
             name=re.sub(r'[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]','_',name.replace('\\','/').split('/')[-1])[:160] or 'document.pdf'
             if self.headers.get_content_type() not in ('application/pdf','application/octet-stream'): raise Bad(415,'请上传 PDF 字节。')
             return self.payload(200,store.add(self.body(UPLOAD_LIMIT),name))
+        elif path in ('/api/archive','/api/restore'):
+            docid,=self.document_ids(self.json_request(),'id')
+            return self.payload(200,store.set_archived(docid,path=='/api/archive'))
+        elif path=='/api/supersede':
+            keep,previous=self.document_ids(self.json_request(),'keep_id','archive_id')
+            return self.payload(200,store.supersede(keep,previous))
+        elif path=='/api/revisions':
+            before,after=self.document_ids(self.json_request(),'before_id','after_id')
+            pair={d['id']:d for d in store.records([before,after],archived=None)}
+            if len(pair)!=2: raise Bad(404,'所选文献不在本地文库中。')
+            return self.payload(200,{'before':summary(pair[before]),'after':summary(pair[after]),
+                                     **describe_revision(pair[before],pair[after])})
         elif path=='/api/discover':
             req=self.json_request()
             if req.get('consent') is not True:
