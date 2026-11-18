@@ -86,7 +86,60 @@
     '  App -.->|配置后逐次同意，查询与摘录| DeepSeek',
     ''
   ].join('\n');
-  const api = {paper,mermaid,MAX_TOPIC,MAX_EVIDENCE};
+  // Each line is an author-supplied chain. Repeated labels represent shared nodes.
+  function methodDiagram(input) {
+    if (typeof input !== 'string' || !input.trim() || input.length > 4000)
+      throw new Error('请输入方法步骤，每行用 → 或 -> 连接。');
+    const labels = new Map(), edges = new Set();
+    for (const line of input.split(/\r?\n/).filter(s => s.trim())) {
+      const chain = line.split(/→|->/).map(s => s.trim());
+      if (chain.length < 2 || chain.some(s => !s || s.length > 100 || /[\u0000-\u001f\u007f]/.test(s)))
+        throw new Error('每行至少需要两个步骤，每个步骤为 1 至 100 个字符。');
+      for (const text of chain) if (!labels.has(text)) labels.set(text, 'n' + labels.size);
+      for (let i = 1; i < chain.length; i++) edges.add(labels.get(chain[i-1]) + ' -> ' + labels.get(chain[i]));
+    }
+    if (labels.size > 60 || edges.size > 100) throw new Error('单图最多 60 个步骤、100 条连接。');
+    const lines = ['digraph Method {', '  rankdir=LR;', '  node [shape=box];'];
+    for (const [label,id] of labels) lines.push('  ' + id + ' [label=' + JSON.stringify(label) + '];');
+    for (const edge of edges) lines.push('  ' + edge + ';');
+    return [...lines, '}', ''].join('\n');
+  }
+
+  function attachDiagram(panel) {
+    const doc = panel.ownerDocument;
+    const label = doc.createElement('label');
+    label.htmlFor = 'method-steps';
+    label.textContent = '论文方法图 · 用箭头连接步骤，相同名称会合并为同一节点';
+    const steps = doc.createElement('textarea');
+    steps.id = label.htmlFor;
+    steps.rows = 3;
+    steps.maxLength = 4000;
+    steps.placeholder = '输入文献 → 编码 → 排序\n排序 → 原文核对';
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = 'compact';
+    button.textContent = '下载方法图 DOT';
+    const message = doc.createElement('p');
+    message.setAttribute('role','status');
+    button.onclick = () => {
+      let source;
+      try { source = methodDiagram(steps.value); }
+      catch (err) { message.textContent = err.message; return; }
+      const link = doc.createElement('a');
+      link.href = URL.createObjectURL(new Blob([source],{type:'text/vnd.graphviz;charset=utf-8'}));
+      link.download = 'paper-method.dot';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      message.textContent = '已生成 Graphviz DOT，可编辑后渲染。';
+    };
+    panel.append(label,steps,button,message);
+  }
+
+  const api = {paper,mermaid,methodDiagram,MAX_TOPIC,MAX_EVIDENCE};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  else root.EvidenceDeskWriting = api;
+  else {
+    root.EvidenceDeskWriting = api;
+    const panel = root.document && root.document.getElementById('writing-workbench');
+    if (panel) attachDiagram(panel);
+  }
 })(globalThis);

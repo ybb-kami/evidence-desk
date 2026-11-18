@@ -25,3 +25,12 @@ assert.match(mermaid,/逐次同意，仅公开关键词/);
 assert.match(mermaid,/User --> CSV/);
 assert.doesNotMatch(mermaid,/https?:\/\/|<script|click /);
 console.log('Writing scaffold and fixed Mermaid architecture tests passed');
+
+const {methodDiagram} = require('./writing.js');
+const method = methodDiagram('文献 → 编码 → 排序\n网络 -> 编码\n编码 → 排序');
+assert.equal((method.match(/label=/g) || []).length, 4);
+assert.equal((method.match(/ -> /g) || []).length, 3);
+assert.ok(method.includes('n3 -> n1;'));
+assert.ok(methodDiagram('引用 "A" -> 比较').includes(JSON.stringify('引用 "A"')));
+assert.throws(() => methodDiagram('数据 → '));
+assert.throws(() => methodDiagram('孤立步骤'));
