@@ -1,0 +1,7 @@
+# Evidence-linked synthesis candidate (not deployed)
+Separate optional preview beside the 994abd4 workbench. It does not replace the frozen app or the reviewed deployment gateway. For an offline preview run:
+python gateway/preview_launcher.py --app /absolute/path/evidence-desk/app.py --private-dir /private/new-run --port 8819
+
+Use a new seat and select 2–6 papers. Each must provide eligible non-bibliographic evidence in this flow; otherwise it abstains. The browser shows exact outgoing JSON plus local page/block links. With no model transport configured the preview remains available but sending is disabled. In a configured test, consent is bound to the selected seat and both wire and local anchor fingerprints; expiry, altered evidence, changed locations, or replay invalidates the ticket. The result is a draft requiring human review, never a certified scientific conclusion. It is not an open-domain chat system.
+
+Acceptance: actual local HTTP with public Attention v1/v7 and ACL BERT, a fake provider transport, two isolated browser sessions, one-use consent, source rechecks. No paid API call or public hosting is claimed. Run python -m unittest discover and python test_actual_http.py --app PATH/app.py --docs PATH/1706.03762v1.pdf PATH/N19-1423.pdf. JavaScript coverage: syntax validation; no actual browser demonstration of this new candidate yet. The earlier 14-second film is of frozen 994abd4, not of this candidate.
