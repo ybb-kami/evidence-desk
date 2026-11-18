@@ -1,5 +1,7 @@
 # 证据台评委版运行交接
 
+产品提交 `90f8f04` 的实测已单独汇总。[本轮 18 项考察点、公开同题对照和新盲测](acceptance/REVIEW-90f8f04.md)
+
 青海大学袁瑞，个人赛，报名编号 `26CZB0001406`。参赛材料为技术 PDF、可编辑源稿和普通话演示视频。本次优化代码位于私有分支 `improve/grounded-retrieval`。
 
 ## 在独立目录启动
@@ -50,3 +52,5 @@ python3.12 -m venv .venv
 第一项在无凭据环境验证 HTTP 协议，第二项使用临时文库，须先把 EVIDENCE_BUDGET_DB 设为与正式演示共用的持久账本绝对路径；在精确型号、凭据和费率等条件具备时进行真实验收；此脚本使用新生成的公开样本文档。阅读和扫描的浏览器复验另需 Playwright 和 Chromium。本云端未持有 DeepSeek 密钥，未产生实际模型、搜索或抓取费用。前期本地模型的历史成绩与本次 Flash 验收分开报告。[模型验收记录](acceptance/DEEPSEEK-ACCEPTANCE.md) · [扫描图版验收](acceptance/FIGURE-REGIONS.md) · [同一套公开题对照](acceptance/PUBLIC-REPLAY-49fb098.md)
 
 [13 页技术说明](delivery/technical-report-zh-49fb098.pdf) · [可编辑源稿](delivery/technical-report-source-49fb098.zip) · [7 分钟普通话视频，录制版 5203688](delivery/evidence-desk-mandarin-1080p-5203688c.mp4)
+
+补充材料对应产品提交 `90f8f04`。三页核验摘要列出 18 个评分考察点的实测与缺口，62.5 秒录屏展示教材原页定位，片中使用本地证据。 [核验摘要 PDF](delivery/verification-90f8f04.pdf) · [教材真实操作补充视频](delivery/long-book-90f8f04.mp4) · [录制与文件校验](delivery/long-book-90f8f04.json)

@@ -1,0 +1,193 @@
+{
+  "source_commit": "90f8f044d660305b6a37ad2f7740d22363ae193a",
+  "source_sha256": {
+    "app.py": "f7b528730f7765fc242a32bd685be0d8562229255caf4a214a79f8f8eab8ef75",
+    "engine.py": "5d7ffc08e51f57190c4105f247dc51d92d4287297e306b31a97f9128473a62f4",
+    "scanpdf/workbench.py": "e2965e47e7a8e1a521946ef2be61ad43cca69501aeb0ce36d3ece393dadf905e",
+    "scanpdf/followup.py": "9701f7cdccacc069282d573af8ddbf59d8c8bf1dcf42d0cd89d7aa28f5cbb5aa",
+    "scanpdf/followup.html": "44f870db4fee938b6cebd5e3fdace25528765d6258a0ade16577930864ba73ea",
+    "scanpdf/book_index.py": "a48f24ff6712e9aa095fe0f851ae6648c2f381dcc9716517d2ea142d31b97135",
+    "scanpdf/book_exercises.py": "58a70b6f8bdbf01875cf72bcf89e55d8bac58d09f74a0b4acba86335c96b1918",
+    "scanpdf/source_locator.py": "5905d3888515cbd4eb3801584dd5ff1344f63ba3e10a8613e9984be1dff9fb11",
+    "scanpdf/source.html": "492c0c78e963f4679f05baa501ddf8999544d0cd5dd5428f3f147f87d138e8c5",
+    "scanpdf/source.js": "b46863ab3a726ecdeed8e531460f13176d889fbcdd365dedb12d8405531468f7"
+  },
+  "pdf_sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+  "institution": "青海大学",
+  "entrant": "袁瑞",
+  "event": "个人赛",
+  "type": "真实 Chromium 补充片段",
+  "external_model_calls": 0,
+  "actual_http_asset_sha256": {
+    "/followup": "44f870db4fee938b6cebd5e3fdace25528765d6258a0ade16577930864ba73ea",
+    "/source": "492c0c78e963f4679f05baa501ddf8999544d0cd5dd5428f3f147f87d138e8c5",
+    "/source.js": "b46863ab3a726ecdeed8e531460f13176d889fbcdd365dedb12d8405531468f7"
+  },
+  "loopback_base": "http://127.0.0.1:37351",
+  "chromium": "156.0.8078.79",
+  "index": {
+    "question": "教材末页索引将 Wasserstein GAN 指向哪些印刷页？",
+    "answer": "索引词「Wasserstein GAN」列出的印刷页码为 281–286、300。索引条目位于 PDF 物理第 541 页（PDF 页标签 527）。",
+    "term": "Wasserstein GAN",
+    "printed_pages": [
+      "281–286",
+      "300"
+    ],
+    "physical_page": 541,
+    "page_label": "527",
+    "anchor": {
+      "id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+      "page": 541,
+      "block": 3,
+      "part": 1,
+      "start": 47,
+      "end": 76
+    },
+    "source_viewer_path": "/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=541&block=3&part=1&start=47&end=76"
+  },
+  "exercise": {
+    "question": "教材习题8.9要求在哪三个维度采样标准正态分布？",
+    "answer": "题干要求在 25、100、500 维采样。",
+    "status": "located",
+    "number": "8.9",
+    "family": "problem",
+    "page": 151,
+    "pages": [
+      151
+    ],
+    "field": "sampling_dimensions",
+    "values": [
+      "25",
+      "100",
+      "500"
+    ],
+    "anchor": {
+      "id": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+      "page": 151,
+      "block": 10,
+      "part": 1,
+      "page_label": "137",
+      "start": 134,
+      "end": 306
+    },
+    "source_viewer_path": "/source?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=151&block=10&part=1&start=134&end=306"
+  },
+  "returned_url": "http://127.0.0.1:37351/followup?id=f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32&page=151&block=10&part=1",
+  "returned_scope": "检索范围：物理页 151 · 文本块 10 · 摘录 1",
+  "local_http_requests": [
+    [
+      "GET",
+      "/api/library"
+    ],
+    [
+      "POST",
+      "/api/followup"
+    ],
+    [
+      "GET",
+      "/api/source"
+    ],
+    [
+      "GET",
+      "/api/library"
+    ],
+    [
+      "POST",
+      "/api/followup"
+    ],
+    [
+      "GET",
+      "/api/source"
+    ],
+    [
+      "GET",
+      "/api/library"
+    ],
+    [
+      "GET",
+      "/api/source"
+    ]
+  ],
+  "blocked_external_origins": [],
+  "recorded_seconds": 62.5,
+  "frames": 750,
+  "changed_frames": 61,
+  "captions": [
+    {
+      "seconds": 0,
+      "text": "补充片段  ·  青海大学  袁瑞  ·  个人赛     |     证据台：541 页教材原文核验"
+    },
+    {
+      "seconds": 4.999,
+      "text": "在 541 页教材中提问：书末索引将 Wasserstein GAN 指向哪些印刷页？"
+    },
+    {
+      "seconds": 11.25,
+      "text": "索引回答：印刷页 281–286、300。点击「定位原文」核对书末条目。"
+    },
+    {
+      "seconds": 19.139,
+      "text": "原件物理页 541（页标签 527）。绿色标记来自原 PDF 的精确字符位置。"
+    },
+    {
+      "seconds": 30.864,
+      "text": "返回教材，查询习题 8.9 的采样维度。"
+    },
+    {
+      "seconds": 35.895,
+      "text": "题干要求在 25、100、500 维采样。点击「定位原文」查看出处。"
+    },
+    {
+      "seconds": 44.87,
+      "text": "习题 8.9 的原文位于物理页 151（页标签 137）。核对高亮采样维度。"
+    },
+    {
+      "seconds": 56.558,
+      "text": "点击「在此段追问」后，回到同一文献、同一物理页和文本块。"
+    }
+  ],
+  "video": {
+    "duration_seconds": 62.5,
+    "resolution": "1920x1080",
+    "frame_rate": 24,
+    "audio_tracks": 0,
+    "codec": "H.264",
+    "bytes": 1262948,
+    "sha256": "db1bc6122dfbaf2390b445dce585f871b6c11f4bd63d3d79324da0b5d6698546",
+    "decoded_without_errors": true
+  },
+  "review_frames": [
+    {
+      "seconds": 2.1,
+      "visual_check": "片头署名和教材选择可读",
+      "png_sha256": "a829d1efbbd0959e8a435319252e681b46435c8b166165ef0b4f217599605cbd"
+    },
+    {
+      "seconds": 13.35,
+      "visual_check": "索引答句和定位原文链接可见",
+      "png_sha256": "7c3124a17d35fefe264b8edefe288d29b979d87ea6b7b563d890abcfd77bfeb6"
+    },
+    {
+      "seconds": 21.239,
+      "visual_check": "物理 541 / 页标签 527 与绿色原页高亮清晰",
+      "png_sha256": "944f63a301cefa1e31a332f16eafdf6a31304449f1aca61a2fe3bd3cffcb3a00"
+    },
+    {
+      "seconds": 37.995,
+      "visual_check": "习题 8.9 的 25、100、500 维字段与定位链接可读",
+      "png_sha256": "1a7bb54e60c5376715656c45995a511b0fd1de57a4da1f4fb5e00f30b2c3cd82"
+    },
+    {
+      "seconds": 46.97,
+      "visual_check": "物理 151 / 页标签 137 与高亮题干清晰",
+      "png_sha256": "798c4c44e0445daaaa9eb5b776a4ffdb56760bd4090b8f726dc8143c563772e4"
+    },
+    {
+      "seconds": 58.658,
+      "visual_check": "回到物理 151、文本块 10、摘录 1 的范围可读",
+      "png_sha256": "d8fc42c89c7a9d24afa16f91cb97f3b4ea458c323b318a05de077fc2bbaf73b0"
+    }
+  ],
+  "playback": "真实本机 Chromium 录制，后期仅添加字幕、扩充编码帧率。",
+  "workspace": "干净检出，单独临时文库，回环地址在录制结束后释放。"
+}

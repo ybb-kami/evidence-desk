@@ -61,3 +61,26 @@ python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --gpt
 四篇文献的综述来源可另行用 `python scanpdf/acceptance/synthesis_browser.py /path/to/pdf` 复测。浏览器从工作台进入综述页，全选后核对所返回的 4 个摘要、1 条引文及 2 条未来工作摘录。七条均与对应 PDF 原块一致。可选模型生成仅通过协议测试。
 
 [原包浏览器答题结果](results/questions-contest.json)、[补入 GPT-2 的结果](results/questions-extra-gpt2.json)、[扫描定位](results/scan.json)、[批量入库](results/corpus.json)和[长文档检索](results/longdoc.json)保留了本次运行的机器输出。两组问答结果各自列出所选原件的 SHA-256、返回答案及证据页块。
+
+## 两套资料各复测全部 15 个题目实例
+
+`official_round.py` 把五道单篇题和 BERT 对照分别在 Attention v1、v7 上复测，再回答三道 GPT 跨篇题。两个资料设置都跑相同的 15 个实例，每题分别使用直接 HTTP 和 Chromium 页面表单。每次执行使用新的本地文库。报告逐题保留答案、缺口、原件哈希、所需证据、实际引文及定位原页的点击结果，并检查原 PDF 链接返回的字节哈希。多篇结果可按页面的文库顺序排列，报告同时记录证据成员和顺序是否一致。
+
+在待复测的仓库根目录、已安装 PyMuPDF、Playwright 和 Chromium 的环境中运行。GPT-2 补充 PDF 须单独提供，脚本会验证其 SHA-256。没有外部模型开关或密钥也可复测。
+
+```sh
+python scanpdf/acceptance/official_round.py /path/to/contest-pdf \
+  --chromium /path/to/chromium --check --output /tmp/ed-round-official-original.json
+python scanpdf/acceptance/official_round.py /path/to/contest-pdf \
+  --gpt2 /path/to/supplement/GPT2-course.pdf --chromium /path/to/chromium \
+  --check --output /tmp/ed-round-official-supplement.json
+```
+
+可用 `--expect-sha <完整提交 SHA>` 核对当前 Git 提交。`--check` 在预期答案、缺件提示或原页高亮出现回归时返回非零退出码，完整报告仍会写入指定路径。环境可沿用同一份本机 E5 和翻译资产。
+
+| `90f8f04` 资料设置 | HTTP 正确回答且证据齐全 | Chromium 正确回答且证据齐全 | Chromium 原页链接及高亮 |
+| --- | ---: | ---: | ---: |
+| 原始赛题资料 | 12/15 | 12/15 | 42/42 |
+| 补入 GPT-2 原件 | 15/15 | 15/15 | 49/49 |
+
+仅使用原始资料时，三道 GPT 题都明确报告缺少 GPT-2 原件。两题仍有部分证据，一题未命中必需证据。补入材料的 SHA-256 为 `d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e`。GPT-1 图 1 的残差相加后归一化由原物理页 4 的图示人工复查。两个入口的答案、缺口和证据成员逐题一致。逐题记录可由上述命令生成。此处统计固定赛题原问，其他问题的效果需通过独立验收评估。

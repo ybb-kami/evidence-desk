@@ -1,0 +1,133 @@
+{
+  "product_sha": "90f8f044d660305b6a37ad2f7740d22363ae193a",
+  "official_question_instances": {
+    "official-original.json": {
+      "http": {
+        "answer": {
+          "supported": 12,
+          "missing": 3
+        },
+        "evidence": {
+          "complete": 12,
+          "partial": 2,
+          "missing": 1
+        },
+        "dom_passed": null,
+        "citations_opened": null,
+        "citations_passed": null
+      },
+      "browser": {
+        "answer": {
+          "supported": 12,
+          "missing": 3
+        },
+        "evidence": {
+          "complete": 12,
+          "partial": 2,
+          "missing": 1
+        },
+        "dom_passed": 15,
+        "citations_opened": 42,
+        "citations_passed": 42
+      }
+    },
+    "official-with-gpt2.json": {
+      "http": {
+        "answer": {
+          "supported": 15
+        },
+        "evidence": {
+          "complete": 15
+        },
+        "dom_passed": null,
+        "citations_opened": null,
+        "citations_passed": null
+      },
+      "browser": {
+        "answer": {
+          "supported": 15
+        },
+        "evidence": {
+          "complete": 15
+        },
+        "dom_passed": 15,
+        "citations_opened": 49,
+        "citations_passed": 49
+      }
+    }
+  },
+  "preloaded_pdfs": 39,
+  "version_check": {
+    "score": 0.72,
+    "v7_retained_and_v1_restored": true
+  },
+  "ocr": {
+    "pages": 15,
+    "indexed_blocks": 248
+  },
+  "graph": {
+    "nodes": 38,
+    "edges": 75,
+    "verified_edge_anchors": 75
+  },
+  "short_concurrency": {
+    "book_paper": {
+      "passed": 39
+    },
+    "short_soak_sequences": 48
+  },
+  "model_check": {
+    "provider": "DeepSeek-V4.1-Flash-1017",
+    "status": "blocked",
+    "reason": "server_model_not_configured",
+    "real_model_calls": 0,
+    "real_search_calls": 0,
+    "real_fetch_calls": 0
+  },
+  "charts": {
+    "renderer": "Mermaid 11.12.0",
+    "bundle_sha256": "07e37dfa97b337ccc85365d57eddf99b9706f09db3b59b260d0333b23b343c4b",
+    "chromium_network": "offline for render; workbench loopback only",
+    "external_requests": 0,
+    "mtcars_sha256": "4d6dfa9b029dbcc15333a6e3598803fae8ae7c4d08605040b1706e6367695058",
+    "mtcars_rendered_nodes": 36,
+    "mtcars_rendered_edges": 45,
+    "original_export_replayed": true,
+    "reserved_character_labels_exact": true,
+    "reserved_graph_rendered_nodes": 4,
+    "reserved_graph_rendered_edges": 3,
+    "nile_sha256": "d0452bea38c61e796a4eeb950bf91d20fb5c7f13d5822eadf5990fe54f9c8d07",
+    "nile_chart_vertices_verified": 100,
+    "scientific_notation_vertices_verified": 3,
+    "nile_axis_units": [
+      "年",
+      "10⁸ m³"
+    ],
+    "fallback_cases": [
+      "missing_y",
+      "missing_x",
+      "invalid",
+      "duplicate",
+      "irregular",
+      "flowchart_point_limit",
+      "malformed_mermaid"
+    ]
+  },
+  "long_book": {
+    "regression": {
+      "full_source_at_8": "9/10",
+      "correct_final_fields": "0/10"
+    },
+    "fresh_blind": {
+      "full_source_at_8": "2/4",
+      "correct_final_fields": "0/4",
+      "specific_gaps": "2/2"
+    }
+  },
+  "unit_tests": {
+    "runner": "unittest",
+    "tests": 206,
+    "skipped": 0,
+    "result": "OK"
+  }
+}
