@@ -2,7 +2,7 @@
 from contextlib import closing
 from pathlib import Path
 import argparse,sqlite3,json
-from group_budget import CAP,GROUPS,NANO,Denied,GroupBudget,_pairs
+from group_budget import CAP,GROUPS,NANO,Denied,GroupBudget,_pairs,read_opening_reserve
 
 
 def _usd(nano):
@@ -20,12 +20,16 @@ def audit(path,*,budget=None):
     try:
         with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True)) as c:
             c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+            opening=None
+            historical_amount=historical_groups=0
             if budget is None:
                 if c.execute('PRAGMA user_version').fetchone()!=(0,):
                     raise Denied('operator configuration required for cap policy')
+                read_opening_reserve(c,required=False)
             else:
                 budget._time()
-                budget._check_cap_marker(c)
+                opening=budget._check_cap_marker(c,verify_live=True)
+                historical_amount,historical_groups=budget._opening_totals(opening)
                 if c.execute('SELECT hash FROM conf').fetchall()!=[(budget.config,)]:
                     raise Denied('configuration does not bind ledger')
             if c.execute('PRAGMA quick_check').fetchone()!=('ok',) or c.execute('PRAGMA foreign_key_check').fetchone():raise Denied('ledger integrity')
@@ -34,9 +38,27 @@ def audit(path,*,budget=None):
             for kind,n,low,hi,charge in c.execute('SELECT op,count(*),min(nano),max(nano),sum(nano) FROM spend GROUP BY op'):
                 if kind not in NANO or not low==hi==NANO[kind] or n>groups:raise Denied('unknown or altered rate or operation')
                 ops[kind]=n;total+=charge
-            if groups>GROUPS or total>cap or c.execute('SELECT 1 FROM spend GROUP BY gid,op HAVING count(*)!=1 LIMIT 1').fetchone():raise Denied('cap or uniqueness violation')
-            return {'groups_with_reservations':groups,'reserved_operations':ops,'reserved_nano_usd':total,
+            combined_groups=groups+historical_groups
+            combined_amount=total+historical_amount
+            if combined_groups>GROUPS or combined_amount>cap or c.execute('SELECT 1 FROM spend GROUP BY gid,op HAVING count(*)!=1 LIMIT 1').fetchone():raise Denied('cap or uniqueness violation')
+            result={'groups_with_reservations':groups,'reserved_operations':ops,'reserved_nano_usd':total,
                     'reserved_usd':_usd(total),'limit_nano_usd':cap,'provider_invoiced_amount':'not_observed'}
+            if opening is not None:
+                result.update({'historical_opening_reserve':{
+                        'historical_requests':historical_groups,
+                        'booked_upper_bound_nano_usd':opening['reserved_nano_usd'],
+                        'effective_upper_bound_nano_usd':historical_amount,
+                        'effective_upper_bound_usd':_usd(historical_amount),
+                        'usd_component_nano':opening['usd_component_nano'],
+                        'cny_component_nano':opening['cny_component_nano'],
+                    },
+                    'groups_counting_toward_limit':combined_groups,
+                    'total_reserved_nano_usd':combined_amount,
+                    'total_reserved_usd':_usd(combined_amount),
+                    'remaining_group_capacity':GROUPS-combined_groups,
+                    'remaining_nano_usd':cap-combined_amount,
+                })
+            return result
     except sqlite3.Error:
         raise Denied('ledger integrity') from None
 
@@ -53,7 +75,7 @@ if __name__=='__main__':
         except (OSError,ValueError,RecursionError):
             p.error('could not read operator configuration')
         fields={'path','approval_sha','price_sha','verified_epoch','expiry_epoch','seat_groups'}
-        if not isinstance(config,dict) or not fields<=set(config)<=fields|{'cap_policy'}:
+        if not isinstance(config,dict) or not fields<=set(config)<=fields|{'cap_policy','opening_evidence_sha256'}:
             p.error('invalid operator configuration fields')
         try:
             budget=GroupBudget(**config)

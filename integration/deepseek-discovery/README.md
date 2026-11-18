@@ -21,3 +21,5 @@
 ```sh
 python -m unittest discover -s integration/deepseek-discovery -p test_single_paper_http.py -v
 ```
+
+对于两笔库外历史请求，请先核对供应商 usage、账单或实际请求上界，再按[首次启用说明](OPENING-RESERVE.md)接入同一份预算。

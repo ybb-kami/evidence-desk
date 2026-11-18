@@ -4,6 +4,7 @@ from contextlib import closing
 from dataclasses import asdict
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import shutil
 import sqlite3
@@ -16,6 +17,7 @@ from discovery_tickets import Ledger as ToolLedger
 from group_dispatch import ApprovedGroupCaller
 from legacy_ledger import MigrationDenied, _group_config, adopt_legacy_snapshot, require_migrated_policy
 from legacy_ledger import renew_policy_in_place, rollback_check, upgrade_policy_in_place
+from opening_reserve import SCHEMA, canonical_bytes, provision_opening, witness_path
 
 
 def fingerprint(data):
@@ -312,11 +314,11 @@ class LegacyLedgerTest(unittest.TestCase):
         self.check_error("ledger_instance_mismatch",
                          lambda: rollback_check(self.path, migration_sha=receipt["migration_sha"]))
 
-    def refreshed(self, *, rate="10", path=None, day=181):
+    def refreshed(self, *, rate="10", path=None, day=181, **options):
         price = {**self.price, "verified_epoch": day, "expiry_epoch": day + 80, "price_sha": identity(("price", day))}
         fx = {"cny_per_usd_upper": rate, "fx_source_sha256": identity(("FX", day)),
               "fx_verified_epoch": day, "fx_expiry_epoch": day + 70}
-        return GroupBudget(path or self.path, **price, cap_policy=fx)
+        return GroupBudget(path or self.path, **price, cap_policy=fx, **options)
 
     def renew(self, previous, target, **overrides):
         options = dict(snapshot=self.backup, snapshot_sha=fingerprint(self.backup.read_bytes()), writers_stopped=True)
@@ -385,6 +387,103 @@ class LegacyLedgerTest(unittest.TestCase):
             self.assertEqual(db.execute("SELECT hash FROM conf").fetchone(), (self.new.config,))
             self.assertEqual(json.loads(db.execute("SELECT metadata FROM legacy_migration").fetchone()[0])["migration_sha"],
                              initial["migration_sha"])
+
+    def opening_ledger(self):
+        project = self.folder / "opening-project"
+        project.mkdir(mode=0o700)
+        proof_dir = project / "proofs"
+        proof_dir.mkdir(mode=0o700)
+        opening_path = project / "opening.sqlite"
+        records = []
+        for run, currency, upper in (("direct-test", "USD", "0.1"), ("app-smoke", "CNY", "2.4")):
+            raw = f"Synthetic evidence fixture for {run}.\n".encode()
+            source = fingerprint(raw)
+            (proof_dir / (source + ".proof")).write_bytes(raw)
+            records.append({"kind": "provider_billing_upper", "runs": [run], "source_sha256": source,
+                            "attempts_upper": 1, "includes_all_attempts_and_pending": True,
+                            "currency": currency, "amount_upper": upper})
+        evidence = {"schema": SCHEMA, "ledger_path_sha256": fingerprint(os.fsencode(opening_path)),
+                    "opening_fx_cny_per_usd_upper": "8", "runs": ["direct-test", "app-smoke"], "records": records}
+        digest = fingerprint(canonical_bytes(evidence))
+        ledger = GroupBudget(opening_path, **self.price, cap_policy=self.new_policy, opening_evidence_sha256=digest)
+        opened = provision_opening(ledger, evidence, proof_dir=proof_dir, no_existing_project_ledger=True, writers_stopped=True)
+        self.assertEqual(opened["action"], "opened_with_historical_upper_bound")
+        with closing(ledger._connect()) as db:
+            receipt = require_migrated_policy(ledger, db)
+        return ledger, digest, receipt
+
+    def test_opening_is_bound_and_kept_out_of_dispatch_and_rollback(self):
+        ledger, digest, receipt = self.opening_ledger()
+        self.assertEqual(receipt["opening_reserve"]["evidence_sha256"], digest)
+        self.assertEqual(receipt["opening_effective_nano_usd"], 400_000_000)
+        self.assertEqual(receipt["historical"]["reservations"], 0)
+        self.check_error("opening_reserve_nonrefundable",
+                         lambda: rollback_check(ledger.path, migration_sha=receipt["migration_sha"]))
+        with closing(ledger._connect()) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM spend").fetchone(), (0,))
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM groups_").fetchone(), (0,))
+            self.assertEqual(require_migrated_policy(ledger, db)["migration_sha"], receipt["migration_sha"])
+            witness = witness_path(ledger.path)
+            held = witness.with_name("held-by-test")
+            witness.rename(held)
+            try:
+                with self.assertRaisesRegex(Denied, "opening authority missing or changed"):
+                    require_migrated_policy(ledger, db)
+                with self.assertRaisesRegex(Denied, "opening authority missing or changed"):
+                    rollback_check(ledger.path, migration_sha=receipt["migration_sha"])
+            finally:
+                held.rename(witness)
+        copy = self.folder / "opening-copy.sqlite"
+        shutil.copyfile(ledger.path, copy)
+        copied = GroupBudget(copy, **self.price, cap_policy=self.new_policy, opening_evidence_sha256=digest)
+        with closing(copied._connect()) as db:
+            self.check_error("ledger_instance_mismatch", lambda: require_migrated_policy(copied, db))
+            self.check_error("ledger_instance_mismatch",
+                             lambda: rollback_check(copied.path, migration_sha=receipt["migration_sha"]))
+
+        with closing(ledger._connect()) as db, db:
+            db.execute("UPDATE opening_reserve SET reserved_nano_usd=0")
+            with self.assertRaises(Denied):
+                require_migrated_policy(ledger, db)
+
+    def test_opening_renewal_requires_same_evidence_and_reprices_without_releasing_reserve(self):
+        ledger, digest, first = self.opening_ledger()
+        self.reserve(ledger, 2, "search")
+        self.path = ledger.path
+        self.snapshot()
+        self.now = 182
+        without_opening = self.refreshed(rate="6")
+        wrong_digest = self.refreshed(rate="6", opening_evidence_sha256=identity("other evidence"))
+        self.check_error("invalid_policy_transition", lambda: self.renew(ledger, without_opening))
+        self.check_error("invalid_policy_transition", lambda: self.renew(ledger, wrong_digest))
+        too_small = self.refreshed(rate="70", opening_evidence_sha256=digest)
+        with self.assertRaises(Denied):
+            self.renew(ledger, too_small)
+        target = self.refreshed(rate="6", opening_evidence_sha256=digest)
+        witness = witness_path(ledger.path)
+        original_witness = witness.read_bytes()
+        changed_witness = json.loads(original_witness)
+        changed_witness["opening_evidence_sha256"] = identity("tampered witness")
+        witness.write_bytes(canonical_bytes(changed_witness))
+        try:
+            with self.assertRaisesRegex(Denied, "opening authority missing or changed"):
+                self.renew(ledger, target)
+        finally:
+            witness.write_bytes(original_witness)
+        second = self.renew(ledger, target)
+        self.assertEqual(second["opening_reserve"], first["opening_reserve"])
+        self.assertEqual(second["opening_effective_nano_usd"], 500_000_000)
+        self.assertEqual(second["historical"]["reserved_nano_usd"], NANO["search"])
+        self.assertEqual(second["new_admissions"], 1)
+        self.assertEqual(second["kind"], "opening_in_place")
+        self.assertEqual(second["predecessor_migration_sha"], first["migration_sha"])
+        self.assertEqual(self.renew(ledger, target)["action"], "already_renewed")
+        self.check_error("unverified_migration", lambda: rollback_check(target.path, migration_sha=first["migration_sha"]))
+        self.check_error("opening_reserve_nonrefundable",
+                         lambda: rollback_check(target.path, migration_sha=second["migration_sha"]))
+        with closing(target._connect()) as db:
+            self.assertEqual(require_migrated_policy(target, db)["opening_effective_nano_usd"], 500_000_000)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM spend").fetchone(), (1,))
 
 
 if __name__ == "__main__":

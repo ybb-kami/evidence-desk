@@ -117,7 +117,7 @@ def click_original(context, citation, origin, digest, pdf):
     assert context.request.get(origin + '/pdf/' + digest).body() == pdf
 
 
-def collect(browser, origin, pdf, ledger_path):
+def collect(browser, origin, pdf, ledger_path, *, opening_fixture=False):
     digest = sha256(pdf).hexdigest()
     external_attempts = []
 
@@ -133,7 +133,10 @@ def collect(browser, origin, pdf, ledger_path):
             return db.execute('SELECT op, nano, wire_sha FROM spend ORDER BY rid').fetchall()
 
     historical = reservations()
-    assert len(historical) == 1 and historical[0][:2] == ('search', NANO['search'])
+    if opening_fixture:
+        assert historical == []  # opening liabilities are stored separately from live spend
+    else:
+        assert len(historical) == 1 and historical[0][:2] == ('search', NANO['search'])
     with ExitStack() as clients:
         def new_visitor():
             context = browser.new_context(service_workers='block')
@@ -253,30 +256,82 @@ def collect_attention(browser, origin, pdf):
             'provider_mode':'offline_fixture', 'actual_paid_calls':0}
 
 
-def run(chromium, attention=None):
+def make_opening_fixture(config, fx, root):
+    from group_budget import VERSION
+    from opening_reserve import SCHEMA, canonical_bytes, provision_opening
+
+    proof_dir = root / 'synthetic-proofs'
+    proof_dir.mkdir(mode=0o700)
+
+    def fixture_proof(payload):
+        raw = canonical_bytes({'fixture_only': True, **payload})
+        fingerprint = sha256(raw).hexdigest()
+        (proof_dir / (fingerprint + '.proof')).write_bytes(raw)
+        return fingerprint
+
+    prices = {'input_nano_usd_per_token_upper':300, 'output_nano_usd_per_token_upper':1200,
+              'other_nano_usd_per_attempt_upper':0}
+    price_sha = fixture_proof({'kind':'synthetic pricing upper bounds', **prices})
+    fx = dict(fx, fx_source_sha256=fixture_proof({'synthetic_cny_per_usd_upper':fx['cny_per_usd_upper']}))
+    runs = [('direct-test', 64), ('app-smoke', 1200)]
+    records = []
+    for label, max_output in runs:
+        bounds = {'model_release':VERSION, 'input_tokens_per_attempt_upper':2**20,
+                  'output_tokens_per_attempt_upper':max_output}
+        source = fixture_proof({'simulated_historical_run':label, 'attempts_upper':1, **bounds})
+        records.append({'kind':'request_cost_upper', 'runs':[label], 'attempts_upper':1,
+                        'includes_all_attempts_and_pending':True, 'source_sha256':source,
+                        'pricing_source_sha256':price_sha, **bounds, **prices})
+    inventory = {'schema':SCHEMA, 'ledger_path_sha256':sha256(os.fsencode(config['path'])).hexdigest(),
+                 'opening_fx_cny_per_usd_upper':fx['cny_per_usd_upper'], 'runs':[label for label, _ in runs],
+                 'records':records}
+    config.update(cap_policy=fx, opening_evidence_sha256=sha256(canonical_bytes(inventory)).hexdigest(),
+                  price_sha=price_sha, approval_sha=fixture_proof({'synthetic_approved_cny_limit':20}))
+    ledger = GroupBudget(**config)
+    provisioned = provision_opening(ledger, inventory, proof_dir=proof_dir,
+                                    no_existing_project_ledger=True, writers_stopped=True)
+    assert provisioned['action'] == 'opened_with_historical_upper_bound' and provisioned['paid_calls'] == 0
+    expected = sum(2**20 * 300 + max_output * 1200 for _, max_output in runs)
+    assert provisioned['reserved_nano_usd'] == expected
+    return ledger, expected
+
+
+def migrate_fixture(config, fx, root):
+    from group_budget import ENDPOINT
+    from legacy_ledger import upgrade_policy_in_place
+    old = GroupBudget(**config)
+    old.provision()
+    old.reserve(seat='d'*64, gid='e'*64, rid='f'*64, op='search', endpoint=ENDPOINT['search'],
+                wire=b'{"query":"historical fixture","count":1,"need_content":false}')
+    snapshot = root/'static.sqlite'
+    with sqlite3.connect(config['path']) as live, sqlite3.connect(snapshot) as backup:
+        live.backup(backup)
+    config.update(cap_policy=fx)
+    ledger = GroupBudget(**config)
+    migration = upgrade_policy_in_place(old, ledger, snapshot=snapshot,
+                                        snapshot_sha=sha256(snapshot.read_bytes()).hexdigest(),
+                                        writers_stopped=True)
+    assert migration['historical']['reserved_nano_usd'] == NANO['search']
+    return ledger
+
+
+def run(chromium, attention=None, *, opening_fixture=False):
     from operator_runtime import private_runtime
     from audit_group_ledger import audit
-    from legacy_ledger import upgrade_policy_in_place
-    from group_budget import ENDPOINT
     with TemporaryDirectory(prefix='judge-browser-') as folder, ExitStack() as stack:
         root = Path(folder)
         now = int(time.time())
         config = dict(path=root/'budget.sqlite', approval_sha='a'*64, price_sha='b'*64,
                       verified_epoch=now, expiry_epoch=now+480, seat_groups=4)
-        old = GroupBudget(**config)
-        old.provision()  # disposable old-format ledger with an unresolved historical operation
-        old.reserve(seat='d'*64, gid='e'*64, rid='f'*64, op='search', endpoint=ENDPOINT['search'],
-                    wire=b'{"query":"historical fixture","count":1,"need_content":false}')
-        snapshot = root/'static.sqlite'
-        with sqlite3.connect(config['path']) as live, sqlite3.connect(snapshot) as backup:
-            live.backup(backup)
-        config.update(cap_policy={'cny_per_usd_upper':'8.00','fx_source_sha256':'c'*64,
-                                  'fx_verified_epoch':now, 'fx_expiry_epoch':now+480})
-        ledger = GroupBudget(**config)
-        migration = upgrade_policy_in_place(old, ledger, snapshot=snapshot,
-                                            snapshot_sha=sha256(snapshot.read_bytes()).hexdigest(),
-                                            writers_stopped=True)
-        assert migration['historical']['reserved_nano_usd'] == NANO['search']
+        fx = {'cny_per_usd_upper':'8.00', 'fx_source_sha256':'c'*64,
+              'fx_verified_epoch':now, 'fx_expiry_epoch':now+480}
+        if opening_fixture:
+            ledger, historical_upper = make_opening_fixture(config, fx, root)
+            initial = audit(config['path'], budget=ledger)
+            assert initial['total_reserved_nano_usd'] == historical_upper
+            assert initial['reserved_nano_usd'] == 0
+        else:
+            ledger = migrate_fixture(config, fx, root)
         unix_path = root / 'model.sock'
         dispatches = []
 
@@ -305,14 +360,25 @@ def run(chromium, attention=None):
         browser = stack.enter_context(playwright.chromium.launch(executable_path=chromium,
                          args=['--disable-background-networking']))
         if attention is None:
-            result = collect(browser, origin, example_pdf(), config['path'])
+            result = collect(browser, origin, example_pdf(), config['path'], opening_fixture=opening_fixture)
             assert len(dispatches) == 1
         else:
             result = collect_attention(browser, origin, attention.read_bytes())
             assert len(dispatches) == sum('confirm_status' in row for row in result['cases'])
         final = audit(config['path'], budget=ledger)
-        assert final['reserved_nano_usd'] == NANO['search'] + len(dispatches) * NANO['model']
         assert final['limit_nano_usd'] == 2_500_000_000
+        if opening_fixture:
+            assert final['historical_opening_reserve'] == initial['historical_opening_reserve']
+            assert final['historical_opening_reserve']['historical_requests'] == 2
+            assert final['reserved_operations'] == {'model':len(dispatches)}
+            assert final['reserved_nano_usd'] == len(dispatches) * NANO['model']
+            total = historical_upper + final['reserved_nano_usd']
+            assert final['total_reserved_nano_usd'] == total
+            assert final['remaining_nano_usd'] == final['limit_nano_usd'] - total
+            assert final['groups_counting_toward_limit'] == 2 + len(dispatches)
+            return {**result, 'historical_sources':'two synthetic request bounds and synthetic prices',
+                    'opening_fixture':True, 'unix_fake_dispatches':len(dispatches), 'audit':final}
+        assert final['reserved_nano_usd'] == NANO['search'] + len(dispatches) * NANO['model']
         return {**result, 'unix_fake_dispatches':len(dispatches), 'in_place_budget_upgrade':True,
                 'historical_unknown_reserved_nano_usd':NANO['search'],
                 'cumulative_reserved_nano_usd':final['reserved_nano_usd'],
@@ -323,5 +389,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--chromium', default=shutil.which('chromium') or shutil.which('chromium-browser'))
     parser.add_argument('--attention', type=Path, help='Run the separate frozen Attention v1 hardware regression')
+    parser.add_argument('--opening-fixture', action='store_true',
+                        help='Provision a new temporary CNY 20 ledger using two synthetic historical request bounds')
     args = parser.parse_args()
-    print(json.dumps(run(args.chromium, args.attention), ensure_ascii=False, indent=2))
+    print(json.dumps(run(args.chromium, args.attention, opening_fixture=args.opening_fixture), ensure_ascii=False, indent=2))

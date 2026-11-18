@@ -4,6 +4,8 @@ from group_budget import ENDPOINT,GroupBudget,Denied
 class ApprovedGroupCaller:
     def __init__(self,ledger,transport):
         if not isinstance(ledger,GroupBudget) or not (callable(transport) or callable(getattr(transport, 'send_reserved', None))):raise Denied('no approved ledger or transport')
+        if ledger.opening_required and not callable(getattr(transport, "send_reserved", None)):
+            raise Denied("opening ledger requires the existing private broker")
         self.ledger,self.transport=ledger,transport
     def call(self,seat,gid,op,rid,body):
         endpoint=ENDPOINT[op]

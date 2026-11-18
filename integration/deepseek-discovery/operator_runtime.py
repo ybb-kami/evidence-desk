@@ -10,7 +10,7 @@ from official_input_bound import _load, submitted_count
 
 def existing_ledger(config):
     fields = {'path', 'approval_sha', 'price_sha', 'verified_epoch', 'expiry_epoch', 'seat_groups'}
-    if not isinstance(config, dict) or set(config) not in (fields, fields | {'cap_policy'}):
+    if not isinstance(config, dict) or set(config) not in (fields, fields | {'cap_policy'}, fields | {'cap_policy','opening_evidence_sha256'}):
         raise Denied('operator metadata')
     if not Path(config['path']).is_absolute():
         raise Denied('an absolute persistent ledger path is required')
@@ -18,7 +18,7 @@ def existing_ledger(config):
     ledger = GroupBudget(**config, input_bound=submitted_count)
     ledger._time()
     with ledger._connect() as db:
-        ledger._check_cap_marker(db)
+        ledger._check_cap_marker(db, verify_live=True)
         if db.execute('SELECT hash FROM conf').fetchall() != [(ledger.config,)]:
             raise Denied('ledger mismatch; no automatic migration/provision')
     return ledger

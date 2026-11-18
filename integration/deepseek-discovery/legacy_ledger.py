@@ -37,7 +37,8 @@ _TOOL_ID = re.compile(r"[a-f0-9]{48}")
 _STAMP = "legacy_migration"
 _TRIGGER = """CREATE TRIGGER legacy_migration_new_spend AFTER INSERT ON spend
 BEGIN UPDATE legacy_migration SET new_admissions = new_admissions + 1 WHERE singleton = 1; END"""
-_GROUP_CONFIG = {"approval_sha", "price_sha", "verified_epoch", "expiry_epoch", "seat_groups", "cap_policy"}
+_GROUP_CONFIG = {"approval_sha", "price_sha", "verified_epoch", "expiry_epoch", "seat_groups",
+                 "cap_policy", "opening_evidence_sha256"}
 
 
 class MigrationDenied(Denied):
@@ -64,7 +65,7 @@ def _integ(db):
              and db.execute("PRAGMA foreign_key_check").fetchone() is None, "invalid_ledger")
 
 
-def _schema(db, expected, *, adopted=False, quiescent=True):
+def _schema(db, expected, *, adopted=False, quiescent=True, opening=False):
     entries = db.execute("SELECT name, type FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%'").fetchall()
     tables = {name for name, kind in entries if kind == "table"}
     other = {name for name, kind in entries if kind not in {"index", "table"}}
@@ -72,6 +73,9 @@ def _schema(db, expected, *, adopted=False, quiescent=True):
     trigger = {"legacy_migration_new_spend"} if adopted else set()
     if expected == _GROUP_COLUMNS and "private_pending" in tables:
         expected = {**expected, "private_pending": ("rid",)}
+    if opening:
+        from group_budget import OPENING_COLUMNS
+        expected = {**expected, "opening_reserve": OPENING_COLUMNS}
     _require(tables == expected.keys() | extra and other == trigger, "unexpected_ledger_schema")
     for table, columns in expected.items():
         actual = tuple(row[1] for row in db.execute(f"PRAGMA table_xinfo({table})"))
@@ -114,7 +118,8 @@ def _snapshot(path, expected_sha):
 
 def _group_config(config, path, *, source_provenance=False):
     _require(isinstance(config, dict)
-             and _GROUP_CONFIG - {"cap_policy"} <= config.keys() <= _GROUP_CONFIG | {"path"}, "invalid_configuration")
+             and _GROUP_CONFIG - {"cap_policy", "opening_evidence_sha256"} <= config.keys() <= _GROUP_CONFIG | {"path"},
+             "invalid_configuration")
     options = dict(config)
     if "path" in options:
         configured = options.pop("path")
@@ -208,12 +213,50 @@ def _result(receipt, new_admissions, action):
     return {**public, "new_admissions": new_admissions, "action": action, "paid_requests_made": 0}
 
 
+def _opening_policy(ledger, db):
+    if not ledger.opening_required:
+        return None, 0, 0
+    from group_budget import read_opening_reserve
+    from opening_reserve import verify_witness
+    verify_witness(ledger)
+    evidence = read_opening_reserve(db, required=True, expected_sha256=ledger.opening_evidence_sha256)
+    amount, requests = ledger.opening_totals(db)
+    return evidence, amount, requests
+
+
+def _opening_proof(evidence, amount):
+    return {"opening_reserve": evidence, "opening_effective_nano_usd": amount} if evidence is not None else {}
+
+
+def stamp_opening_policy(ledger, db):
+    """Bind already verified opening evidence on the final ledger within its creation transaction."""
+    _require(isinstance(ledger, GroupBudget) and ledger.opening_required and db.in_transaction,
+             "opening_requires_creation_transaction")
+    ledger._time()
+    _integ(db)
+    _schema(db, _GROUP_COLUMNS, opening=True)
+    instance = _active_instance(ledger.path, db)
+    _require(_config_hash(db) == ledger.config and db.execute("PRAGMA user_version").fetchone() == (ledger.policy_version,),
+             "unverified_policy_migration")
+    history = _history(db, rates=NANO)
+    _require(not history[0] and not history[1], "opening_requires_empty_dispatch_history")
+    evidence, effective, requests = _opening_policy(ledger, db)
+    _require(effective <= ledger.cap and requests <= GROUPS, "history_exceeds_policy")
+    proof = {"kind": "opening_in_place", "currency": "USD", "target_config": ledger.config,
+             "applied_config": ledger.config, "target_cap_nano_usd": ledger.cap,
+             "policy_version": ledger.policy_version, "history_sha256": _fingerprint(history),
+             "historical": _totals(history), "historical_rids": [], "instance": instance,
+             **_opening_proof(evidence, effective)}
+    return _result(_stamp(db, proof), 0, "stamped_opening_reserve")
+
+
 def upgrade_policy_in_place(previous, target, *, snapshot, snapshot_sha, writers_stopped=False):
     """Bind the same ledger to the new policy, preserving exact IDs and charges."""
     _require(writers_stopped is True, "stop_all_paid_writers_first")
     _require(isinstance(previous, GroupBudget) and isinstance(target, GroupBudget)
              and previous.path == target.path and target.path.is_file() and not target.path.is_symlink()
              and previous.config != target.config and getattr(target, "cap_policy", None) is not None
+             and not previous.opening_required and not target.opening_required
              and previous.seat_groups == target.seat_groups
              and target.cap >= getattr(previous, "cap", CAP), "invalid_policy_transition")
     try:
@@ -276,13 +319,22 @@ def rollback_check(path, *, migration_sha):
             db.execute("PRAGMA trusted_schema=OFF")
             db.execute("BEGIN")
             _integ(db)
-            _schema(db, _GROUP_COLUMNS, adopted=True)
             receipt, new_admissions = _receipt(db)
-            _require(receipt.get("kind") == "policy_in_place" and receipt["migration_sha"] == migration_sha
+            is_opening = receipt.get("kind") == "opening_in_place"
+            _schema(db, _GROUP_COLUMNS, adopted=True, opening=is_opening)
+            _require(receipt.get("kind") in {"policy_in_place", "opening_in_place"} and receipt["migration_sha"] == migration_sha
                      and _config_hash(db) == receipt["applied_config"]
                      and db.execute("PRAGMA user_version").fetchone() == (receipt["policy_version"],),
                      "unverified_migration")
             _require(receipt.get("instance") == _active_instance(path, db), "ledger_instance_mismatch")
+            if is_opening:
+                from group_budget import read_opening_reserve
+                from opening_reserve import verify_witness_for
+                evidence = receipt["opening_reserve"]
+                verify_witness_for(path, evidence["evidence_sha256"])
+                _require(evidence == read_opening_reserve(db, required=True, expected_sha256=evidence["evidence_sha256"]),
+                         "opening_reserve_changed")
+                raise MigrationDenied("opening_reserve_nonrefundable")
             _require(not new_admissions and _fingerprint(_history(db)) == receipt["history_sha256"],
                      "rollback_requires_reconciliation")
             return _result(receipt, 0, "no_spend_after_migration")
@@ -292,14 +344,23 @@ def rollback_check(path, *, migration_sha):
 
 def _bound_history(ledger, db, receipt, n, instance):
     _require(receipt.get("instance") == instance, "ledger_instance_mismatch")
-    _require(receipt.get("kind") == "policy_in_place" and receipt.get("currency") == "USD"
-             and _digest(receipt.get("snapshot_sha256")) and _digest(receipt.get("previous_config"))
-             and receipt["previous_config"] != ledger.config
+    opening, opening_nano, opening_groups = _opening_policy(ledger, db)
+    opening_kind = "opening_in_place" if opening is not None else "policy_in_place"
+    _require(receipt.get("kind") == opening_kind and receipt.get("currency") == "USD"
+             and receipt.get("opening_reserve") == opening
+             and receipt.get("opening_effective_nano_usd") == (opening_nano if opening is not None else None)
              and receipt.get("target_config") == receipt.get("applied_config") == _config_hash(db) == ledger.config
              and receipt.get("target_cap_nano_usd") == ledger.cap
              and receipt.get("policy_version") == ledger.policy_version
              and db.execute("PRAGMA user_version").fetchone() == (ledger.policy_version,),
              "unverified_policy_migration")
+    original_opening = opening is not None and "predecessor_migration_sha" not in receipt
+    if original_opening:
+        _require(receipt.get("previous_config") is None and receipt.get("snapshot_sha256") is None
+                 and receipt.get("historical_rids") == [], "unverified_policy_migration")
+    else:
+        _require(_digest(receipt.get("snapshot_sha256")) and _digest(receipt.get("previous_config"))
+                 and receipt["previous_config"] != ledger.config, "unverified_policy_migration")
     offset = receipt.get("admissions_at_cutover", 0)
     if "predecessor_migration_sha" in receipt:
         _require(_digest(receipt["predecessor_migration_sha"]) and _digest(receipt.get("first_migration_sha"))
@@ -320,7 +381,7 @@ def _bound_history(ledger, db, receipt, n, instance):
              and _totals(historical) == receipt.get("historical"), "changed_policy_history")
     totals = _totals((groups, entries))
     seats = Counter(seat for _, seat in groups)
-    _require(totals["groups"] <= GROUPS and totals["reserved_nano_usd"] <= ledger.cap
+    _require(totals["groups"] + opening_groups <= GROUPS and totals["reserved_nano_usd"] + opening_nano <= ledger.cap
              and all(count <= ledger.seat_groups for count in seats.values()), "history_exceeds_policy")
     if db.execute("SELECT 1 FROM sqlite_schema WHERE name='private_pending'").fetchone():
         pending = [row[0] for row in db.execute("SELECT rid FROM private_pending")]
@@ -337,6 +398,7 @@ def renew_policy_in_place(previous, target, *, snapshot, snapshot_sha, writers_s
              and previous.path == target.path and target.path.is_file() and not target.path.is_symlink()
              and previous.cap_policy is not None and target.cap_policy is not None
              and previous.policy_version == target.policy_version
+             and previous.opening_evidence_sha256 == target.opening_evidence_sha256
              and previous.config != target.config and previous.seat_groups == target.seat_groups,
              "invalid_policy_transition")
     old_dates = (previous.checked, previous.cap_policy["fx_verified_epoch"])
@@ -348,19 +410,22 @@ def renew_policy_in_place(previous, target, *, snapshot, snapshot_sha, writers_s
         target._time()
         instance = _active_instance(target.path)
         with _snapshot(snapshot, snapshot_sha) as backup:
-            _schema(backup, _GROUP_COLUMNS, adopted=True)
+            _schema(backup, _GROUP_COLUMNS, adopted=True, opening=previous.opening_required)
             predecessor, before_n = _receipt(backup)
             original = _bound_history(previous, backup, predecessor, before_n, instance)
+            opening, opening_nano, opening_groups = _opening_policy(target, backup)
         totals = _totals(original)
-        _require(totals["reserved_nano_usd"] <= target.cap, "history_exceeds_policy")
-        proof = {"kind": "policy_in_place", "currency": "USD", "snapshot_sha256": snapshot_sha,
+        _require(totals["groups"] + opening_groups <= GROUPS
+                 and totals["reserved_nano_usd"] + opening_nano <= target.cap, "history_exceeds_policy")
+        proof = {"kind": predecessor["kind"], "currency": "USD", "snapshot_sha256": snapshot_sha,
                  "previous_config": previous.config, "target_config": target.config, "applied_config": target.config,
                  "target_cap_nano_usd": target.cap, "policy_version": target.policy_version, "instance": instance,
                  "history_sha256": _fingerprint(original), "historical": totals,
                  "historical_rids": [row[0] for row in original[1]], "admissions_at_cutover": before_n,
                  "predecessor_migration_sha": predecessor["migration_sha"],
                  "predecessor_historical": predecessor["historical"],
-                 "first_migration_sha": predecessor.get("first_migration_sha", predecessor["migration_sha"])}
+                 "first_migration_sha": predecessor.get("first_migration_sha", predecessor["migration_sha"]),
+                 **_opening_proof(opening, opening_nano)}
         expected = _fingerprint(proof)
         with closing(target._connect()) as db, db:
             db.execute("PRAGMA trusted_schema=OFF")
@@ -368,7 +433,7 @@ def renew_policy_in_place(previous, target, *, snapshot, snapshot_sha, writers_s
             target._time()
             _require(_active_instance(target.path, db) == instance, "ledger_instance_mismatch")
             _integ(db)
-            _schema(db, _GROUP_COLUMNS, adopted=True)
+            _schema(db, _GROUP_COLUMNS, adopted=True, opening=target.opening_required)
             current, n = _receipt(db)
             if current["migration_sha"] == expected:
                 _bound_history(target, db, current, n, instance)
@@ -391,7 +456,7 @@ def require_migrated_policy(ledger, db):
     try:
         _integ(db)
         _require(_stamped(db), "policy_migration_required")
-        _schema(db, _GROUP_COLUMNS, adopted=True, quiescent=False)
+        _schema(db, _GROUP_COLUMNS, adopted=True, quiescent=False, opening=ledger.opening_required)
         receipt, n = _receipt(db)
         _bound_history(ledger, db, receipt, n, _active_instance(ledger.path, db))
         return _result(receipt, n, "verified_migrated_policy")
@@ -479,6 +544,7 @@ def adopt_legacy_snapshot(target, *, snapshot, snapshot_sha, kind, currency, sou
     """
     _require(writers_stopped is True, "stop_all_paid_writers_first")
     _require(isinstance(target, GroupBudget) and currency == "USD", "unsupported_legacy_currency")
+    _require(not target.opening_required, "invalid_policy_transition")
     _require(kind in {"group", "standalone-model", "standalone-tools"}, "unknown_legacy_source")
     try:
         with _snapshot(snapshot, snapshot_sha) as backup:

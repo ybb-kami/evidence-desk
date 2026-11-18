@@ -279,7 +279,7 @@ def fake_response(endpoint, wire):
 
 def _check_ledger(ledger, db, mode):
     ledger._time()
-    ledger._check_cap_marker(db)
+    ledger._check_cap_marker(db, verify_live=True)
     if db.execute("SELECT hash FROM conf").fetchall() != [(ledger.config,)]:
         raise Denied("configuration does not bind ledger")
     if mode == "approved_unix":
@@ -454,7 +454,7 @@ def main():
             raw = stream.read(4097)
         config = _decode(raw) if len(raw) <= 4096 else None
         fields = {"path", "approval_sha", "price_sha", "verified_epoch", "expiry_epoch", "seat_groups"}
-        if (not isinstance(config, dict) or set(config) not in (fields, fields | {"cap_policy"})
+        if (not isinstance(config, dict) or set(config) not in (fields, fields | {"cap_policy"}, fields | {"cap_policy","opening_evidence_sha256"})
                 or not Path(config["path"]).is_absolute()):
             raise ValueError("Invalid explicit ledger configuration.")
         with UnixProviderBroker(args.socket, allow_uids=args.allow_uid, socket_gid=args.socket_gid,
