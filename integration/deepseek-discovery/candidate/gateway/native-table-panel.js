@@ -1,0 +1,9 @@
+(async()=>{'use strict';const e=(t,s='')=>{const n=document.createElement(t);n.textContent=s;return n};
+const p=e('section');p.id='native-table-probe';p.className='panel compare';(document.querySelector('#grounded-synthesis')||document.querySelector('#evidence-workflow')).after(p);
+const doc=e('select'),pg=e('input'),run=e('button','核对这页的原生无框表'),refresh=e('button','刷新活动文献'),out=e('div');pg.type='number';pg.min=1;pg.max=650;pg.value=1;doc.setAttribute('aria-label','所选文献');pg.setAttribute('aria-label','物理页');out.setAttribute('role','status');
+p.append(e('h2','原表核验 · 无框键值表'),e('p','选择 PDF 原件和物理页。按原文框恢复一张规则双列表；不识别扫描表、不猜缺值。'),doc,e('span',' 物理页 '),pg,refresh,run,out);
+let rev=0;const reset=()=>{rev++;out.replaceChildren()};doc.onchange=reset;pg.oninput=reset;
+refresh.onclick=async()=>{reset();const v=rev;try{const r=await fetch('/api/library'),j=await r.json();if(v!==rev)return;doc.replaceChildren();for(const d of j.docs){const o=e('option',d.name);o.value=d.id;doc.append(o)}}catch{out.textContent='无法读取本席文库。'}};await refresh.onclick();
+run.onclick=async()=>{reset();const v=rev,id=doc.value,page=Number(pg.value);if(!id||!Number.isInteger(page)||page<1||page>650){out.textContent='请选择文献及有效物理页。';return}out.textContent='正在重读原件与每个单元格…';try{const r=await fetch('/api/native-table-probe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,page})});if(!r.ok)throw Error();const j=await r.json();if(v!==rev)return;out.replaceChildren();if(j.status!=='original_cells_rechecked'){out.append(e('p','未取得可逐格验证的表，不提供数值。'));return}
+const a=e('a','回到物理第 '+page+' 页原表');a.href='/pdf/'+id+'#page='+page;a.target='_blank';a.rel='noopener';out.append(a,e('p','版本 SHA-256：'+j.sha256));
+const t=e('table');for(const c of j.cells){const tr=e('tr');for(const x of ['行 '+c.row+' · 列 '+c.column,c.text,'矩形（pt）'+c.bbox_pt.join(', ')])tr.append(e('td',x));t.append(tr)}out.append(t)}catch{if(v===rev)out.textContent='无法读取所选文献或页码，请核对后重试。'}}})();
