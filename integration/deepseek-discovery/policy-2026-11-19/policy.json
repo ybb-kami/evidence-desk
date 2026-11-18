@@ -1,0 +1,76 @@
+{
+  "scope": "Existing four-seat Evidence Desk cumulative CNY 20 policy; text Flash, standalone Search and Fetch",
+  "status": "conditional_bounds_only",
+  "official_live_pricing_verified_by_cloud": false,
+  "official_live_document_access": {
+    "pricing": "https://api-docs.deepseek.com/quick_start/pricing/",
+    "pricing_cny": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+    "tools": "https://api-docs.deepseek.com/guides/search/",
+    "result": "Cloud could not retrieve the live pages; HTTP proxy returned 403"
+  },
+  "budget": {
+    "currency": "CNY",
+    "lifetime_limit": "20.00",
+    "ledger_cap_nano_usd": 2500000000,
+    "applies_to_prior_spend_reservations_and_unknowns": true,
+    "daily_reset": false
+  },
+  "window": {
+    "fx_checked_at": "2026-11-19T00:10:21+08:00",
+    "end_exclusive": "2026-11-20T00:00:00+08:00",
+    "price_start": "Use the actual local time of verification of the applicable official rates, not the FX observation time."
+  },
+  "runtime_fields_available": {
+    "expiry_epoch": 1795104000,
+    "cap_policy": {
+      "cny_per_usd_upper": "8.00",
+      "fx_source_sha256": "0158abea59aaacd9513110657c59bd9f3ed3ecb7fa31eb2cf7273f37cae30c9d",
+      "fx_verified_epoch": 1795018221,
+      "fx_expiry_epoch": 1795104000
+    }
+  },
+  "runtime_fields_requiring_local_price_evidence": ["price_sha", "verified_epoch"],
+  "fx_reference": {
+    "publisher": "fawazahmed0/currency-api, third-party market reference",
+    "source_date": "2026-11-18",
+    "latest_returned_same_bytes": true,
+    "dated_2026_11_19_result_at_check": "404",
+    "source_url": "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@2026-11-18/v1/currencies/usd.json",
+    "copy": "fx-usd-2026-11-18.json",
+    "market_cny_per_usd": "6.6662016",
+    "policy_upper_is_supplier_guaranteed_fx": false
+  },
+  "model_observation": {
+    "id": "deepseek-flash",
+    "release": "DeepSeek-V4.1-Flash-1017",
+    "unit": "USD per million tokens",
+    "off_peak": {"cached_input": "0.003", "uncached_input": "0.15", "output_including_reasoning": "0.60"},
+    "peak": {"cached_input": "0.006", "uncached_input": "0.30", "output_including_reasoning": "1.20"},
+    "peak_multiplier": 2,
+    "source_kind": "Third-party models.dev entry citing official pricing as accessed 2026-10-19; re-read November 19 Beijing",
+    "source_url": "https://github.com/anomalyco/models.dev/blob/d893237face842c5a4c918009d50c8e33b7c6523/providers/deepseek/models/deepseek-flash.toml",
+    "source_file_sha256": "3c5b7cd635750896326f55269a969334a2e94efd8106052641e7847d2ff1a00e"
+  },
+  "tools_observation": {
+    "unit": "CNY per 1000 successful standalone requests with results",
+    "search": "5",
+    "fetch": "5",
+    "source_kind": "DeepSeek official Harness implementation note for October 2026; present at the latest published commit read on November 19 Beijing",
+    "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/2e39e70496aa02986ca6a820c5d497e816b69d7e/.agents/notes/implemented/feature/2026-10-15-deepseek-search-fetch-api.md#consequences",
+    "source_file_sha256": "ce9ec72dfcfbb0e5a9812317ee1b42d079bf3550da83add22b3c506c30491185"
+  },
+  "maximum_compatible_tariffs": {
+    "units": "Model: per million tokens. Independent tools: per 1000 requests each. Includes all applicable charges.",
+    "USD": {"any_input": "0.30", "all_output": "1.20", "search": "0.75", "fetch": "0.75"},
+    "CNY": {"any_input": "2.40", "all_output": "9.60", "search": "6.00", "fetch": "6.00"},
+    "usd_settlement_condition": "Effective conversion including any applicable fees must remain within 8.00 CNY/USD for the stated CNY budget."
+  },
+  "reservation_nano_usd": {
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 512,
+    "model": 315187200,
+    "search": 750000,
+    "fetch": 750000,
+    "one_of_each": 316687200
+  }
+}
