@@ -64,9 +64,10 @@ def _windows(text, width=1600, overlap=260):
             boundary = max(text.rfind("\n", earliest, end), text.rfind(" ", earliest, end))
             if boundary >= earliest:
                 end = boundary + 1
-        excerpt = text[start:end].strip()
+        fragment = text[start:end]
+        excerpt = fragment.strip()
         if excerpt:
-            yield excerpt, start + len(text[start:end]) - len(text[start:end].lstrip())
+            yield excerpt, start + len(fragment) - len(fragment.lstrip())
         if end == len(text):
             break
         start = end - overlap
@@ -101,6 +102,7 @@ def parse_pdf(data: bytes, name: str) -> dict:
                     if raw[6] != 0:
                         continue
                     block_text = raw[4].strip()
+                    marker = None
                     if page_num == 1:
                         x0, y0, x1, y1 = raw[:4]
                         width = page.cropbox.width
@@ -121,6 +123,8 @@ def parse_pdf(data: bytes, name: str) -> dict:
                     for part, (excerpt, offset) in enumerate(_windows(block_text), 1):
                         chunks.append({"page": page_num, "block": raw[5] + 1,
                                        "part": part, "offset": offset, "text": excerpt})
+                        if marker:
+                            chunks[-1]["arxiv_stamp"] = True
                         if len(chunks) > MAX_CHUNKS:
                             raise ValueError("PDF exceeds the extracted passage limit (12,000).")
                 if len(chunks) == original_count:
@@ -190,6 +194,8 @@ def _signature(doc, limit=30_000):
     tokens = []
     last_block, original = None, ""
     for chunk in doc["chunks"]:
+        if chunk.get("arxiv_stamp"):
+            continue
         block = chunk["page"], chunk["block"]
         if block != last_block:
             tokens.extend(_terms(original))
