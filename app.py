@@ -142,9 +142,19 @@ class Handler(BaseHTTPRequestHandler):
                     '/index.html':('index.html','text/html; charset=utf-8'),
                     '/sample.pdf':('sample.pdf','application/pdf'),
                     '/csv-stats.js':('csv-stats.js','application/javascript; charset=utf-8')}
+            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js'):
+                assets['/'+name]=(name, 'text/css; charset=utf-8' if name.endswith('.css') else 'application/javascript; charset=utf-8')
             if path in assets:
                 filename,mime=assets[path]
                 if (HERE/filename).is_file(): return self.payload(200,(HERE/filename).read_bytes(),mime)
+            if path.startswith('/api/reader/') and ID.fullmatch(path[12:]):
+                from reader import build_reader
+                matches=store.records([path[12:]],archived=None)
+                if not matches: raise Bad(404,'找不到指定文献。')
+                return self.payload(200,build_reader(matches[0]))
+            if path=='/api/local-review':
+                from local_review import collection_review
+                return self.payload(200,collection_review(store.records()))
             if path=='/api/library':
                 return self.payload(200,{'docs':[summary(d) for d in store.records()], 'deepseek_enabled':self.server.enable_model and provider.configured()})
             if path=='/api/archive':
@@ -172,6 +182,13 @@ class Handler(BaseHTTPRequestHandler):
             if len(pair)!=2: raise Bad(404,'所选文献不在本地文库中。')
             return self.payload(200,{'before':summary(pair[before]),'after':summary(pair[after]),
                                      **describe_revision(pair[before],pair[after])})
+        elif path=='/api/tracking':
+            req=self.json_request()
+            if req.get('consent') is not True: raise Bad(403,'请确认本次访问公开 arXiv 类别。')
+            if set(req)!={'category','consent','feedback'} or not isinstance(req['category'],str) or not isinstance(req['feedback'],dict):
+                raise Bad(400,'仅接受公开类别、本机反馈和本次确认。')
+            from arxiv_tracking import refresh
+            return self.payload(200,refresh(req['category'],store.records(),req['feedback'],consent=True))
         elif path=='/api/discover':
             req=self.json_request()
             if req.get('consent') is not True:

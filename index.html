@@ -12,14 +12,16 @@
 .search-row{display:flex;gap:8px;margin:8px 0}.search-row input{flex:1;min-width:0;background:white;color:var(--ink);border:1px solid #aeb8ac;border-radius:8px;padding:10px 12px}label[for=query]{font-weight:650;display:block}.rule{margin:22px 0 13px;border:0;border-top:1px solid var(--line)}.empty{border:1px dashed #adb9a9;border-radius:12px;padding:clamp(15px,3vw,30px);margin:12px 0;background:#fafbf5}.empty strong{display:block;margin-bottom:4px}.counter{color:var(--green);background:var(--pale);padding:5px 8px;border-radius:6px}.card-list{display:grid;gap:12px}.evidence{border:1px solid var(--line);border-radius:11px;padding:clamp(12px,1.7vw,20px);min-width:0;overflow-wrap:anywhere;background:white}.evidence h3{font-size:16px;margin:5px 0}.metadata{color:var(--green)}blockquote{margin:14px 0;padding:3px 0 3px 13px;border-left:2px solid #92a68f;white-space:pre-wrap}.compare{margin-top:20px}.compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.compare-grid .evidence{background:#f8faf5}footer{margin:25px 0;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}[hidden]{display:none!important}
 #paper-compare-form label,#discover-form label[for],#graph-node-label{display:block;font-weight:650}select{display:block;width:100%;min-width:0;margin:4px 0 10px;padding:8px;color:var(--ink);background:white;border:1px solid #aeb8ac;border-radius:8px}#graph-content h3,.paper-panel h3{font-size:16px;margin:12px 0}.paper-panel{min-width:0;overflow-wrap:anywhere}.paper-panel h4{margin:4px 0}.paper-panel .evidence h3{display:none}#graph-figure{margin:12px 0}#graph-canvas{background:#f8faf5;border:1px solid var(--line);border-radius:10px;overflow:hidden}#graph-canvas svg{width:100%;max-height:360px;display:block}#graph-canvas svg text{pointer-events:none;font:700 14px system-ui;fill:white}#graph-canvas svg g[data-node]{cursor:pointer}#graph-ranking{padding-left:24px}#graph-ranking li,#graph-key li{overflow-wrap:anywhere;margin:9px 0}.jump-links{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:12px}.hero .jump-links a{color:#e2ebdf}.hero .jump-links a:focus-visible{outline-color:#e2ebdf}#graph-content details{margin-top:14px}
 @media(max-width:760px){.workbench{grid-template-columns:minmax(0,1fr)}.hero{margin-top:20px}.doc-list{max-height:230px;overflow:auto}.compare-grid{grid-template-columns:minmax(0,1fr)}}@media(max-width:390px){.brand small{display:none}.search-row{flex-wrap:wrap}.search-row input{flex-basis:100%}}
-.workbench-tools{display:grid;gap:12px}#csv-workbench label[for=csv-file]{min-width:0}#csv-file{max-width:100%}.csv-scroll{max-width:100%;max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:8px}.csv-scroll table{border-collapse:collapse;width:100%;font-size:13px}.csv-scroll th,.csv-scroll td{white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;min-width:90px;max-width:230px;padding:6px 10px;border-bottom:1px solid var(--line)}.csv-scroll th{background:var(--pale);position:sticky;top:0}#csv-figure{margin:12px 0}#csv-chart svg{display:block;width:100%;min-width:460px;background:#f8faf5}#csv-chart text{fill:var(--ink);font:13px system-ui}#version-results blockquote{max-height:16em;overflow:auto}#version-results{margin-top:10px}#versions-list{max-height:280px;overflow:auto}
+.workbench-tools{display:grid;gap:12px}#csv-workbench label[for=csv-file]{min-width:0}#csv-file{max-width:100%}.csv-scroll{max-width:100%;max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:8px}.csv-scroll table{border-collapse:collapse;width:100%;font-size:13px}.csv-scroll th,.csv-scroll td{white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;min-width:90px;max-width:230px;padding:6px 10px;border-bottom:1px solid var(--line)}.csv-scroll th{background:var(--pale);position:sticky;top:0}#csv-figure{margin:12px 0}#csv-chart img{display:block;width:100%;min-width:460px;height:auto;background:white}.csv-options input{display:block;width:100%;margin:4px 0 10px;padding:8px;border:1px solid var(--line);border-radius:8px}.wrapping{overflow-wrap:anywhere}#version-results blockquote{max-height:16em;overflow:auto}#version-results{margin-top:10px}#versions-list{max-height:280px;overflow:auto}
+#writing-preview{display:block;resize:vertical;width:100%;font:13px/1.5 ui-monospace,monospace;padding:10px;border:1px solid var(--line);margin:6px 0 12px;background:#fff;overflow:auto}#writing-form label{font-weight:650}
 </style>
+<link rel="stylesheet" href="/reader.css">
 </head>
 <body>
 <a class="skip" href="#main">跳转到检索区</a>
 <header><div class="shell mast"><div class="brand"><span class="glyph" aria-hidden="true">◫</span><span>证据台</span><small>EVIDENCE DESK</small></div><span class="tag">本地工作区</span></div></header>
 <div class="shell">
-<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#paper-compare">分篇检索</a><a href="#citation-graph">本地引文图</a><a href="#public-discovery">公开文献发现</a><a href="#version-management">版本与归档</a><a href="#csv-workbench">CSV 图表</a></nav></section>
+<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#paper-compare">分篇检索</a><a href="#citation-graph">本地引文图</a><a href="#local-review">本地综述</a><a href="#public-discovery">公开文献发现</a><a href="#version-management">版本与归档</a><a href="#csv-workbench">CSV 图表</a><a href="#writing-workbench">论文框架</a><a href="#reader">文献阅读</a><a href="#tracking">arXiv 追踪</a></nav></section>
 <div class="workbench">
 <aside class="panel" aria-labelledby="library-title"><div class="library-head"><div><div class="eyebrow">01 / 文献库</div><h2 id="library-title">本地文献</h2></div><span class="counter" id="library-count">—</span></div>
 <input id="files" type="file" accept=".pdf,application/pdf" multiple hidden><button class="primary full" type="button" id="choose">＋ 导入 PDF</button>
@@ -64,6 +66,7 @@
 <details><summary>按局部 PageRank 查看文献</summary><ol id="graph-ranking"></ol></details>
 </div>
 </section>
+<section class="panel compare" id="local-review"></section>
 <section class="panel compare" id="public-discovery" tabindex="-1" aria-labelledby="discover-title">
 <div class="eyebrow">06 / 公开文献发现</div><h2 id="discover-title">查询 Crossref</h2>
 <form id="discover-form">
@@ -94,14 +97,32 @@
 <div class="actions"><label for="csv-file">选择 CSV：<input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"></label><button id="csv-clear" type="button" class="compact">清空 CSV</button></div>
 <p id="csv-status" role="status" class="subtle">尚未选择数据。</p>
 <div id="csv-result" hidden>
-<div class="compare-grid"><label for="csv-column">数值列<select id="csv-column"></select></label><label for="csv-mode">图形<select id="csv-mode"><option value="line">折线图</option><option value="bar">柱状图</option></select></label></div>
-<figure id="csv-figure"><div id="csv-chart" class="csv-scroll" tabindex="0" aria-label="图形显示区，可横向滚动"></div><figcaption id="csv-caption"></figcaption></figure>
+<div class="compare-grid"><label for="csv-column">数值列<select id="csv-column"></select></label><label for="csv-mode">图形<select id="csv-mode"><option value="line">折线图</option><option value="bar">柱状图</option><option value="dot">点图</option></select></label></div>
+<div class="compare-grid csv-options"><label for="csv-value-unit">数值单位（选填）<input id="csv-value-unit" maxlength="40" placeholder="例如：毫秒"></label><label for="csv-row-unit">行单位（选填）<input id="csv-row-unit" maxlength="40" placeholder="例如：试次"></label></div>
+<label for="csv-width">导出图宽<select id="csv-width"><option value="183">183 mm</option><option value="90">90 mm</option></select></label>
+<p id="csv-source" class="subtle wrapping"></p>
+<figure id="csv-figure"><div id="csv-chart" class="csv-scroll" tabindex="0" aria-label="图形显示区，可横向滚动"></div><figcaption id="csv-caption" class="wrapping"></figcaption></figure>
+<div class="actions"><button id="csv-svg" class="compact" type="button" disabled>下载 SVG</button><button id="csv-png" class="compact" type="button" disabled>下载 PNG（300 dpi）</button><button id="csv-mapping" class="compact" type="button" disabled>下载数据映射及图注</button></div>
+<p id="csv-export-status" role="status" class="subtle"></p>
 <details><summary>查看 CSV 原始表格（最多前 100 行）</summary><div class="csv-scroll" id="csv-table" tabindex="0" aria-label="CSV 数据表，可滚动"></div></details>
 </div></section>
 </div>
+<section class="panel compare" id="writing-workbench" tabindex="-1" aria-labelledby="writing-title">
+<div class="eyebrow">09 / 写作准备</div><h2 id="writing-title">论文框架和证据清单</h2>
+<p class="subtle" id="writing-help">在「查找证据」中把所需摘录加入对照，本区只引用你选中的摘录。生成的是填写模板及本地核对清单，不是模型写作、经过核对的书目或成稿。</p>
+<form id="writing-form"><label for="writing-topic">论文题目或想法（选填）</label>
+<div class="search-row"><input id="writing-topic" type="text" maxlength="180" autocomplete="off" aria-describedby="writing-help"><button id="writing-make" type="submit" class="primary">生成可编辑框架</button></div></form>
+<p id="writing-status" class="subtle" role="status">已加入对照：0 条。</p>
+<label id="writing-preview-label" for="writing-preview" hidden>Markdown 预览</label><textarea id="writing-preview" rows="12" readonly hidden></textarea>
+<div class="actions"><button id="writing-download" type="button" class="compact" disabled>下载 Markdown</button><button id="mermaid-download" type="button" class="compact">下载证据台架构 Mermaid</button></div>
+<p class="subtle">Mermaid 是本工作台实际模块的数据流示意源码，不是按主题自动生成的研究架构。文件保存在本机，不上传原文。</p>
+</section>
+<section id="reader" aria-label="文献阅读"></section>
+<section id="tracking" aria-label="arXiv 追踪"></section>
 <footer class="subtle"><span>证据台 · 本地文献检索</span><span>摘录用于定位，引用前请核对 PDF 原页。</span></footer>
 </div>
 <script src="/csv-stats.js"></script>
+<script src="/writing.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -238,7 +259,7 @@ $('files').onchange = async () => {
   $('files').value = '';
   $('choose').disabled = false;
 };
-function hitKey(hit) { return JSON.stringify([hit.id, hit.page, hit.block]); }
+function hitKey(hit) { return JSON.stringify([hit.id, hit.page, hit.block, hit.part || 1]); }
 function drawCard(hit, pinned = false, verifiable = false) {
   const card = el(pinned ? 'article' : 'li', 'evidence');
   const printedLabel = hit.page_label && String(hit.page_label) !== String(hit.page) ? ' · 页面标签 ' + hit.page_label : '';
@@ -272,6 +293,7 @@ function renderComparison() {
   $('comparison').replaceChildren(...[...compared.values()].map(hit => drawCard(hit, true)));
   $('clear-compare').hidden = compared.size === 0;
   $('compare-status').textContent = compared.size === 0 ? '从结果中加入最多两条原文摘录。' : '已选 ' + compared.size + ' / 2 条。';
+  resetWriting();
   for (const button of $('hits').querySelectorAll('button')) {
     const added = compared.has(button.dataset.key);
     button.textContent = added ? '已加入对照' : '加入对照';
@@ -783,66 +805,65 @@ $('version-form').onsubmit = async event => {
   }
 };
 
-let csvData, csvRun = 0;
+let csvData, csvRun = 0, csvMeta, csvExport, csvExportVersion = 0;
 function drawCSV() {
   if (!csvData) return;
+  ++csvExportVersion;
   const csv = globalThis.EvidenceDeskCSV;
   const mode = $('csv-mode').value || 'line';
-  const stats = csv.analyze(csvData,Number($('csv-column').value),mode);
-  $('csv-caption').textContent = stats.caption;
-  const available = stats.visible.filter(value => value !== null);
-  if (!available.length) {
-    $('csv-chart').replaceChildren(el('p','empty','图中没有可画的数值；请查看图注或表格。'));
-    return;
-  }
-  const W = 680, H = 310, L = 108, R = 24, T = 24, B = 57;
-  const floor = mode === 'bar' ? Math.min(0,...available) : Math.min(...available);
-  const ceiling = mode === 'bar' ? Math.max(0,...available) : Math.max(...available);
-  const lower = floor === ceiling ? floor - (Math.abs(floor) || 1) * .04 : floor;
-  const upper = floor === ceiling ? ceiling + (Math.abs(ceiling) || 1) * .04 : ceiling;
-  const count = stats.visible.length, dx = (W - L - R) / count;
-  const px = i => L + (i + .5) * dx;
-  const py = n => T + (upper - n) / (upper - lower) * (H - T - B);
-  const chart = svg('svg',{viewBox:'0 0 ' + W + ' ' + H,role:'img','aria-labelledby':'csv-svg-title csv-svg-desc'});
-  const title = svg('title',{id:'csv-svg-title'});
-  const desc = svg('desc',{id:'csv-svg-desc'});
-  title.textContent = mode === 'bar' ? '按原始行序的柱状图' : '按原始行序的折线图';
-  desc.textContent = stats.caption;
-  chart.append(title,desc);
-  function label(x,y,text,align) {
-    const t = svg('text',{x,y,'text-anchor':align});
-    t.textContent = text;
-    chart.append(t);
-  }
-  for (let i = 0; i <= 4; i++) {
-    const y = T + i * (H - T - B) / 4;
-    const value = i === 4 ? lower : upper - i * (upper - lower) / 4;
-    chart.append(svg('line',{x1:L,y1:y,x2:W-R,y2:y,stroke:'#d9dcd3'}));
-    label(L-9,y+4,csv.format(value),'end');
-  }
-  if (lower < 0 && upper > 0) chart.append(svg('line',{x1:L,y1:py(0),x2:W-R,y2:py(0),stroke:'#8d978e'}));
-  let prev = null;
-  stats.visible.forEach((value,i) => {
-    const x = px(i);
-    if (i === 0 || i === count - 1 || (i + 1) % Math.max(3, Math.ceil(count / 8)) === 0)
-      label(x,H-B+23,String(i+1),'middle');
-    if (value === null) { prev = null; return; }
-    const y = py(value);
-    if (mode === 'line' && prev) chart.append(svg('line',{x1:prev[0],y1:prev[1],x2:x,y2:y,stroke:'#234e3c','stroke-width':2}));
-    const mark = mode === 'bar' && value !== 0
-      ? svg('rect',{x:x-Math.min(dx*.3,19),y:Math.min(y,py(0)),width:Math.min(dx*.6,38),height:Math.abs(y-py(0)),fill:'#234e3c'})
-      : svg('circle',{cx:x,cy:y,r:mode === 'bar' ? 2.5 : 3.8,fill:'#234e3c'});
-    const tip = svg('title');
-    tip.textContent = '数据第 ' + (i+1) + ' 行：' + csv.format(value);
-    mark.append(tip);
-    chart.append(mark);
-    prev = [x,y];
+  const widthMm = Number($('csv-width').value || '183');
+  const stats = csv.analyze(csvData,Number($('csv-column').value),mode,{
+    ...csvMeta,valueUnit:$('csv-value-unit').value,observationUnit:$('csv-row-unit').value
   });
-  label((L+W-R)/2,H-8,'数据行序（表头不计入）','middle');
-  $('csv-chart').replaceChildren(chart);
+  $('csv-caption').textContent = stats.caption;
+  $('csv-export-status').textContent = '';
+  $('csv-source').textContent = '原始文件 SHA-256：' + csvMeta.sourceSha256;
+  let svgText = '';
+  try {
+    svgText = csv.figureSVG(stats,{widthMm});
+    const preview = el('img');
+    preview.alt = '按 CSV 行序绘制的描述性图表。数值口径见下方图注。';
+    preview.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+    $('csv-chart').replaceChildren(preview);
+  } catch (error) {
+    $('csv-chart').replaceChildren(el('p','empty',error.message));
+  }
+  csvExport = {stats,svgText,widthMm};
+  $('csv-svg').disabled = !svgText;
+  $('csv-png').disabled = !svgText;
+  $('csv-mapping').disabled = false;
 }
+$('csv-svg').onclick = () => {
+  if (csvExport?.svgText) downloadLocal(csvExport.svgText,'csv-figure.svg','image/svg+xml;charset=utf-8');
+};
+$('csv-mapping').onclick = () => {
+  if (csvExport) downloadLocal(globalThis.EvidenceDeskCSV.mappingJSON(csvExport.stats),'csv-figure-mapping.json','application/json;charset=utf-8');
+};
+$('csv-png').onclick = async () => {
+  if (!csvExport?.svgText || $('csv-png').disabled) return;
+  const run = csvExportVersion;
+  const {stats,widthMm} = csvExport;
+  $('csv-png').disabled = true;
+  $('csv-export-status').textContent = '正在本机生成 PNG…';
+  try {
+    const png = await globalThis.EvidenceDeskCSV.figurePNG(stats,{widthMm});
+    if (run !== csvExportVersion) return;
+    downloadLocal(png,'csv-figure-300dpi.png','image/png');
+    $('csv-export-status').textContent = '已生成 PNG。';
+  } catch (error) {
+    if (run === csvExportVersion) $('csv-export-status').textContent = error.message;
+  } finally {
+    if (run === csvExportVersion) $('csv-png').disabled = false;
+  }
+};
 function resetCSV(message) {
-  csvData = undefined;
+  csvExportVersion++;
+  csvData = csvExport = csvMeta = undefined;
+  $('csv-value-unit').value = '';
+  $('csv-row-unit').value = '';
+  $('csv-source').textContent = '';
+  $('csv-export-status').textContent = '';
+  for (const id of ['csv-svg','csv-png','csv-mapping']) $(id).disabled = true;
   $('csv-result').hidden = true;
   $('csv-status').textContent = message;
   $('csv-table').replaceChildren();
@@ -867,7 +888,11 @@ $('csv-file').onchange = async () => {
     let text;
     try { text = new TextDecoder('utf-8',{fatal:true}).decode(bytes); }
     catch { throw Error('无法按 UTF-8 读取，请将文件另存为 UTF-8 CSV。'); }
-    csvData = csv.parse(text);
+    const parsed = csv.parse(text);
+    const sourceSha256 = await csv.sha256(bytes);
+    if (run !== csvRun) return;
+    csvMeta = {sourceSha256,sourceName:file.name};
+    csvData = parsed;
     const table = el('table');
     const title = el('caption','subtle','原始数据预览（前 ' + Math.min(csvData.rows.length,100) + ' 行，共 ' + csvData.rows.length + ' 行）');
     const head = el('thead'), labels = el('tr'), body = el('tbody');
@@ -899,11 +924,62 @@ $('csv-file').onchange = async () => {
 };
 $('csv-column').addEventListener('change',drawCSV);
 $('csv-mode').addEventListener('change',drawCSV);
+$('csv-width').addEventListener('change',drawCSV);
+$('csv-value-unit').addEventListener('input',drawCSV);
+$('csv-row-unit').addEventListener('input',drawCSV);
+let writingDraft = '';
+function resetWriting() {
+  writingDraft = '';
+  $('writing-preview').value = '';
+  $('writing-preview').hidden = true;
+  $('writing-preview-label').hidden = true;
+  $('writing-download').disabled = true;
+  $('writing-status').textContent = '已加入对照：' + compared.size + ' 条。';
+}
+function downloadLocal(text,name,mime) {
+  const href = URL.createObjectURL(new Blob([text],{type:mime}));
+  const link = el('a');
+  link.href = href;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(href),1000);
+}
+$('writing-topic').addEventListener('input',resetWriting);
+$('writing-form').onsubmit = event => {
+  event.preventDefault();
+  const writing = globalThis.EvidenceDeskWriting;
+  if (!writing) {
+    $('writing-status').textContent = '本地框架组件未载入，请重启程序并刷新。';
+    return;
+  }
+  const draft = writing.paper($('writing-topic').value,[...compared.values()],window.location.origin);
+  writingDraft = draft.markdown;
+  $('writing-preview').value = writingDraft;
+  $('writing-preview').hidden = false;
+  $('writing-preview-label').hidden = false;
+  $('writing-download').disabled = false;
+  $('writing-status').textContent = draft.count
+    ? '已生成模板，含 ' + draft.count + ' 条本地出处。请打开 PDF 核对。'
+    : '已生成空框架，未添加引文。';
+};
+$('writing-download').onclick = () => {
+  if (writingDraft) downloadLocal(writingDraft,'论文框架与证据清单.md','text/markdown;charset=utf-8');
+};
+$('mermaid-download').onclick = () => {
+  const writing = globalThis.EvidenceDeskWriting;
+  if (writing) downloadLocal(writing.mermaid,'evidence-desk-architecture.mmd','text/plain;charset=utf-8');
+  else $('writing-status').textContent = '本地框架组件未载入，请重启程序并刷新。';
+};
 discoveryEligibility();
 refreshDocs().catch(error => {
   $('import-log').className = 'subtle log';
   $('import-log').textContent = '无法载入文献库：' + error.message;
 });
 </script>
+<script src="/reader.js"></script>
+<script src="/tracking.js"></script>
+<script src="/review-panel.js"></script>
 </body>
 </html>
