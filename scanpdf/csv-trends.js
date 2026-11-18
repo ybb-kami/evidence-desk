@@ -322,6 +322,21 @@
     return source;
   }
 
+  // Mermaid 11.12's numeric grammar accepts ordinary decimal literals.
+  // Moving the point in Number's shortest representation preserves its value.
+  function mermaidNumber(value) {
+    const number = String(value);
+    const [coefficient, exponent] = number.split('e');
+    if (exponent === undefined) return number;
+    const sign = coefficient.startsWith('-') ? '-' : '';
+    const [integer, fraction = ''] = coefficient.slice(sign.length).split('.');
+    const digits = integer + fraction;
+    const point = integer.length + Number(exponent);
+    if (point <= 0) return sign + '0.' + '0'.repeat(-point) + digits;
+    if (point >= digits.length) return sign + digits.padEnd(point, '0');
+    return sign + digits.slice(0, point) + '.' + digits.slice(point);
+  }
+
   function mermaidXY(stats) {
     const unavailable = reason => ({code:'', reason});
     if (stats.xKind !== 'numeric' || !stats.connect) return unavailable('数值趋势图需要数值横轴，并由用户选择连线。');
@@ -344,10 +359,6 @@
     if (!(position > max)) return unavailable('横轴间距不能由 Mermaid 的等距数值轴逐点复现。可用 SVG 或 TikZ。');
     const values = points.map(point => point.y);
     const yBounds = numericDomain(values);
-    const decimal = value => /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(String(value));
-    if (![min,max,...yBounds,...values].every(decimal)) {
-      return unavailable('数值趋势图需要普通十进制数字表示。请选择 SVG 或 TikZ 核对这组数值。');
-    }
     const x = axisName(stats.source.x), y = axisName(stats.source.y);
     const chartScope = `${x} ${min}–${max} / ${y}`;
     const title = group.group === null ? chartScope : `${stats.source.group.column} = ${group.group} · ${chartScope}`;
@@ -355,9 +366,9 @@
       `      plotColorPalette: '${palette[0]}'`, '---', 'xychart',
       ...(stats.source.sha256 ? [`  %% Source SHA-256 ${stats.source.sha256}`] : []),
       `  %% CSV source lines ${points.map(point => point.sourceLine ?? '?').join(', ')}`,
-      `  title "${mermaidLabel(title)}"`, `  x-axis "${mermaidLabel(x)}" ${min} --> ${max}`,
-      `  y-axis "${mermaidLabel(y)}" ${yBounds[0]} --> ${yBounds[1]}`,
-      `  line [${values.join(', ')}]`, ''];
+      `  title "${mermaidLabel(title)}"`, `  x-axis "${mermaidLabel(x)}" ${mermaidNumber(min)} --> ${mermaidNumber(max)}`,
+      `  y-axis "${mermaidLabel(y)}" ${mermaidNumber(yBounds[0])} --> ${mermaidNumber(yBounds[1])}`,
+      `  line [${values.map(mermaidNumber).join(', ')}]`, ''];
     const code = lines.join('\n');
     return code.length <= 48000 ? {code, reason:null} : unavailable('Mermaid 源码超过 48,000 字符。可按组导出。');
   }

@@ -218,8 +218,9 @@ function showGraph(area, data, works, groups, sources) {
     content.append(detail);
   }
 }
-const laterStates = {reported_same_scope:'后文报告同条件实测', topic_candidate:'后文主题候选',
+const laterStates = {reported_same_scope:'后文报告同条件实测', partial_modality_scope:'后文报告部分模态的应用', topic_candidate:'后文主题候选',
   checked_no_match:'已查找，仍待查证', unverified:'尚未查证'};
+const modalityNames = {image:'图像', audio:'音频', video:'视频'};
 function showProposals(area, data, sources) {
   const layer = data.proposals;
   const content = section(area, 'future-proposals', '未来工作措辞归并');
@@ -274,7 +275,7 @@ function showProposals(area, data, sources) {
 }
 function showFuture(area, data, sources) {
   const content = section(area, 'future-review', '未来工作与后续证据');
-  content.append(node('p', 'arXiv 日期对应所选版本。仅查选集中较晚的已匹配引用，按英文主题词和词组筛查正文。未匹配的项目仍待查证。'));
+  content.append(node('p', 'arXiv 日期对应所选版本。仅查选集中较晚的已匹配引用，按英文主题词、词组和明示的跨模态范围筛查正文。未匹配的项目仍待查证。'));
   if (!data.follow_ups.length) content.append(node('p', '目前没有找到明确含未来工作措辞的摘录。', 'gap'));
   for (const row of data.follow_ups) {
     const source = sources.get(row.direction);
@@ -287,6 +288,8 @@ function showFuture(area, data, sources) {
       node('blockquote', source.text), link(`原文 ${source.ref}`, source.ref));
     if (row.date) detail.append(' · ', dateLink(row.date));
     detail.append(node('p', `选集有 ${row.citations} 条指向该作品的引用，${row.later} 条可确认较晚，${row.unordered} 条无法判断先后，已比对 ${row.checked} 篇较晚论文的正文。`));
+    const notLater = row.citations - row.later - row.unordered;
+    if (notLater) detail.append(node('p', `有 ${notLater} 条引用所在 PDF 的日期不晚于所选版本，未纳入后续比对。`));
     if (!row.date) detail.append(node('p', '缺少这份 PDF 的可核日期，无法排列后续文献。', 'gap'));
     else if (!row.comparable_topic) detail.append(node('p', '英文主题词过少，无法按当前规则比对。', 'gap'));
     else if (!row.later) detail.append(node('p', '所选文献里没有日期可确认较晚的已匹配引用。', 'gap'));
@@ -300,6 +303,10 @@ function showFuture(area, data, sources) {
         item.append(dateLink(match.date), ' · ', link(later.title + ' 原文', later.ref), ' · ',
           link('参考文献条目', match.citation), node('blockquote', later.text),
           node('small', `${laterStates[match.kind]} · 匹配词 ${match.terms.join('、')}`));
+        if (match.coverage) {
+          const labels = domains => domains.map(domain => modalityNames[domain]).join('、');
+          item.append(node('p', `该摘录涉及 ${labels(match.coverage.observed_modalities)}。原展望还列出 ${labels(match.coverage.unverified_modalities)}，实验条件和其余范围仍待核对。`));
+        }
         candidates.append(item);
       }
       detail.append(candidates);

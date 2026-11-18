@@ -6,6 +6,10 @@
 
 其他 Crossref 记录可通过 DOI 查看书目信息。若运行环境无法连通服务，可通过工作台手动导入已有 PDF。
 
+## 从科研 Copilot 核对论文线索
+
+在 Copilot 填写公开检索词。若网页结果含有受支持的 arXiv、ACL Anthology 或 JOSS 官方论文链接，点击「在论文发现中核对」打开对应的编号和出版方入口。已有 JOSS 题录可直接查阅，缺少时可以单独同意将公开 DOI 发给 JOSS 官方出版仓库。确认下载后，PDF 进入当前文库并提供物理原页入口。[浏览器前后对照](HANDOFF.md)
+
 ## 用 JOSS 出版题录按题名获取 PDF
 
 用 JOSS 官方出版仓库的 Crossref XML 准备本机题录。准备程序可接收多个公开 JOSS DOI，核对期刊、DOI 和出版版本的 CC BY 4.0 许可，保留原始 XML 供复查。默认保存在 `~/.local/share/evidence-desk/joss-catalog`，也可在准备和启动工作台前一并设置 `EVIDENCE_JOSS_CATALOG` 选择目录。

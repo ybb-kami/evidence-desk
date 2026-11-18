@@ -201,8 +201,10 @@ def execute(store, docs, req, doi, emit, *, generator=None, search_action=None):
             groups.append(dict(name="扫描覆盖", answer=" ".join(coverage), gap=None, sources=[], cells=[],
                                scan=[{"id": d["id"], "page": d["textless_pages"][0]} for d in docs if d["textless_pages"]]))
         elif action == "web_search":
+            from discovery.handoff import from_url
             web = search_action()
-            state = "ok" if web["state"] == "ok" else "unavailable"
+            web = {**web, "items": [dict(item, discovery=from_url(item["url"])) for item in web["items"]]}
+            state = {"ok": "ok", "partial": "partial"}.get(web["state"], "unavailable")
         elif action == "publication_metadata":
             from discovery.joss import read_publication
             try:
@@ -212,6 +214,8 @@ def execute(store, docs, req, doi, emit, *, generator=None, search_action=None):
                 state = "unavailable"
                 groups.append(dict(name="JOSS 出版方", answer=None, gap="未取得可核验的题录，可稍后重试。", sources=[], cells=[]))
         receipts.append({"tool": action, "status": state, "anchors": pages, "seconds": round(time.monotonic()-start, 2)})
+        if action == "web_search":
+            receipts[-1]["web_results"] = len(web["items"])
         emit("receipt", receipts[-1])
         if state == "gap" and "scan_coverage" not in actions and any(d["textless_pages"] for d in docs):
             actions.append("scan_coverage")

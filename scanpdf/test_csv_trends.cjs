@@ -98,8 +98,12 @@ const irregular = trends.analyze(csv.parse('x,y\n1,2\n2,3\n4,4'), {...settings,g
 assert.match(trends.mermaidXY(irregular).reason,/等距/);
 const fractional = trends.analyze(csv.parse('x,y\n0,1\n0.1,2\n0.2,3\n0.3,4'), {...settings,groupColumn:null});
 assert.match(trends.mermaidXY(fractional).reason,/逐点复现/);
-const unsafePrecision = trends.analyze(csv.parse('x,y\n0,1\n1,1e-10'), {...settings,groupColumn:null});
-assert.match(trends.mermaidXY(unsafePrecision).reason,/普通十进制/);
+const scientificValues = trends.analyze(csv.parse('x,y\n0,1\n1,1e-10'), {...settings,groupColumn:null});
+assert.match(trends.mermaidXY(scientificValues).code,/line \[1, 0\.0000000001\]/);
+const extremes = trends.analyze(csv.parse('x,y\n1,-1.25e-88\n2,4.3e+81'), {...settings,groupColumn:null});
+const decimals = trends.mermaidXY(extremes).code.match(/line \[([^\]]+)\]/)[1].split(', ');
+assert.ok(decimals.every(value => /^-?\d+(?:\.\d+)?$/.test(value)));
+assert.deepEqual(decimals.map(Number),[-1.25e-88,4.3e+81]);
 const tooMany = trends.analyze(csv.parse('x,y\n' + Array.from({length:201},(_,i)=>`${i},${i}`).join('\n')),
   {...settings,groupColumn:null});
 assert.throws(()=>trends.mermaid(tooMany),/最多 200/);

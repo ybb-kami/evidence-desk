@@ -94,6 +94,29 @@ class WorkflowTests(unittest.TestCase):
         bad=report(DOC,{'answer':'made up','hits':[h],'generation':{'claims':[dict(h,span='missing string')]}})
         self.assertIsNone(bad['answer'])
 
+    def test_duplicate_search_calls_yield_one_discovery_handoff_and_separate_pdf_evidence(self):
+        events = []
+        req = dict(self.req, model_planner=True, search_terms="public paper")
+        self.store.local_generator.choose_tools.return_value = (
+            "model_tool_calls", ["web_search", "unapproved_import", "web_search"],
+        )
+        search = Mock(return_value={"state": "partial", "items": [
+            {"url": "https://arxiv.org/abs/1706.03762v1", "title": "A paper"},
+            {"url": "https://example.org/10.21105/joss.03021", "title": "A blog"},
+        ]})
+        with patch("followup.answer_question", return_value={"hits": [dict(DOC["chunks"][0], id=DOCID)],
+                                                            "answer": "37 samples"}):
+            execute(self.store, [DOC], req, None, lambda k, x: events.append((k, x)), search_action=search)
+        search.assert_called_once_with()
+        final = events[-1][1]
+        first, second = final["web"]["items"]
+        self.assertEqual(first["discovery"]["identifier"], "1706.03762v1")
+        self.assertIsNone(second["discovery"])
+        self.assertEqual(final["receipts"][0] | {"seconds": 0}, {"tool": "web_search", "status": "partial",
+                                                                 "anchors": 0, "seconds": 0, "web_results": 2})
+        self.assertEqual([group["name"] for group in final["reports"]], [DOC["name"]])
+        self.assertEqual(final["reports"][0]["sources"][0]["id"], DOCID)
+
     def test_genuine_provider_tool_calls_only_and_no_arguments_from_pdf(self):
         model=LocalGenerator('http://127.0.0.1:12508/v1/chat/completions','test')
         req=dict(self.req,question='Check the citation graph')

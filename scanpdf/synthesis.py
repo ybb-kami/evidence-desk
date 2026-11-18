@@ -6,7 +6,8 @@ import re
 
 import app
 import provider
-from future_work import classify_later, group_proposals
+from future_work import (AUTHOR_PLAN, classify_later, group_proposals, modality_scope,
+                         normalize, partial_application)
 from graph import build_graph
 from local_review import (FUTURE, SENTENCE_BOUNDARY, _body_chunks, _body_passages,
                           _find_passage, _topic_terms, _version_stamp)
@@ -83,15 +84,19 @@ def _dated_excerpt(doc):
 
 def _directions(doc):
     seen = set()
+    directions = []
     for chunk in _body_chunks(doc):
         for raw in SENTENCE_BOUNDARY.split(chunk['text']):
             quote = raw.strip()
+            normalized = normalize(quote)
+            author_plan = bool(AUTHOR_PLAN.match(normalized) and len(set(_topic_terms(normalized))) >= 3)
             if (30 <= len(quote) <= 500 and quote.endswith(('.', '!', '?', '。', '！', '？', ')'))
-                    and FUTURE.search(quote) and quote not in seen):
-                seen.add(quote)
-                yield chunk, quote
-                if len(seen) == MAX_FUTURE_PER_PDF:
-                    return
+                    and (FUTURE.search(quote) or author_plan) and normalized not in seen):
+                seen.add(normalized)
+                directions.append((author_plan, chunk, quote))
+    directions.sort(key=lambda row: not row[0])
+    for _, chunk, quote in directions[:MAX_FUTURE_PER_PDF]:
+        yield chunk, quote
 
 
 def _citation_groups(nodes, links):
@@ -146,7 +151,9 @@ def _follow_ups(papers, links, evidence, documents, add):
             unordered += comparison is None
         chronological.sort(key=lambda row: (row[0]['date']['year'], row[0]['date']['date'] or '', row[0]['id']))
         for direction in paper['future']:
-            quote = TOPIC_NOISE.sub(' ', evidence[direction]['text'])
+            proposal = evidence[direction]['text']
+            quote = TOPIC_NOISE.sub(' ', proposal)
+            scope = modality_scope(proposal)
             comparable_topic = len(set(_topic_terms(FUTURE.sub('', quote)))) >= 3
             checked = 0
             matches = []
@@ -159,20 +166,27 @@ def _follow_ups(papers, links, evidence, documents, add):
                         continue
                     checked += 1
                     matched = _find_passage(passages[doc['id']], quote)
-                    if not matched:
-                        continue
-                    chunk, excerpt, terms = matched
-                    kind = classify_later(evidence[direction]['text'], excerpt)
-                    matches.append((kind, later, link, chunk, excerpt, terms))
-            matches.sort(key=lambda match: match[0] != 'reported_same_scope')
+                    kind = classify_later(proposal, matched[1]) if matched else None
+                    partial = (partial_application(_body_chunks(doc), scope)
+                               if scope and kind != 'reported_same_scope' else None)
+                    if partial:
+                        chunk, excerpt, terms, coverage = partial
+                        matches.append(('partial_modality_scope', later, link, chunk, excerpt, terms, coverage))
+                    elif matched:
+                        chunk, excerpt, terms = matched
+                        matches.append((kind, later, link, chunk, excerpt, terms, None))
+            precedence = {'reported_same_scope': 0, 'partial_modality_scope': 1, 'topic_candidate': 2}
+            matches.sort(key=lambda match: precedence[match[0]])
             candidates = []
-            for kind, later, link, chunk, excerpt, terms in matches[:MAX_LATER_PER_DIRECTION]:
+            for kind, later, link, chunk, excerpt, terms, coverage in matches[:MAX_LATER_PER_DIRECTION]:
                 ref = add(documents[later['id']], chunk, excerpt, '后续正文', later['title'])
-                candidates.append({'excerpt': ref, 'citation': link['ref'], 'date': later['date'],
-                                   'terms': terms, 'kind': kind})
+                candidate = {'excerpt': ref, 'citation': link['ref'], 'date': later['date'],
+                             'terms': terms, 'kind': kind}
+                if coverage:
+                    candidate['coverage'] = coverage
+                candidates.append(candidate)
             observed = sum(match[0] == 'reported_same_scope' for match in matches)
-            state = ('reported_same_scope' if observed else 'topic_candidate' if matches else
-                     'checked_no_match' if checked else 'unverified')
+            state = matches[0][0] if matches else 'checked_no_match' if checked else 'unverified'
             reviews.append({'direction': direction, 'date': paper['date'],
                             'citations': len(incoming[paper['work']]), 'unordered': unordered,
                             'later': len(chronological), 'checked': checked, 'matches': len(matches),

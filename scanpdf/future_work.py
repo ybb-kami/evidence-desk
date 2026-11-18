@@ -4,7 +4,7 @@ from itertools import combinations
 import re
 import unicodedata
 
-from local_review import FUTURE, _topic_terms
+from local_review import FUTURE, SENTENCE_BOUNDARY, _topic_terms
 
 
 MAX_VECTOR_GROUPS = 12
@@ -17,6 +17,18 @@ EVALUATION = re.compile(r"^(?:In our experiments?,?\s+)?(?:we|our (?:team|study)
 AUTHOR = re.compile(r"^(?:(?:in|for) (?:our )?future (?:work|research),?\s+)?"
                     r"(?:we (?:plan|will|leave|aim|intend)|our future (?:work|research))\b|"
                     r"^(?:我们(?:将|计划|拟)|本研究下一步)", re.I)
+AUTHOR_PLAN = re.compile(r"^we (?:plan|intend) to (?:extend|apply|adapt|investigate|test|evaluate|"
+                         r"study|compare|measure|analy[sz]e|explore|validate|examine)\b", re.I)
+MODALITY_EXTENSION = re.compile(r"\b(?:extend|apply|adapt)\s+(?:the\s+)?"
+                                r"([a-z][a-z-]{2,}(?:\s+[a-z][a-z-]{2,})?)\s+to\b")
+MODALITIES = {
+    "image": re.compile(r"\b(?:images?|visual|vision)\b"),
+    "audio": re.compile(r"\b(?:audio|speech)\b"),
+    "video": re.compile(r"\bvideos?\b"),
+}
+APPLICATION = re.compile(r"\b(?:fed to|processed by|classif\w*|recognition|train(?:ed)? on)\b")
+REPORTED_RESULT = re.compile(r"\bwe (?:report(?:ed)?|measure(?:d)?|benchmark(?:ed)?|"
+                             r"present(?: here)?(?: the first)? results?)\b")
 NUMBER_CONDITION = re.compile(
     r"\b(?:with|at|using|under|across)\s+([0-9][0-9,.]*)\s*(tokens?|gpus?|tpus?|samples?|"
     r"examples?|seeds?|epochs?|milliseconds?|seconds?|gigabytes?|gb)\b", re.I)
@@ -39,6 +51,48 @@ def topics(text):
     for match in HAN.findall(text):
         terms.update(match[offset:offset + 2] for offset in range(len(match) - 1))
     return terms
+
+
+def modality_scope(text):
+    """Read named non-text examples from an author's explicit extension plan."""
+    text = normalize(text)
+    if not AUTHOR_PLAN.match(text) or "modalities other than text" not in text:
+        return None
+    target = MODALITY_EXTENSION.search(text)
+    domains = [domain for domain, pattern in MODALITIES.items() if pattern.search(text)]
+    return (target[1], domains) if target and len(domains) >= 2 else None
+
+
+def partial_application(chunks, scope):
+    """Locate a later reported application for a strict subset of named modalities."""
+    family, domains = scope
+    family_pattern = re.compile(rf"\b{re.escape(family.removesuffix('s'))}s?\b")
+    for chunk in chunks:
+        text = chunk["text"]
+        breaks = [(match.start(), match.end()) for match in SENTENCE_BOUNDARY.finditer(text)]
+        starts = [0, *(end for _, end in breaks)]
+        stops = [*(start for start, _ in breaks), len(text)]
+        for index, (start, stop) in enumerate(zip(starts, stops)):
+            lead = normalize(text[start:stop])
+            if FUTURE.search(lead) or not family_pattern.search(lead) or not APPLICATION.search(lead):
+                continue
+            observed = [domain for domain in domains if MODALITIES[domain].search(lead)]
+            if not 0 < len(observed) < len(domains):
+                continue
+            for finish in stops[index:min(index + 4, len(stops))]:
+                quote = text[start:finish].strip()
+                if len(quote) > 650:
+                    break
+                flat = normalize(quote)
+                # A further named modality inside the same window may describe
+                # a different experiment. Keep only clear single-scope excerpts.
+                if (REPORTED_RESULT.search(flat) and not FUTURE.search(flat)
+                        and not any(MODALITIES[domain].search(flat) for domain in domains if domain not in observed)):
+                    return chunk, quote, [family, *observed], {
+                        "requested_modalities": domains, "observed_modalities": observed,
+                        "unverified_modalities": [domain for domain in domains if domain not in observed],
+                    }
+    return None
 
 
 def conditions(text):
@@ -90,7 +144,7 @@ def group_proposals(follow_ups, evidence, papers, nodes, *, dense=None):
         match = normalize(text)
         group = groups.setdefault(match, {"id": ref, "text": text, "members": [], "conditions": conditions(text)})
         group["members"].append({"ref": ref, "doc": paper["id"], "work": paper["work"], "date": row["date"],
-                                 "by_author": bool(AUTHOR.search(text)), "state": row["state"],
+                                 "by_author": bool(AUTHOR.search(normalize(text))), "state": row["state"],
                                  "pagerank": importance[paper["work"]]})
     ordered = list(groups.values())
     for group in ordered:

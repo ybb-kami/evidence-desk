@@ -107,7 +107,6 @@ def check_boundaries(page):
         "invalid": ([[1, 2], [2, "N/A"], [3, 6]], "无效"),
         "duplicate": ([[1, 2], [1, 3], [3, 6]], "重复"),
         "irregular": ([[1, 2], [2, 3], [4, 6]], "等距"),
-        "scientific_notation": ([[1, "1e-10"], [2, 3], [3, 6]], "十进制"),
     }
     for case, (rows, message) in failures.items():
         load(page, csv_fixture(["x", "y"], rows), "x", "y")
@@ -188,6 +187,16 @@ def run(mtcars, nile, bundle, output, chromium, original):
         rendered_chart = render(renderer, chart, output / "nile-xychart-mermaid.svg")
         chart_points = verify_chart(rendered_chart, nile)
         renderer.locator("#diagram").screenshot(path=output / "nile-mermaid-preview.png")
+        load(app, csv_fixture(["x", "y"], [["0", "-2.5e-9"], ["1e-9", "0"], ["2e-9", "5e-9"]]), "x", "y")
+        scientific = save(app, "mermaid-xy", output, "scientific-").read_text(encoding="utf-8")
+        assert "line [-0.0000000025, 0, 0.000000005]" in scientific
+        decimal_chart = render(renderer, scientific, output / "scientific-xychart-mermaid.svg")
+        vertices = [(float(x), float(y)) for x, y in re.findall(r"[ML](-?[0-9.]+),(-?[0-9.]+)", decimal_chart["chartPath"])]
+        assert len(vertices) == 3
+        first, middle, last = vertices
+        assert last[0] > first[0] and first[1] > last[1]
+        assert math.isclose(middle[0], (first[0]+last[0])/2, abs_tol=.002)
+        assert math.isclose(middle[1], first[1]+(last[1]-first[1])/3, abs_tol=.002)
         boundaries = check_boundaries(app)
         invalid_parsed = renderer.evaluate('''async () => {
           try { await mermaid.parse('xychart\\n line [1, ??, 3]'); return true; }
@@ -202,7 +211,7 @@ def run(mtcars, nile, bundle, output, chromium, original):
             "mtcars_rendered_edges": rendered_observations["edges"], "original_export_replayed": bool(original),
             "reserved_character_labels_exact": True, "reserved_graph_rendered_nodes": len(reserved["nodes"]),
             "reserved_graph_rendered_edges": reserved["edges"], "nile_sha256": sha256(nile.read_bytes()).hexdigest(),
-            "nile_chart_vertices_verified": chart_points, "nile_axis_units": ["年", "10⁸ m³"],
+            "nile_chart_vertices_verified": chart_points, "scientific_notation_vertices_verified": len(vertices), "nile_axis_units": ["年", "10⁸ m³"],
             "fallback_cases": [*boundaries, "malformed_mermaid"]}
 
 

@@ -69,11 +69,11 @@ def select(page, part):
     ).inner_text()
 
 
-def translate_raw(base, text):
+def translate_raw(base, text, direction="en-zh"):
     request = u.Request(
         base + "/api/bilingual/translate",
         data=json.dumps(
-            {"direction": "en-zh", "text": text.replace("\n", " ").replace("ﬁ", "fi")}
+            {"direction": direction, "text": text.replace("\n", " ").replace("ﬁ", "fi")}
         ).encode(),
         headers={"Content-Type": "application/json"},
     )
@@ -203,6 +203,7 @@ def verify_export(
 
 def verify(base, files, chromium, example_dir=None):
     english = add(base, "1706.03762v1.pdf", (files / "1706.03762v1.pdf").read_bytes())
+    bert = add(base, "N19-1423.pdf", (files / "N19-1423.pdf").read_bytes())
     zhname = "2501.12948v2.pdf"
     chinese = add(base, zhname, (files / zhname).read_bytes())
     with fitz.open() as doc:
@@ -247,6 +248,20 @@ def verify(base, files, chromium, example_dir=None):
         for index, (text, _) in enumerate(held_out, 1):
             terms_page.insert_text((25, 55 * index), text, fontsize=10)
         alignment_fixture = add(base, "Alignment-and-terms.pdf", doc.tobytes())
+    ordinary = "Transformer oil insulates the high-voltage winding."
+    new_name = "We introduce a sequence modeling architecture called WaveGate."
+    zh_case = "卷积神经网络对局部空间结构进行建模。"
+    zh_attention = "我们采用多头注意力对输入序列建模。"
+    with fitz.open() as doc:
+        page = doc.new_page()
+        page.insert_text((25, 40), new_name)
+        page.insert_text((25, 85), ordinary)
+        page.insert_text((25, 130), "We use a neural model called Transformer.")
+        page = doc.new_page()
+        page.insert_text((25, 40), "WaveGate measures a weak signal.")
+        page.insert_text((25, 85), zh_case, fontname="china-s")
+        page.insert_text((25, 130), zh_attention, fontname="china-s")
+        named_fixture = add(base, "Names-and-ordinary-words.pdf", doc.tobytes())
     print(
         "directions",
         u.urlopen(base + "/api/bilingual/models").read().decode(),
@@ -285,6 +300,50 @@ def verify(base, files, chromium, example_dir=None):
             before = translate_raw(base, text.strip())
             print("TERM", repr(text), "| before", before, "| after", after, flush=True)
             assert term in after and "[TERM" not in after
+        # Select the original abstract sentence and round trip both of its block anchors.
+        open_doc(page, base, english, 1)
+        phrase = ("We propose a new simple network architecture, the Transformer,\n"
+                  "based solely on attention mechanisms, dispensing with recurrence and convolutions\n"
+                  "entirely.")
+        before = translate_raw(base, phrase)
+        after = select(page, phrase).split("」\n", 1)[1]
+        print("ARCHITECTURE Attention v1 page 1", "| before", before, "| after", after, flush=True)
+        assert "变形器" in before and "Transformer" in after and "变形器" not in after
+        card = page.locator(".source").filter(has_text=phrase).first.locator("..")
+        anchor = card.get_attribute("data-anchor")
+        card.get_by_role("button", name="定位译文").click()
+        peer = page.locator(f'.translation-card[data-anchor="{anchor}"]')
+        expect(peer).to_be_focused()
+        peer.get_by_role("button", name="定位原文").click()
+        expect(card).to_be_focused()
+        expect(page.locator("#original")).to_have_attribute("href", f"/pdf/{english}#page=1")
+        card.locator("summary").click()
+        assert card.locator("img").evaluate("img => img.decode().then(() => img.naturalWidth > 40)")
+
+        # A second original document names its architecture independently.
+        open_doc(page, base, bert, 1)
+        bert_phrase = ("We introduce a new language representa-\n"
+                       "tion model called BERT, which stands for\n"
+                       "Bidirectional Encoder Representations from\nTransformers.")
+        before = translate_raw(base, bert_phrase)
+        after = select(page, bert_phrase).split("」\n", 1)[1]
+        print("ARCHITECTURE BERT page 1", "| before", before, "| after", after, flush=True)
+        assert "BERT" in after and "Transformers" in after and "[TERM" not in after
+        open_doc(page, base, named_fixture, 2)
+        before = translate_raw(base, "WaveGate")
+        after = select(page, "WaveGate").split("」\n", 1)[1]
+        print("ARCHITECTURE independent page 2", "| before", before, "| after", after, flush=True)
+        assert before != "WaveGate" and after == "WaveGate"
+        open_doc(page, base, named_fixture, 1)
+        assert select(page, ordinary).split("」\n", 1)[1] == translate_raw(base, ordinary)
+        open_doc(page, base, named_fixture, 2)
+        page.select_option("#direction", "zh-en")
+        for text, term in ((zh_case, "convolutional neural networks"), (zh_attention, "multi-head attention")):
+            before = translate_raw(base, text, "zh-en")
+            after = select(page, text).split("」\n", 1)[1]
+            print("ZH TERM", text, "| before", before, "| after", after, flush=True)
+            assert term not in before.lower() and term in after.lower() and "[TERM" not in after
+        page.select_option("#direction", "en-zh")
         for text,terms in held_out:
             open_doc(page, base, alignment_fixture, 2)
             after = select(page, text).split("」\n", 1)[1]

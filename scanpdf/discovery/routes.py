@@ -12,7 +12,7 @@ import fitz
 
 from app import Bad, UPLOAD_LIMIT
 from arxiv_tracking import CATEGORIES
-from . import fetch, joss, references
+from . import fetch, handoff, joss, references
 from .schedule import CADENCES
 
 ASSETS = Path(__file__).parent
@@ -136,12 +136,38 @@ def _subscription(handler, post):
     return schedule.subscribe(category, cadence)
 
 
+def _candidate(handler, post):
+    if post:
+        request = handler.json_request()
+        if request.get("consent") is not True:
+            raise Bad(403, "请确认向 JOSS 官方出版仓库发送此公开 DOI。")
+        selected = handoff.candidate(request.get("provider"), request.get("identifier"))
+        if set(request) != {"provider", "identifier", "consent"} or not selected or selected["provider"] != "joss":
+            raise Bad(400, "仅支持核对一个明确的 JOSS DOI。")
+        try:
+            publication = joss.cache_record(selected["identifier"], joss.catalog_root())
+        except (OSError, ValueError):
+            raise Bad(502, "未取得可核验的 JOSS 出版方题录。") from None
+    else:
+        params = parse_qs(urlsplit(handler.path).query, keep_blank_values=True)
+        if set(params) != {"provider", "identifier"} or any(len(values) != 1 for values in params.values()):
+            raise Bad(400, "请选择一个已支持的公开论文编号。")
+        selected = handoff.candidate(params["provider"][0], params["identifier"][0])
+        if not selected:
+            raise Bad(400, "请选择一个已支持的公开论文编号。")
+        publication = joss.cached_publication(selected["identifier"]) if selected["provider"] == "joss" else None
+    return {"candidate": selected, "publication": publication}
+
+
 def handle(handler, post, path):
     if not post and path == "/download":
         handler.payload(200, (ASSETS / "download.html").read_bytes(), "text/html; charset=utf-8")
         return True
     if path == "/api/download/subscription":
         handler.payload(200, _subscription(handler, post))
+        return True
+    if path == "/api/download/candidate":
+        handler.payload(200, _candidate(handler, post))
         return True
     if path == "/api/download/references":
         library = handler.server.library

@@ -8,9 +8,11 @@
 
 点击「导出已完成译段（HTML）」可下载独立文件，离线用浏览器打开。文件包含 PDF 名称、SHA-256、物理页索引、块号、原文和译文。选区标出相对于整段的字符范围（从 1 开始）。整段另行标记。导出前会核对源段文本、坐标和保护范围并移除已变化的记录。文献与翻译方向分别保存，仅导出已经完成的译段。离线 HTML 可脱离工作台、模型和网络打开。
 
-「设置需保留原文的术语」可按行输入专名或代码标识，应用后在翻译中按大小写和字面匹配保留。修改后仅需重新翻译本篇当前方向。更改某段的整段保留选项会清空该段两方向的旧译文。
+「设置需保留原文的术语」可按行输入专名或代码标识，应用后在翻译中按大小写和字面匹配保留。每篇每个方向最多 32 个不同术语，每项最多 80 个字符，输入上限 2048 个字符。超限时显示原因并保留已应用的词表。修改后仅需重新翻译本篇当前方向。更改某段的整段保留选项会清空该段两方向的旧译文。
 
-英译中内置四项机器学习术语，按英文词组匹配，兼容常见大小写、空白和连字符变化。已知译法可以按出现次数核对时，在译句中改正术语。其余情况先尝试把术语标记放在完整语句中翻译。模型漏写或改写标记时，工作台分开翻译术语两侧，再填入标准译名。自定义原文保留、公式和代码等保护规则先于术语处理。[词表与处理逻辑](reader.js)
+双向内置四项机器学习术语，按词组匹配。兼容常见英文大小写、空白和连字符变化。阅读器还从物理首页和当前页的明确命名句识别拉丁字母架构名，例如 *architecture called WaveGate*、*model called BERT* 或「名为 WaveTune 的网络架构」。每页最多使用 24 个识别出的名称，按大小写保留，单独划选同一名称也可核对。神经网络语境中的 *Transformer* 保留原名，有电压、绕组等电气上下文时沿用模型输出。
+
+已知译法可以按出现次数核对时，在译句中改正术语。其余情况先尝试把术语标记放在完整语句中翻译。模型漏写或改写标记时，工作台分开翻译术语两侧，再填入标准译名或来源专名。自定义原文保留、公式和代码等保护规则先于术语处理。[词表与处理逻辑](reader.js)
 
 整页和连续翻译时，阅读器确认的完整编号参考文献原样保留；可以单独划选题名翻译。数字占多数且至少三行是数值的表格块整体保留，避免数值、重复单元格或换行被模型改写。已识别的公式、代码和特殊词元会按字符保留。导出文件会标明完整参考文献、数据表及其他整块保留的内容。整篇验收的逐页计数、样例局限和复测命令见[15 页整篇验收](WHOLE_PAPER_REVIEW.md)。
 
@@ -44,7 +46,7 @@ python scanpdf/workbench.py --data ./data
 ```bash
 python -m unittest scanpdf.bilingual.test_routes
 node scanpdf/bilingual/test_reader.cjs
-# 端到端测试另需 Python playwright 和 Chromium，以及赛题中的两份原始 PDF
+# 端到端测试另需 Python playwright 和 Chromium，以及 Attention v1、BERT 和中文原始 PDF
 python scanpdf/bilingual/check_browser.py --samples /path/to/contest-pdf --chromium /usr/bin/chromium
 ```
 
@@ -67,4 +69,14 @@ Chromium 实测两侧滚轮与键盘定位、长原文与短译文的双向对�
 | 4 | Multi-Head Attention | 多头注意 | 多头注意力 |
 | 7 | label smoothing | 标牌 平滑 | 标签平滑 |
 
-另用预先编写的五句独立语境回归。四句正例得到全部五处预期术语，包括大小写、单复数和同句双术语。反例 “The editor is smoothing a paper label before storage.” 的输出与原始模型逐字相同。这些检查只衡量术语命中及误触发。术语周围的语句仍有误译，例如合成句中的 *ablation* 仍被翻成「衰竭」。词表未覆盖的 *Transformer* 在论文摘要中仍可能被译为「变形器」。[测试输入及复测](check_browser.py)
+Chromium 内使用同一模型复测论文专名及中译英。Attention v1 的测试同时点击两栏定位按钮，核对了第 1 页原文链接和同块裁图。
+
+| 输入 | 原始模型输出片段 | 工作台输出片段 |
+|---|---|---|
+| Attention v1，第 1 页摘要中的架构名 *Transformer* | 即变形器 | 即Transformer |
+| BERT，ACL N19-1423 第 1 页摘要中的 *Transformers* | 变形器的双向编码器 | Transformers的双向编码器 |
+| 独立测试 PDF，由第 1 页定义的第 2 页选区 *WaveGate* | 波浪游戏 | WaveGate |
+| 「卷积神经网络对局部空间结构进行建模。」 | Volatile neural networks | Convolutional neural networks |
+| 「我们采用多头注意力对输入序列建模。」 | multiple attention | multi-head attention |
+
+五句独立英文旧例中的全部五处目标术语继续命中。普通语境 “The editor is smoothing a paper label before storage.” 和电气语境 “Transformer oil insulates the high-voltage winding.” 的输出与原始模型逐字相同。命名识别依赖可抽取文字和有限的命名结构。术语周围的语句仍有误译，例如 Attention 摘要中的 *recurrence and convolutions* 仍被译成「重复和进化」。[测试输入及复测](check_browser.py)

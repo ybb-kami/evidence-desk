@@ -125,9 +125,10 @@ def route(handler):
     from followup import lookup
     store = handler.server.library
     result = lookup(store, {k: request[k] for k in ("id", "question", "anchor")}, dense=store.dense)
-    # An ambiguous cell lookup already has a specific evidence gap; prose generation
-    # must not invent a value from an adjacent cell or bypass the scope restriction.
-    if "table_cells" in result and not result.get("answer"):
+    # Preserve scope restrictions when multiple source entries match or a
+    # located exercise statement cannot substantiate the requested solution.
+    structured = "table_cells" in result or result.get("answer_method") in {"book_index", "exercise_locator"}
+    if structured and not result.get("answer"):
         return handler.payload(200, {"status": "insufficient_evidence", "claims": []})
     try:
         flash = handler.flash_model()

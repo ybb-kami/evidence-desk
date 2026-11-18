@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from future_work import classify_later
+from future_work import classify_later, modality_scope, partial_application
 from paid_budget import BudgetExceeded
 from synthesis import _model_sources, abstract_sentence, evidence_set, generated_paragraphs, handle
 
@@ -113,6 +113,30 @@ class SynthesisTests(unittest.TestCase):
         match, = result['follow_ups']
         self.assertEqual((match['state'], match['same_scope']), ('reported_same_scope', 1))
         self.assertEqual(match['candidates'][0]['kind'], 'reported_same_scope')
+
+    def test_author_plan_can_link_a_partial_nontext_application(self):
+        proposal = 'We\nplan to extend the Mapper to modalities other than text such as images, audio and video.'
+        later_text = 'For the path task, images are fed to the Mapper in tiles. We report the results on that benchmark.'
+        reference = '[1] A. Author. The initial study. arXiv:2001.00001.'
+        before = paper(1, text=proposal)
+        after = paper(2, text=later_text, reference=reference, day='4 Feb 2023')
+        result = evidence_set([before, after])
+        row, = result['follow_ups']
+        match, = row['candidates']
+        sources = {source['ref']: source for source in result['sources']}
+        self.assertEqual((row['state'], row['same_scope']), ('partial_modality_scope', 0))
+        self.assertEqual(match['coverage'], {'requested_modalities': ['image', 'audio', 'video'],
+                                             'observed_modalities': ['image'],
+                                             'unverified_modalities': ['audio', 'video']})
+        self.assertEqual(sources[row['direction']]['text'], proposal)
+        self.assertEqual(sources[match['excerpt']]['text'], later_text)
+
+    def test_partial_application_requires_a_named_modality_and_report_in_one_block(self):
+        scope = modality_scope('We plan to apply the Mapper to modalities other than text such as images and video.')
+        no_report = {'text': 'Images are fed to the Mapper in tiles in the prior work.'}
+        self.assertIsNone(partial_application([no_report, {'text': 'We report our results.'}], scope))
+        other_modality = {'text': 'Text is fed to the Mapper. We report separate image and video results.'}
+        self.assertIsNone(partial_application([other_modality], scope))
 
     @patch('synthesis.provider.configured', return_value=True)
     @patch('synthesis.generated_paragraphs', side_effect=RuntimeError('offline'))

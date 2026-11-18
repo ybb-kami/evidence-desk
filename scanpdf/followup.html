@@ -61,7 +61,7 @@ function cite(hit){
   return block;
 }
 const localMethods=new Set(['local_extractive','direct_measurement','source_fields','abbreviation',
-  'table_calculation','scan_table','native_table']);
+  'table_calculation','scan_table','native_table','book_index','exercise_locator']);
 const flashModel='DeepSeek-V4.1-Flash-1017';
 function receipt(state,text){
   const result=node('p','模型回执 · '+text);
@@ -160,7 +160,7 @@ byId('ask').onsubmit=async event=>{
     } else if(data.answer) {
       turn.append(node('strong',data.answer));
       const method={local_extractive:'本机 MobileBERT 原文抽取',
-        fieldwise:'按问题逐项核对',direct_measurement:'原句中的唯一明确读数',source_fields:'原文字段核对',abbreviation:'原文括号中的全称',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
+        fieldwise:'按问题逐项核对',direct_measurement:'原句中的唯一明确读数',source_fields:'原文字段核对',abbreviation:'原文括号中的全称',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格',book_index:'书末索引原条目',exercise_locator:'编号习题原文'};
       if(method[data.answer_method])turn.append(node('p',method[data.answer_method]));
     }
     for(const claim of data.fields?.length?[]:data.generation?.claims||[]){
@@ -191,7 +191,7 @@ byId('ask').onsubmit=async event=>{
       turn.append(cells);
     }
     if(data.retrieval){
-      const labels={bm25:'全文检索','bm25-phrase':'短语匹配','bm25-recall':'扩展词项检索',keyword:'关键词','multilingual-e5-small':'本机多语向量'};
+      const labels={bm25:'全文检索','bm25-phrase':'短语匹配','bm25-recall':'扩展词项检索',keyword:'关键词','multilingual-e5-small':'本机多语向量','paired-measurements':'同句双对象计量匹配'};
       const methods=data.retrieval.methods.map(m=>labels[m]||m);
       const states={index_preparing:'语义索引正在后台建立',busy:'语义索引正忙'};
       if(states[data.retrieval.dense])methods.push(states[data.retrieval.dense]);
@@ -200,7 +200,8 @@ byId('ask').onsubmit=async event=>{
     if(!data.fields?.length && (data.gap || !data.hits.length)) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
     for(const hit of data.hits)turn.append(cite(hit));
     const alreadyReplied=consent && (data.fields?.length ? data.fields.every(verifiedFlashReply) : verifiedFlashReply(data));
-    if(data.model_available && data.hits.length && (!data.table_cells || data.answer) && !alreadyReplied)
+    const structuredGap=!data.answer && (data.table_cells || ['book_index','exercise_locator'].includes(data.answer_method));
+    if(data.model_available && data.hits.length && !structuredGap && !alreadyReplied)
       modelDraft(turn,question,id,current);
     historyBox.append(turn); field.value=''; byId('status').textContent='';
     field.focus();

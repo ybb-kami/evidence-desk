@@ -73,6 +73,14 @@ def lookup(store, request, *, dense=None):
         chunk = next((c for c in doc["chunks"] if [c["page"], c["block"], c["part"]] == anchor), None)
         if chunk is None:
             raise Bad(404, "未找到所选证据段落。")
+    from book_index import answer as book_index_answer
+    from book_exercises import locate_exercise
+    index_entry = book_index_answer(doc, question, chunk)
+    if index_entry is not None:
+        return index_entry
+    exercise = locate_exercise(doc if chunk is None else dict(doc, chunks=[chunk]), question)
+    if exercise is not None:
+        return exercise
     from abbreviations import answer as abbreviation_answer
     definition = abbreviation_answer(doc, question, chunk)
     if definition is not None:

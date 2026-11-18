@@ -1,6 +1,7 @@
 """Combine independent rankings of the same passages within one selected document."""
 from collections import defaultdict
 
+from comparison_retrieval import paired_measurements
 from hybrid_retrieval import retrieve, retrieve_candidates, retrieve_phrase_candidates
 from semantic import DenseUnavailable
 
@@ -35,6 +36,10 @@ def ranked_passages(doc, question, original, dense=None, *, limit=8, recall_bm25
     if semantic_hits:
         rankings.append(semantic_hits)
         methods.append("multilingual-e5-small")
+    paired = paired_measurements(doc, question)
+    if paired:
+        rankings.append(paired)
+        methods.append("paired-measurements")
     # Reciprocal rank fusion compares order, not raw BM25 and cosine scales.
     # A unique key also keeps OCR and native results scoped to the returned PDF.
     ranked = {}
@@ -44,9 +49,13 @@ def ranked_passages(doc, question, original, dense=None, *, limit=8, recall_bm25
             key = (hit["id"], hit["page"], hit["block"], hit.get("part", 1))
             if key not in ranked:
                 ranked[key] = dict(hit, retrieval_ranks={})
+            elif method == "paired-measurements":
+                ranked[key].update(start=hit["start"], end=hit["end"])
             ranked[key]["retrieval_ranks"][method] = rank
             scores[key] += 1 / (20 + rank)
     hits = []
-    for key in sorted(ranked, key=lambda k: -scores[k])[:limit]:
+    # At most two passages containing both named subjects and the requested
+    # repeated unit precede the broader topical matches.
+    for key in sorted(ranked, key=lambda k: ("paired-measurements" not in ranked[k]["retrieval_ranks"], -scores[k]))[:limit]:
         hits.append(dict(ranked[key], score=round(scores[key], 6)))
     return hits, {"methods": methods, "dense": semantic_status}

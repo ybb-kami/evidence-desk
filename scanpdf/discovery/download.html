@@ -34,6 +34,15 @@
 </nav>
 <h1>发现与获取 PDF</h1>
 <main>
+  <section id="candidate-review" aria-labelledby="candidate-heading" hidden>
+    <h2 id="candidate-heading">核对公开论文编号</h2>
+    <div id="candidate-details"></div>
+    <form id="candidate-verify" hidden>
+      <label class="consent"><input type="checkbox" id="candidate-consent" required> 同意只向 JOSS 官方出版仓库发送此公开 DOI，读取并保存题录</label>
+      <button>核对 JOSS 题录</button>
+    </form>
+    <p id="candidate-status" role="status"></p>
+  </section>
   <section aria-labelledby="search-heading">
     <h2 id="search-heading">公开书目检索</h2>
     <p class="hint" id="search-hint">用 Crossref 查找公开题录，或按题名查询本机已缓存的 JOSS 出版题录。可从出版方下载开放 PDF。</p>
@@ -131,6 +140,7 @@
   const jossDoiPattern = /^10\.21105\/joss\.[0-9]{5,6}$/i;
   const searchProvider = byId("search-provider");
   let selectedPaper = null;
+  let selectedCandidate = null;
   function link(text, url, external = false) {
     const node = document.createElement("a");
     node.textContent = text;
@@ -174,6 +184,57 @@
       }
     });
   }
+  function selectPaper(doi, provider, title) {
+    if (byId("acl-download").querySelector("button").disabled) return false;
+    selectedPaper = {doi, provider};
+    byId("acl-selection").textContent = (title ? title + " · " : "") + doi;
+    byId("publisher-consent").textContent = "同意向 " + (provider === "joss" ? "JOSS 官方出版仓库" : "ACL Anthology")
+      + " 请求所选论文的公开 PDF，并导入当前文库";
+    byId("acl-download").hidden = false;
+    byId("acl-status").textContent = "";
+    byId("acl-consent").checked = false;
+    return true;
+  }
+  function showCandidate({candidate, publication}) {
+    selectedCandidate = candidate;
+    const {provider, identifier, publisher_url} = candidate;
+    const details = byId("candidate-details");
+    details.replaceChildren(link(identifier, publisher_url, true));
+    const metadata = document.createElement("p");
+    details.append(metadata);
+    byId("candidate-verify").hidden = provider !== "joss" || !!publication;
+    if (publication) {
+      metadata.textContent = [publication.title, publication.authors.join(", "), publication.year].filter(Boolean).join(" · ");
+      const receipt = document.createElement("p");
+      receipt.textContent = "已核对 JOSS 出版题录，元数据 SHA-256 " + publication.metadata_sha256;
+      details.append(receipt, link("CC BY 4.0", publication.license, true), " · ");
+    } else {
+      metadata.textContent = provider === "joss" ? "本机尚无此 DOI 的出版题录。" : "可在出版方页面核对题名与版本，再确认下载。";
+    }
+    if (provider === "arxiv") {
+      byId("identifier").value = identifier;
+      byId("download-consent").checked = false;
+      details.append(link("转到 arXiv 下载确认", "#download"));
+    } else if ((provider === "acl" || publication) && selectPaper(identifier, provider, publication?.title)) {
+      details.append(link("转到出版方下载确认", "#acl-download"));
+    }
+  }
+  async function loadCandidate() {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("provider") && !params.has("identifier")) return;
+    byId("candidate-review").hidden = false;
+    try {
+      showCandidate(await request("/api/download/candidate?" + params));
+    } catch (error) {
+      byId("candidate-status").textContent = error.message;
+    }
+  }
+  bind("candidate-verify", "candidate-status", "candidate-consent", "正在核对 JOSS 题录…", async status => {
+    if (!selectedCandidate || selectedCandidate.provider !== "joss") return;
+    const {provider, identifier} = selectedCandidate;
+    showCandidate(await request("/api/download/candidate", {provider, identifier, consent: true}));
+    status.textContent = "已取得出版题录。";
+  });
   searchProvider.addEventListener("change", () => {
     const local = searchProvider.value === "joss";
     byId("search-consent").disabled = local;
@@ -227,15 +288,7 @@
         select.type = "button";
         select.textContent = "选择开放 PDF";
         select.addEventListener("click", () => {
-          if (byId("acl-download").querySelector("button").disabled) return;
-          selectedPaper = {doi: item.doi, provider};
-          byId("acl-selection").textContent = item.title + " · " + item.doi;
-          byId("publisher-consent").textContent = "同意向 " + (provider === "joss" ? "JOSS 官方出版仓库" : "ACL Anthology")
-            + " 请求所选论文的公开 PDF，并导入当前文库";
-          byId("acl-download").hidden = false;
-          byId("acl-status").textContent = "";
-          byId("acl-consent").checked = false;
-          byId("acl-consent").focus();
+          if (selectPaper(item.doi, provider, item.title)) byId("acl-consent").focus();
         });
         row.append(select);
       }
@@ -484,6 +537,7 @@
     }
   });
   byId("subscription-status-button").addEventListener("click", loadSubscription);
+  loadCandidate();
   loadSubscription();
   loadReceipts();
 </script>

@@ -1,0 +1,113 @@
+{
+  "works": 2,
+  "edges": 1,
+  "same_scope": 0,
+  "merged_versions": [
+    {
+      "ref": "E10",
+      "doc": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "work": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+      "date": {
+        "year": 2017,
+        "date": "2017-06-12",
+        "kind": "arxiv_version",
+        "ref": "E8"
+      },
+      "by_author": true,
+      "state": "partial_modality_scope",
+      "pagerank": 0.6491228070176251
+    },
+    {
+      "ref": "E6",
+      "doc": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+      "work": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+      "date": {
+        "year": 2023,
+        "date": "2023-08-02",
+        "kind": "arxiv_version",
+        "ref": "E4"
+      },
+      "by_author": true,
+      "state": "unverified",
+      "pagerank": 0.6491228070176251
+    }
+  ],
+  "coverage": {
+    "requested_modalities": [
+      "image",
+      "audio",
+      "video"
+    ],
+    "observed_modalities": [
+      "image"
+    ],
+    "unverified_modalities": [
+      "audio",
+      "video"
+    ]
+  },
+  "proposals": [
+    {
+      "ref": "E10",
+      "doc": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "name": "1706.03762v1.pdf",
+      "title": "Attention Is All You Need",
+      "page": 10,
+      "block": 4,
+      "text": "We\nplan to extend the Transformer to problems involving input and output modalities other than text and\nto investigate local, restricted attention mechanisms to efﬁciently handle large inputs and outputs\nsuch as images, audio and video.",
+      "category": "未来工作"
+    },
+    {
+      "ref": "E6",
+      "doc": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+      "name": "1706.03762v7.pdf",
+      "title": "Attention Is All You Need",
+      "page": 10,
+      "block": 9,
+      "text": "We\nplan to extend the Transformer to problems involving input and output modalities other than text and\nto investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs\nsuch as images, audio and video.",
+      "category": "未来工作"
+    }
+  ],
+  "later_excerpt": {
+    "ref": "E13",
+    "doc": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+    "name": "2205.14135v2.pdf",
+    "title": "FlashAttention : Fast and Memory-Eﬃcient Exact Attention with IO-Awareness",
+    "page": 9,
+    "block": 28,
+    "text": "The task is to classify whether two points in a black and\nwhite 128×128 (or 256×256) image have a path connecting them, and the images are fed to the transformer\none pixel at a time. In prior work, all transformer models have either run out of memory, or only achieved\nrandom performance [80]. There has been a search for alternative architectures that can model such long\ncontext [37]. We present here the ﬁrst result of Transformer models being able to solve Path-X and Path-256\n(Table 6).",
+    "category": "后续正文"
+  },
+  "bibliography": {
+    "ref": "E12",
+    "doc": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+    "name": "2205.14135v2.pdf",
+    "title": "FlashAttention : Fast and Memory-Eﬃcient Exact Attention with IO-Awareness → Attention Is All You Need",
+    "page": 15,
+    "block": 13,
+    "text": "[82] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz\nKaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing\nsystems, 30, 2017.",
+    "category": "引用"
+  },
+  "publication_dates": [
+    {
+      "year": 2017,
+      "date": "2017-06-12",
+      "kind": "arxiv_version",
+      "ref": "E8"
+    },
+    {
+      "year": 2022,
+      "date": "2022-06-23",
+      "kind": "arxiv_version",
+      "ref": "E1"
+    },
+    {
+      "year": 2023,
+      "date": "2023-08-02",
+      "kind": "arxiv_version",
+      "ref": "E4"
+    }
+  ],
+  "original_pages_opened_and_sha_verified": 4,
+  "external_requests": 0
+}

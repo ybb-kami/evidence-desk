@@ -69,6 +69,16 @@ class GroundedDraftTests(unittest.TestCase):
         draft.route(handler)
         handler.payload.assert_called_once_with(200, {"status": "not_configured", "claims": []})
 
+    def test_structured_gap_with_source_hits_does_not_request_a_draft(self):
+        handler = Mock()
+        handler.server = SimpleNamespace(enable_model=True, library=SimpleNamespace(dense=None))
+        handler.json_request.return_value = {"id": self.hits[0]["id"], "question": "Which one?", "anchor": None, "consent": True}
+        for method in ("book_index", "exercise_locator"):
+            with self.subTest(method=method), patch("followup.lookup", return_value={"hits": self.hits, "answer_method": method}):
+                draft.route(handler)
+                handler.payload.assert_called_with(200, {"status": "insufficient_evidence", "claims": []})
+                handler.flash_model.assert_not_called()
+
     def test_route_propagates_budget_denial_without_falling_back(self):
         handler = Mock()
         handler.server = SimpleNamespace(enable_model=True, library=SimpleNamespace(dense=None))

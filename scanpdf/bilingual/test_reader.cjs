@@ -1,6 +1,6 @@
 "use strict";
 const assert = require("node:assert/strict");
-const {parts, translateWithTerms} = require("./reader.js");
+const {parts, translateWithTerms, architectureNames, parseGlossary} = require("./reader.js");
 const text = "😀The model uses x = 2 + 3 and `fit(x)`.\nconst y = 5;\n$z_1$ and 计算。";
 const slices = parts({text,protected:[]},0,text.length);
 assert.equal(slices.map(p=>p.text).join(""),text);
@@ -51,10 +51,38 @@ assert.deepEqual(parts({text:code,protected:[]},0,code.length,[],"en-zh"),[{text
 const title = "Label Smoothing\nDuring training, we enabled label smoothing.";
 assert.deepEqual(parts({text:title,protected:[]},0,title.length,[],"en-zh").map(p=>p.text),
   ["Label Smoothing\n","During training, we enabled label smoothing."]);
+const names = architectureNames([
+  {text:"We propose a new network architecture, the WaveGate, based on attention."},
+  {text:"We propose a network architecture, the Transformer, based solely on attention."},
+  {text:"我们提出一种新的模型，称为 CodeNet。"},
+  {text:"我们评估名为 WaveTune 的网络架构。"},
+  {text:"Our model is called LiftNet-2.5."},
+  {text:"A reference about a model called OtherModel.", reference:true},
+  {text:"The model called for additional input."},
+  {text:"We introduce a network architecture, the Neural Network, which works."},
+  {text:"A transformer supplies the network. Transformer oil insulates the winding."},
+]);
+assert.deepEqual(names,["WaveGate","Transformer","CodeNet","WaveTune","LiftNet-2.5"]);
+assert.equal(architectureNames(Array.from({length:40}, (_,i)=>({text:`A model called Model${i}.`}))).length,24);
+assert.deepEqual(parseGlossary("  BERT \nDIN\nBERT\n"),["BERT","DIN"]);
+assert.throws(()=>parseGlossary("手".repeat(81)),/80/);
+assert.throws(()=>parseGlossary(Array.from({length:33}, (_,i)=>String(i)).join("\n")),/32/);
+assert.throws(()=>parseGlossary(" ".repeat(2049)),/2048/);
 
 async function testTerms() {
   const forbidden = () => assert.fail("An exact term should not call the model.");
   assert.equal(await translateWithTerms("Scaled Dot-\nProduct Attention","en-zh",forbidden),"缩放点积注意力");
+  assert.equal(await translateWithTerms("WaveGate","en-zh",forbidden,names),"WaveGate");
+  assert.equal(await translateWithTerms("CodeNet","zh-en",forbidden,names),"CodeNet");
+  assert.equal(await translateWithTerms("The attention decoder uses the Transformer.","en-zh",
+      async () => "注意力解码器使用变形器。",names),"注意力解码器使用Transformer。");
+  assert.equal(await translateWithTerms("Transformer oil insulates the winding.","en-zh",
+      async () => "变压器油使绕组绝缘。",names),"变压器油使绕组绝缘。");
+  assert.equal(await translateWithTerms("卷积神经网络对局部空间结构建模。","zh-en",
+      async () => "Volatile neural networks model local spatial structures."),
+      "Convolutional neural networks model local spatial structures.");
+  assert.equal(await translateWithTerms("我们采用多头注意力。","zh-en",
+      async () => "We use multiple attention."),"We use multi-head attention.");
   const markerInput = "Test label smoothing with multi-head attention.";
   assert.equal(await translateWithTerms(markerInput,"en-zh",async value => {
     assert.equal(value, markerInput);

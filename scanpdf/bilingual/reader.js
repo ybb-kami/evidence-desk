@@ -31,23 +31,78 @@ function denseNumericTable(text) {
   return numeric.length >= 3 && numeric.length*2 >= lines.length;
 }
 
-const academicTerms = [
+const englishTerms = [
   [/\bconvolutional\s+neural\s+networks?\b/giu, "卷积神经网络", /卷积神经网络|转录神经网络/gu],
   [/\bscaled\s+dot(?:\s*[-‐‑–]\s*|\s+)product\s+attention\b/giu, "缩放点积注意力", /缩放点积注意力|规模化点-生产注意/gu],
   [/\bmulti(?:[-‐‑–]|\s+)?head\s+attention\b/giu, "多头注意力", /多头注意力?/gu],
   [/\blabel\s+smoothing\b/giu, "标签平滑", /标签平滑|标牌\s*(?:的\s*)?平滑/gu],
 ];
+const chineseTerms = [
+  [/卷积神经网络/gu, "convolutional neural network", /\b(?:convolutional|volatile) neural networks?\b/giu],
+  [/缩放点积注意力/gu, "scaled dot-product attention", /\bscaled dot[- ]product attention\b/giu],
+  [/多头注意力/gu, "multi-head attention", /\b(?:multi[- ]?head(?:ed)?|multiple) attention\b/giu],
+  [/标签平滑/gu, "label smoothing", /\blabel smoothing\b/giu],
+];
 
-function academicMatches(text, direction) {
-  if (direction !== "en-zh") return [];
-  return academicTerms.flatMap(([pattern, target, variants]) =>
-    Array.from(text.matchAll(pattern), match => ({
-      start:match.index, end:match.index + match[0].length, target, variants,
-    }))).sort((a,b) => a.start - b.start);
+const MAX_NAMES = 24;
+const name = String.raw`[A-Za-z][A-Za-z0-9-]{0,31}(?:\.[0-9]{1,4})?(?:[ \t]+[A-Za-z][A-Za-z0-9-]{0,23}){0,2}`;
+const endOfName = String.raw`(?=[ \t]*[,.;:!?，。；：、！？”’"）)]|\s*$|\s*\()`;
+const namedIntroductions = [
+  new RegExp(String.raw`\b(?:architecture|framework|network|model|encoder|decoder)\b(?:\s*,\s*the\s+|\s*,?\s*(?:(?:is|was)\s+)?(?:called|named|dubbed)\s+(?:the\s+)?)[“"]?(${name})${endOfName}`, "giu"),
+  new RegExp(String.raw`(?:架构|框架|网络|模型|编码器|解码器)[，,、\s]*(?:称为|命名为|简称为|名为)[“"]?\s*(${name})${endOfName}`, "gu"),
+  new RegExp(String.raw`(?:称为|命名为|简称为|名为)[“"]?\s*(${name})[”"]?\s*的\s*(?:网络架构|架构|框架|网络|模型|编码器|解码器)`, "gu"),
+];
+const neuralContext = /\b(?:attention|encoder|decoder|neural|pre[- ]?train\w*|language model\w*)\b|注意力|编码器|解码器|神经网络|预训练/u;
+const electricalContext = /\b(?:electric(?:al)?|voltage|winding|insulation|insulates?|transformer oil|power grid)\b|电压|线圈|绕组|绝缘/iu;
+
+function architectureNames(segments) {
+  const names = new Set();
+  for (const {text,reference} of segments) {
+    if (reference || denseNumericTable(text)) continue;
+    const line = text.replace(/\s+/g," ");
+    if (/\bTransformers?\b/u.test(line) && neuralContext.test(line.toLowerCase()) && !electricalContext.test(line))
+      names.add("Transformer");
+    for (const pattern of namedIntroductions) {
+      for (const [,candidate] of line.matchAll(pattern)) {
+        if (/^[A-Z][A-Za-z0-9-]*(?:\.[0-9]+)?(?: [A-Z][A-Za-z0-9-]*){0,2}$/u.test(candidate) &&
+            !/^(?:Architecture|Framework|Model|Network|Neural Network|Encoder|Decoder|The|Our)$/u.test(candidate))
+          names.add(candidate);
+        if (names.size >= MAX_NAMES) return [...names];
+      }
+    }
+    if (names.size >= MAX_NAMES) break;
+  }
+  return [...names];
 }
 
-async function translateWithTerms(text, direction, translate) {
-  const matches = academicMatches(text, direction);
+function namePattern(name) {
+  return "\\b" + name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/ /g,"\\s+") + "\\b";
+}
+
+function academicMatches(text, direction, names = []) {
+  const terms = direction === "en-zh" ? [...englishTerms] : direction === "zh-en" ? [...chineseTerms] : [];
+  for (const name of names) {
+    if (name === "Transformer") {
+      if (!electricalContext.test(text)) {
+        terms.push([/\bTransformer\b/gu, name, /\bTransformer\b|变形器|变压器|转换器|转化器/gu]);
+        terms.push([/\bTransformers\b/gu, "Transformers", /\bTransformers\b|变形器|变压器|转换器|转化器/gu]);
+      }
+    } else {
+      const pattern = new RegExp(namePattern(name),"gu");
+      terms.push([pattern,name,pattern]);
+    }
+  }
+  const hits = terms.flatMap(([pattern, target, variants]) =>
+    Array.from(text.matchAll(pattern), match => ({
+      start:match.index, end:match.index + match[0].length, target, variants,
+    }))).sort((a,b) => a.start - b.start || b.end - a.end);
+  const result = [];
+  for (const hit of hits) if (!result.length || hit.start >= result.at(-1).end) result.push(hit);
+  return result;
+}
+
+async function translateWithTerms(text, direction, translate, names) {
+  const matches = academicMatches(text, direction, names);
   if (!matches.length) return translate(text);
   if (matches[0].start === 0 && matches[0].end === text.length) return matches[0].target;
   const raw = await translate(text);
@@ -57,9 +112,19 @@ async function translateWithTerms(text, direction, translate) {
     counts.set(target, {variants, count:count + 1});
   }
   // Keep the model's existing phrasing when all the recognized terms can be corrected in place.
-  if ([...counts.values()].every(({variants,count}) => Array.from(raw.matchAll(variants)).length === count)) {
+  const seen = new Set();
+  if ([...counts.values()].every(({variants,count}) => {
+    const found = Array.from(raw.matchAll(variants));
+    if (found.length !== count || found.some(match => seen.has(match.index))) return false;
+    for (const match of found) seen.add(match.index);
+    return true;
+  })) {
     let result = raw;
-    for (const [target,{variants}] of counts) result = result.replace(variants,target);
+    for (const [target,{variants}] of counts) result = result.replace(variants,variant => {
+      let word = target;
+      if (target === "convolutional neural network" && /networks$/i.test(variant)) word += "s";
+      return /^[a-z]/.test(word) && /^[A-Z]/.test(variant) ? word[0].toUpperCase() + word.slice(1) : word;
+    });
     return result;
   }
   const markers = /\[TERM[1-9]\d*\]/g;
@@ -92,7 +157,7 @@ async function translateWithTerms(text, direction, translate) {
   return result + await surrounding(text.slice(position));
 }
 
-function parts(segment, start, end, terms = [], direction) {
+function parts(segment, start, end, terms = [], direction, names) {
   let pos = start;
   const out = [];
   function prose(stop) {
@@ -102,14 +167,14 @@ function parts(segment, start, end, terms = [], direction) {
       const firstBreak = proseText.indexOf("\n");
       if (pos === 0 && firstBreak > 0 && /^\n\s*[A-Z]/.test(proseText.slice(firstBreak))) {
         const title = proseText.slice(0,firstBreak).trim();
-        const [match] = academicMatches(title,direction);
+        const [match] = academicMatches(title,direction,names);
         if (match?.start === 0 && match.end === title.length) {
           forBoundaries = forBoundaries.slice(0,firstBreak) + "\n" + forBoundaries.slice(firstBreak + 1);
         }
       }
       for (const sentence of new Intl.Segmenter(undefined,{granularity:"sentence"}).segment(forBoundaries)) {
         const value = proseText.slice(sentence.index,sentence.index + sentence.segment.length);
-        const matches = value.length > 220 ? academicMatches(value,direction) : [];
+        const matches = value.length > 220 ? academicMatches(value,direction,names) : [];
         let remaining = value, position = 0;
         while (remaining) {
           let length = remaining.length;
@@ -140,13 +205,20 @@ function parts(segment, start, end, terms = [], direction) {
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = {parts, preservedRanges, denseNumericTable, translateWithTerms};
+function parseGlossary(text) {
+  const terms = [...new Set(text.split(/\r?\n/).map(t=>t.trim()).filter(Boolean))].sort();
+  if (text.length > 2048 || terms.length > 32 || terms.some(term=>Array.from(term).length > 80))
+    throw Error("每篇每个方向最多保留 32 个术语，每项最多 80 字符，总长度不超过 2048 字符。");
+  return terms;
+}
+
+if (typeof module !== "undefined") module.exports = {parts, preservedRanges, denseNumericTable, translateWithTerms, architectureNames, parseGlossary};
 if (typeof document !== "undefined") startReader();
 
 async function startReader() {
   const $ = id => document.getElementById(id);
   const docs = $("doc"), direction = $("direction"), rows = $("rows"), status = $("status");
-  const saved = new TranslationBook(), engines = new Map(), keep = new Set(), glossaries = new Map();
+  const saved = new TranslationBook(), engines = new Map(), keep = new Set(), glossaries = new Map(), openingNames = new Map();
   const alignment = alignedReader(rows);
   let localDirections = [], current, targets = [], epoch = 0, generation = 0, running = false;
   const pairKey = () => docs.value + "/" + direction.value;
@@ -298,6 +370,14 @@ async function startReader() {
       }
       while (token === generation) {
         const page = current.page;
+        const doc = docs.value;
+        const localNames = architectureNames(current.segments);
+        if (page === 1) openingNames.set(doc,localNames);
+        else if (!openingNames.has(doc)) {
+          const opening = await json("/api/bilingual/page/" + doc + "?page=1").catch(() => null);
+          if (opening) openingNames.set(doc,architectureNames(opening.segments));
+        }
+        const names = [...new Set([...localNames,...(openingNames.get(doc) || [])])].slice(0,MAX_NAMES);
         for (const [index,segment] of current.segments.entries()) {
           if (chosen && chosen !== segment) continue;
           const start = selection?.start ?? 0, end = selection?.end ?? segment.text.length;
@@ -306,13 +386,13 @@ async function startReader() {
           const keepKey = [docs.value,page,segment.block].join("/");
           const reference = mode !== "one" && segment.reference;
           const table = !selection && denseNumericTable(segment.text);
-          const fragments = reference || table || keep.has(keepKey) ? [{text:segment.text.slice(start,end),translate:false}] : parts(segment,start,end,glossaries.get(pairKey()),direction.value);
+          const fragments = reference || table || keep.has(keepKey) ? [{text:segment.text.slice(start,end),translate:false}] : parts(segment,start,end,glossaries.get(pairKey()),direction.value,names);
           for (const part of fragments) {
             if (token !== generation) return;
             if (part.translate) {
               const lead = part.text.match(/^\s*/)[0], tail = part.text.match(/\s*$/)[0];
               const text = part.text.trim().replace(/\s*\n\s*/g, " ").replace(/[\uFB00-\uFB06]/g, c => c.normalize("NFKC"));
-              result += lead + await translateWithTerms(text,direction.value,translate) + tail;
+              result += lead + await translateWithTerms(text,direction.value,translate,names) + tail;
             } else result += part.text;
           }
           if (token !== generation) return;
@@ -338,7 +418,9 @@ async function startReader() {
   $("applyTerms").onclick = () => {
     if (!current || running) return;
     const key = pairKey();
-    const terms = [...new Set($("terms").value.split(/\r?\n/).map(t=>t.trim()).filter(Boolean))].sort();
+    let terms;
+    try { terms = parseGlossary($("terms").value); }
+    catch (error) { status.textContent = error.message; return; }
     if (JSON.stringify(terms) === JSON.stringify(glossaries.get(key) || [])) return;
     glossaries.set(key,terms);
     const count = saved.remove(r=>r.doc===docs.value && r.direction===direction.value);

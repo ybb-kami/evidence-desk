@@ -88,9 +88,13 @@ def _read_entry(file):
     return _cached_entry(file, (details.st_ino, details.st_size, details.st_mtime_ns))
 
 
-def published(doi):
+def cached_publication(doi):
     canonical = fetch.joss_doi(doi)
-    return canonical is not None and _read_entry(catalog_root() / (_slug(canonical) + ".xml")) is not None
+    return _read_entry(catalog_root() / (_slug(canonical) + ".xml")) if canonical else None
+
+
+def published(doi):
+    return cached_publication(doi) is not None
 
 
 def _terms(text):

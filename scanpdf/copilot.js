@@ -8,7 +8,7 @@ function element(tag, text, className) {
 }
 function link(title, href) {
   const el = element('a', title);
-  el.href = href; el.target = '_blank'; el.rel = 'noopener';
+  el.href = href; el.target = '_blank'; el.rel = 'noopener noreferrer';
   return el;
 }
 const labels = {
@@ -19,13 +19,22 @@ function appendStep(message) {get('steps').append(element('li', message));}
 function render(data) {
   if (data.web) {
     const panel = element('article');
-    panel.append(element('h3', '公开网页检索结果'));
+    panel.append(element('h3', '公开网页线索'), element('p', 'DeepSeek Search 来源。引用论文时可核对题录、导入正式 PDF，再打开物理原页。'));
     if (data.web.error) panel.append(element('p',data.web.error.message));
+    if (!data.web.error && !data.web.items.length) panel.append(element('p', '未找到公开网页线索。'));
     for (const item of data.web.items) {
-      panel.append(link(item.title || item.url, item.url),element('p', item.snippet || item.summary));
+      const result = element('div');
+      result.append(link(item.title || item.url, item.url), element('p', item.snippet || item.summary));
+      if (item.discovery) {
+        const publishers = {arxiv:'arXiv', acl:'ACL Anthology', joss:'JOSS'};
+        const label = publishers[item.discovery.provider];
+        if (label) result.append(link('在论文发现中核对 '+label+' '+item.discovery.identifier, item.discovery.href));
+      }
+      panel.append(result);
     }
     if (data.web.fetch) {
-      const detail=element('details'); detail.append(element('summary','查看抓取的网页摘录'),element('p',data.web.fetch.text));
+      const detail=element('details');
+      detail.append(element('summary','查看外部网页摘录'), link('打开网页来源', data.web.fetch.url), element('p',data.web.fetch.text));
       panel.append(detail);
     }
     get('reports').append(panel);
@@ -95,8 +104,9 @@ function eventReceived(event) {
   }
   case 'replan': appendStep(event.reason+' 增加「'+labels[event.tool]+'」。'); break;
   case 'receipt': {
-    const states = {ok:'已完成',gap:'证据有缺口',unavailable:'外部来源不可用'};
-    appendStep(labels[event.tool]+' · '+states[event.status]+' · '+event.seconds+' 秒 · '+event.anchors+' 处原文定位');
+    const states = {ok:'已完成',gap:'证据有缺口',unavailable:'外部来源不可用',partial:'已取得网页线索，抓取未完成'};
+    const count = event.tool === 'web_search' ? event.web_results+' 条网页线索' : event.anchors+' 处原文定位';
+    appendStep(labels[event.tool]+' · '+states[event.status]+' · '+event.seconds+' 秒 · '+count);
     break;
   }
   case 'token': get('preview').hidden = false; get('draft').append(document.createTextNode(event.text)); break;
