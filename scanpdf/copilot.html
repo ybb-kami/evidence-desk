@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>科研 Copilot · 证据台</title>
+<style>
+:root{color-scheme:light;--ink:#152d2a;--dim:#4d635d;--line:#cad7cf;--paper:#fffefa;--green:#125b50}*{box-sizing:border-box}
+body{margin:0;background:#f3f5ee;color:var(--ink);font:16px/1.6 system-ui,sans-serif}main{max-width:1080px;margin:auto;padding:1.5rem 1.2rem 4rem}
+a{color:var(--green)}h1{font:600 clamp(2rem,5vw,3rem)/1.2 Georgia,serif;margin:1rem 0 1.5rem}
+h2{font-size:1.2rem;margin:0 0 .65rem}h3{font-size:1.05rem;margin:.45rem 0}
+.layout{display:grid;grid-template-columns:minmax(250px,0.8fr) minmax(0,1.6fr);gap:1rem;align-items:start}
+form,.panel{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:1.1rem}
+fieldset{border:0;padding:0;margin:0}legend,.field{font-weight:650}label.option{display:flex;align-items:baseline;gap:.45rem;padding:.25rem 0;overflow-wrap:anywhere}
+#documents{max-height:15rem;overflow:auto;border-block:1px solid var(--line);margin:.4rem 0 1rem}
+textarea,button{font:inherit;color:inherit}textarea{resize:vertical;display:block;width:100%;min-height:6rem;padding:.55rem;border:1px solid #85998f;border-radius:4px;margin:.35rem 0 .75rem}
+input{accent-color:var(--green)}button{padding:.55rem .9rem;background:var(--green);border:0;color:white;border-radius:4px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}
+#state{min-height:1.5em}ol{padding-left:1.4rem;margin:0}.panel+.panel{margin-top:1rem}.trace{color:var(--dim);font-size:.92rem}.trace li{padding:.15rem 0}
+article+article{border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem}
+p{margin:.4rem 0}.quote{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.95rem;color:#344941;border-left:2px solid var(--line);padding-left:.7rem;margin:.3rem 0 .7rem}
+#draft{white-space:pre-wrap}.muted,small{color:var(--dim)}.gap{color:#755831}details{margin:.5rem 0}.cell{margin-right:.8rem}
+@media(max-width:740px){.layout{grid-template-columns:1fr}main{padding:.85rem}.panel,form{padding:.85rem}}
+</style>
+<main>
+<a href="/">返回工作台</a><h1>科研 Copilot</h1>
+<div class="layout">
+<form id="task">
+<fieldset><legend>研究范围 <small>1–6 篇</small></legend><div id="documents"></div></fieldset>
+<label class="field" for="question">你想核对什么？</label>
+<textarea id="question" required maxlength="500" placeholder="例如，比较两篇论文报告的同一项指标，列出原表位置。"></textarea>
+<label class="option"><input id="planning" type="checkbox" checked>允许本机模型选择工具</label>
+<label class="option"><input id="publisher" type="checkbox">向 JOSS 查询问题中指定的公开 DOI</label>
+<p><button id="run">运行研究任务</button></p><p id="state" role="status"></p>
+</form>
+<div>
+<section class="panel"><h2>执行记录</h2><ol id="steps" class="trace"></ol><p id="waiting" class="muted">选择文献并提问后，这里会显示实际调用的工具。</p></section>
+<section class="panel" id="preview" hidden><h2>正在生成 · 引文待核对</h2><p id="draft"></p></section>
+<section class="panel" id="result" hidden><h2>结果与出处</h2><div id="reports"></div></section>
+</div></div></main>
+<script defer src="/copilot.js"></script>
+</html>

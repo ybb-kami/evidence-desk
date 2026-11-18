@@ -118,7 +118,7 @@ def search(query):
             "items": [record for *_, record in sorted(results, reverse=True)[:5]]}
 
 
-def cache_record(doi, folder):
+def read_publication(doi):
     doi = fetch.joss_doi(doi)
     if doi is None:
         raise ValueError("Expected a JOSS DOI such as 10.21105/joss.03021")
@@ -128,7 +128,12 @@ def cache_record(doi, folder):
         if response.status != 200 or response.geturl() != url:
             raise ValueError("JOSS returned an unexpected metadata endpoint")
         data = response.read(MAX_XML + 1)
-    item = _parse(data, doi)
+    return _parse(data, doi), data
+
+
+def cache_record(doi, folder):
+    item, data = read_publication(doi)
+    doi = item["doi"]
     folder.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(dir=folder, delete=False) as temporary:
         temporary.write(data)

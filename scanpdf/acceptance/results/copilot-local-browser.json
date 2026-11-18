@@ -1,0 +1,369 @@
+{
+  "mode": "real",
+  "pdfs": [
+    "3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf",
+    "0cff6544a6c4f2ed82e24d44edbf1ae9b5a7ec7c0b69cd68cc328fcf655deef2"
+  ],
+  "cases": {
+    "unindexed": {
+      "seconds": 0.12,
+      "events": [
+        {
+          "event": "stage",
+          "label": "核对文献范围",
+          "detail": "文库已读出 1 份指定版本。"
+        },
+        {
+          "event": "plan",
+          "planner": "not_requested",
+          "model": null,
+          "proposed": [],
+          "required": [
+            "answer_paper"
+          ],
+          "tools": [
+            "answer_paper"
+          ]
+        },
+        {
+          "event": "stage",
+          "label": "检索所选论文并核对回答",
+          "tool": "answer_paper"
+        },
+        {
+          "event": "receipt",
+          "tool": "answer_paper",
+          "status": "gap",
+          "anchors": 0,
+          "seconds": 0.02
+        },
+        {
+          "event": "replan",
+          "tool": "scan_coverage",
+          "reason": "当前回答有证据缺口，所选文献仍有未索引页面。"
+        },
+        {
+          "event": "stage",
+          "label": "检查扫描页识别进度",
+          "tool": "scan_coverage"
+        },
+        {
+          "event": "receipt",
+          "tool": "scan_coverage",
+          "status": "ok",
+          "anchors": 0,
+          "seconds": 0.0
+        },
+        {
+          "event": "final",
+          "reports": [
+            {
+              "name": "unread.pdf",
+              "answer": null,
+              "method": null,
+              "gap": "所选范围未找到足以回答这个问题的原文。",
+              "sources": [],
+              "cells": [],
+              "generation": null
+            },
+            {
+              "name": "扫描覆盖",
+              "answer": "unread.pdf 尚有 1 页缺少可检索文字；前几页为 1。",
+              "gap": null,
+              "sources": [],
+              "cells": [],
+              "scan": [
+                {
+                  "id": "0cff6544a6c4f2ed82e24d44edbf1ae9b5a7ec7c0b69cd68cc328fcf655deef2",
+                  "page": 1
+                }
+              ]
+            }
+          ],
+          "publications": [],
+          "receipts": [
+            {
+              "tool": "answer_paper",
+              "status": "gap",
+              "anchors": 0,
+              "seconds": 0.02
+            },
+            {
+              "tool": "scan_coverage",
+              "status": "ok",
+              "anchors": 0,
+              "seconds": 0.0
+            }
+          ],
+          "planner": "not_requested"
+        }
+      ],
+      "source_links_opened": [],
+      "provisional_deltas": [],
+      "steps_displayed": "核对文献范围 · 文库已读出 1 份指定版本。\n已选择规则编排\n执行顺序 · 单篇证据问答\n检索所选论文并核对回答\n单篇证据问答 · 证据有缺口 · 0.02 秒 · 0 处原文定位\n当前回答有证据缺口，所选文献仍有未索引页面。 增加「扫描覆盖」。\n检查扫描页识别进度\n扫描覆盖 · 已完成 · 0 秒 · 0 处原文定位"
+    },
+    "graph": {
+      "seconds": 1.85,
+      "events": [
+        {
+          "event": "stage",
+          "label": "核对文献范围",
+          "detail": "文库已读出 2 份指定版本。"
+        },
+        {
+          "event": "stage",
+          "label": "请求本机模型选择工具"
+        },
+        {
+          "event": "plan",
+          "planner": "model_tool_calls",
+          "model": "evidence-local-qwen",
+          "proposed": [
+            "citation_graph"
+          ],
+          "required": [
+            "citation_graph"
+          ],
+          "tools": [
+            "citation_graph"
+          ]
+        },
+        {
+          "event": "stage",
+          "label": "计算库内引用与未来工作线索",
+          "tool": "citation_graph"
+        },
+        {
+          "event": "receipt",
+          "tool": "citation_graph",
+          "status": "ok",
+          "anchors": 0,
+          "seconds": 0.0
+        },
+        {
+          "event": "final",
+          "reports": [
+            {
+              "name": "所选文献的引文网络",
+              "answer": "所选文献构成 2 个作品节点、0 条内部引文边。 找到 0 处作者讨论未来工作的摘录。",
+              "sources": [],
+              "cells": [],
+              "gap": "所选文献之间尚未抽到引文边，无法据此判断核心文献。"
+            }
+          ],
+          "publications": [],
+          "receipts": [
+            {
+              "tool": "citation_graph",
+              "status": "ok",
+              "anchors": 0,
+              "seconds": 0.0
+            }
+          ],
+          "planner": "model_tool_calls"
+        }
+      ],
+      "source_links_opened": [],
+      "provisional_deltas": [],
+      "steps_displayed": "核对文献范围 · 文库已读出 2 份指定版本。\n请求本机模型选择工具\n模型 evidence-local-qwen 返回工具调用 · 引用与未来工作\n执行顺序 · 引用与未来工作\n计算库内引用与未来工作线索\n引用与未来工作 · 已完成 · 0 秒 · 0 处原文定位"
+    },
+    "streamed_answer": {
+      "seconds": 8.35,
+      "events": [
+        {
+          "event": "stage",
+          "label": "核对文献范围",
+          "detail": "文库已读出 1 份指定版本。"
+        },
+        {
+          "event": "plan",
+          "planner": "not_requested",
+          "model": null,
+          "proposed": [],
+          "required": [
+            "answer_paper"
+          ],
+          "tools": [
+            "answer_paper"
+          ]
+        },
+        {
+          "event": "stage",
+          "label": "检索所选论文并核对回答",
+          "tool": "answer_paper"
+        },
+        {
+          "event": "token",
+          "text": "qu"
+        },
+        {
+          "event": "token",
+          "text": "artz"
+        },
+        {
+          "event": "token",
+          "text": " trans"
+        },
+        {
+          "event": "token",
+          "text": "ducer"
+        },
+        {
+          "event": "receipt",
+          "tool": "answer_paper",
+          "status": "ok",
+          "anchors": 3,
+          "seconds": 7.43
+        },
+        {
+          "event": "final",
+          "reports": [
+            {
+              "name": "calibration.pdf",
+              "answer": "quartz transducer",
+              "method": "local_cited_draft",
+              "gap": null,
+              "sources": [
+                {
+                  "id": "3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf",
+                  "name": "calibration.pdf",
+                  "page": 1,
+                  "block": 2,
+                  "part": 1,
+                  "start": 0,
+                  "end": 77,
+                  "text": "A quartz transducer measured pressure in the test chamber during calibration."
+                },
+                {
+                  "id": "3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf",
+                  "name": "calibration.pdf",
+                  "page": 1,
+                  "block": 2,
+                  "part": 1,
+                  "start": 0,
+                  "end": 131,
+                  "text": "A quartz transducer measured pressure in the test chamber during calibration.\nThe validation split contains 37 annotated abstracts."
+                },
+                {
+                  "id": "3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf",
+                  "name": "calibration.pdf",
+                  "page": 1,
+                  "block": 1,
+                  "part": 1,
+                  "start": 0,
+                  "end": 24,
+                  "text": "Tidal sensor calibration"
+                }
+              ],
+              "cells": [],
+              "generation": "cited_draft"
+            }
+          ],
+          "publications": [],
+          "receipts": [
+            {
+              "tool": "answer_paper",
+              "status": "ok",
+              "anchors": 3,
+              "seconds": 7.43
+            }
+          ],
+          "planner": "not_requested"
+        }
+      ],
+      "source_links_opened": [
+        "/source?id=3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf&page=1&block=2&part=1&start=0&end=77",
+        "/source?id=3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf&page=1&block=2&part=1&start=0&end=131",
+        "/source?id=3100b322fc6b21c6584d121301a670c17811d238ba6e7d19d22e9482d1bff7cf&page=1&block=1&part=1&start=0&end=24"
+      ],
+      "provisional_deltas": [
+        {
+          "ms": 4717.60000000149,
+          "text": "qu"
+        },
+        {
+          "ms": 4821,
+          "text": "quartz"
+        },
+        {
+          "ms": 4898.4000000003725,
+          "text": "quartz trans"
+        },
+        {
+          "ms": 4972.800000000745,
+          "text": "quartz transducer"
+        }
+      ],
+      "steps_displayed": "核对文献范围 · 文库已读出 1 份指定版本。\n已选择规则编排\n执行顺序 · 单篇证据问答\n检索所选论文并核对回答\n单篇证据问答 · 已完成 · 7.43 秒 · 3 处原文定位"
+    },
+    "publisher": {
+      "seconds": 14.34,
+      "events": [
+        {
+          "event": "stage",
+          "label": "核对文献范围",
+          "detail": "文库已读出 1 份指定版本。"
+        },
+        {
+          "event": "stage",
+          "label": "请求本机模型选择工具"
+        },
+        {
+          "event": "plan",
+          "planner": "model_tool_calls",
+          "model": "evidence-local-qwen",
+          "proposed": [
+            "publication_metadata"
+          ],
+          "required": [
+            "publication_metadata"
+          ],
+          "tools": [
+            "publication_metadata"
+          ]
+        },
+        {
+          "event": "stage",
+          "label": "查询 JOSS 出版方题录",
+          "tool": "publication_metadata"
+        },
+        {
+          "event": "receipt",
+          "tool": "publication_metadata",
+          "status": "ok",
+          "anchors": 0,
+          "seconds": 0.41
+        },
+        {
+          "event": "final",
+          "reports": [],
+          "publications": [
+            {
+              "doi": "10.21105/joss.03021",
+              "title": "seaborn: statistical data visualization",
+              "authors": [
+                "Michael Waskom"
+              ],
+              "venue": "Journal of Open Source Software",
+              "year": 2021,
+              "url": "https://doi.org/10.21105/joss.03021",
+              "metadata_sha256": "0ff4b751af9628029436b82ea72d575b5409063a46e5232dd66a2b7713ce05c6"
+            }
+          ],
+          "receipts": [
+            {
+              "tool": "publication_metadata",
+              "status": "ok",
+              "anchors": 0,
+              "seconds": 0.41
+            }
+          ],
+          "planner": "model_tool_calls"
+        }
+      ],
+      "source_links_opened": [],
+      "provisional_deltas": [],
+      "steps_displayed": "核对文献范围 · 文库已读出 1 份指定版本。\n请求本机模型选择工具\n模型 evidence-local-qwen 返回工具调用 · JOSS 题录\n执行顺序 · JOSS 题录\n查询 JOSS 出版方题录\nJOSS 题录 · 已完成 · 0.41 秒 · 0 处原文定位"
+    }
+  }
+}

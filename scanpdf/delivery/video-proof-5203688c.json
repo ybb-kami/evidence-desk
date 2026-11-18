@@ -1,0 +1,114 @@
+{
+  "revision": "5203688cf7d8b1f3340b63eeada92167855455bc",
+  "video_sha256": "0af683af09560d1fead3baadefa3e6d1a76ae112f6ac6cd68ef7756db82214bc",
+  "captured_in_chromium": true,
+  "registered_team": "26CZB0001406",
+  "runtime": "E5 + MobileBERT + OPUS-MT",
+  "new_file": {
+    "name": "Dusk-Marsh-Acoustic-Survey.pdf",
+    "sha256": "079c3c646e03d626aa571117be447015e01e106b21d63d74590aa2cd188cfd09",
+    "pages": 2,
+    "imported_on_camera": true
+  },
+  "new_question": {
+    "question": "How many waterproof recorders were installed on the eastern boardwalk?",
+    "answer": "17",
+    "method": "local_extractive",
+    "retrieval": [
+      "bm25",
+      "multilingual-e5-small"
+    ],
+    "local_generator": "disabled",
+    "source": {
+      "page": 1,
+      "block": 6,
+      "part": 1,
+      "answer_start": 45,
+      "answer_end": 47,
+      "context": "During the spring survey, the team installed 17 waterproof acoustic recorders on the\neastern boardwalk."
+    }
+  },
+  "unavailable_price": {
+    "question": "What was the invoice price in dollars for one waterproof recorder installed on the eastern boardwalk?",
+    "answer": null,
+    "status": "已找到相关段落，请核对其中的条件和数值。"
+  },
+  "native_cell": {
+    "page": 2,
+    "table": "2.4",
+    "row": 3,
+    "column": 2,
+    "column_label": "F1",
+    "row_label": "West",
+    "value": "84.3"
+  },
+  "uncached_scan": {
+    "was_cached": false,
+    "physical_page": 8,
+    "tables": 1,
+    "seconds": 4.363
+  },
+  "scan_answer": {
+    "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+    "depends_on_ocr_from_previous_chapter": true,
+    "cells": [
+      {
+        "page": 8,
+        "table": 2,
+        "row": 12,
+        "column": 2,
+        "column_label": "BLEU · EN-DE",
+        "value": "28.4"
+      },
+      {
+        "page": 8,
+        "table": 2,
+        "row": 12,
+        "column": 3,
+        "column_label": "BLEU · EN-FR",
+        "value": "41.0"
+      }
+    ]
+  },
+  "live_bilingual": {
+    "source_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+    "page": 1,
+    "anchor": "p1-b11",
+    "live_translation_request": true,
+    "protected_terms": [
+      "Transformer",
+      "WMT",
+      "ensembles"
+    ]
+  },
+  "synthesis": {
+    "preloaded_pdfs": 20,
+    "works": 20,
+    "edges": 28,
+    "abstracts": 19,
+    "future_directions": 17,
+    "postdated_text_comparisons": 7,
+    "later_candidates": 0
+  },
+  "csv": {
+    "mode": "bar",
+    "source": {
+      "name": "fictional-trial-latency.csv",
+      "sha256": "12d9da185aa83113ecb36666654a70609aa00f2e98a6c227b5505949c2b27b80",
+      "column": "latency_ms",
+      "columnIndex": 2,
+      "valueUnit": "毫秒",
+      "observationUnit": "试次"
+    },
+    "summary": {
+      "totalRows": 5,
+      "previewRows": 5,
+      "used": 4,
+      "missing": 1,
+      "invalid": 0,
+      "min": 9,
+      "max": 14,
+      "mean": 11.25
+    }
+  }
+}

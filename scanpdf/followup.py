@@ -111,7 +111,7 @@ def lookup(store, request, *, dense=None):
             "gap": ("已找到相关段落，请核对其中的条件和数值。" if ranked else
                     "所选范围未找到足以回答这个问题的原文。")}
 
-def answer_question(store, request):
+def answer_question(store, request, *, on_delta=None):
     """Local retrieval runs first; optional local models receive only the selected evidence."""
     result = lookup(store, request, dense=store.dense)
     if result.get("answer") or not result["hits"] or "table_cells" in result or result.get("answer_method"):
@@ -121,7 +121,10 @@ def answer_question(store, request):
     candidates, status, english = store.passage_reader.candidates(question, result["hits"])
     checked, direct = assess_spans(question, english, candidates, result["hits"]) if candidates else ([], None)
     result["reader"] = {"status": status, "candidates": checked}
-    draft = store.local_generator.answer(question, result["hits"], checked)
+    options = {"english": english} if english else {}
+    if on_delta:
+        options["on_delta"] = on_delta
+    draft = store.local_generator.answer(question, result["hits"], checked, **options)
     result["generation"] = draft
     if draft["status"] == "cited_draft":
         claim = draft["claims"][0]
@@ -129,5 +132,8 @@ def answer_question(store, request):
     elif direct and draft["status"] in {"disabled", "busy", "unavailable", "misconfigured"}:
         result.update(answer=direct["answer"].strip(), answer_method="local_extractive", gap=None)
     elif draft["status"] == "insufficient_evidence":
-        result["gap"] = "在已检索的原文中，本机模型没有找到问题所需的直接依据。"
+        reasons = {"field_missing":"所引原句没有说明问题所问的字段。",
+                   "different_condition":"原句对应的实验条件与问题不符。",
+                   "ambiguous_measurement":"多个条件的原文报告不同读数，请指定实验条件后再核对。"}
+        result["gap"] = reasons.get(draft.get("reason"), "在已检索的原文中，本机模型没有找到问题所需的直接依据。")
     return result
