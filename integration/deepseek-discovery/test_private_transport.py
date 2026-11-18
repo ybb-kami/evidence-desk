@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing, contextmanager
+from contextlib import closing, contextmanager, redirect_stderr, redirect_stdout
 from hashlib import sha256
+from io import StringIO
 import json
 import os
 from pathlib import Path
@@ -14,7 +15,9 @@ from tempfile import TemporaryDirectory
 import threading
 from time import monotonic, sleep, time
 import unittest
+from unittest.mock import patch
 
+import broker_sender
 from group_budget import ENDPOINT, MODEL, Denied, GroupBudget
 from group_dispatch import ApprovedGroupCaller
 from legacy_ledger import upgrade_policy_in_place
@@ -23,6 +26,7 @@ from private_transport import (
     IDENTITY, LENGTH, REPLY_LIMIT, UnixProviderBroker, UnixProviderTransport,
     PrivateTransportError, _frame, _receive, fake_response,
 )
+import private_transport
 
 
 UID = os.geteuid()
@@ -33,6 +37,18 @@ MODEL_BODY = {"model": MODEL, "messages": [{"role": "system", "content": "Return
               {"role": "user", "content": json.dumps({"question": "What is the passage?",
               "documents": [[{"ref": "E1", "excerpt": SOURCE}]]})}], "max_tokens": 512,
               "stream": False, "thinking": {"type": "disabled"}, "response_format": {"type": "json_object"}}
+FIXTURE_KEY = "fixture-key-used-only-by-tests"
+
+
+class FixtureEnvironment(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.key_reads = 0
+
+    def get(self, key, default=None):
+        if key == "DEEPSEEK_API_KEY":
+            self.key_reads += 1
+        return super().get(key, default)
 
 
 def hex_id(label):
@@ -305,6 +321,86 @@ class PrivateTransportTests(unittest.TestCase):
             _, errors = process.communicate(timeout=5)
         self.assertEqual((process.returncode, errors), (0, b""))
         self.assertFalse(self.path.exists())
+
+    def cli(self, config, environment, *options):
+        config_file = self.root / "operator-config.json"
+        config_file.write_text(json.dumps(config))
+        arguments = ["private_transport.py", "--socket", os.fspath(self.path), "--allow-uid", str(UID),
+                     "--ledger-config", os.fspath(config_file), *options]
+        output, error = StringIO(), StringIO()
+        with (patch.object(sys, "argv", arguments),
+              patch.object(private_transport.os, "environ", environment),
+              patch.object(private_transport.signal, "signal"),
+              patch.object(UnixProviderBroker, "serve_forever", autospec=True) as serve,
+              patch.object(broker_sender, "approved_sender", wraps=broker_sender.approved_sender) as factory,
+              patch.object(broker_sender.http.client, "HTTPSConnection", side_effect=AssertionError("unexpected network")) as internet,
+              redirect_stdout(output), redirect_stderr(error)):
+            try:
+                private_transport.main()
+                code = 0
+            except SystemExit as exc:
+                code = exc.code
+        internet.assert_not_called()
+        self.assertNotIn(FIXTURE_KEY, output.getvalue() + error.getvalue())
+        self.assertFalse(self.path.exists())
+        return code, output.getvalue(), serve, factory
+
+    def migrated_config(self):
+        fixed_rate = {"cny_per_usd_upper": "7.5", "fx_source_sha256": hex_id("exchange-cli-fixture"),
+                      "fx_verified_epoch": self.config["verified_epoch"], "fx_expiry_epoch": self.config["expiry_epoch"]}
+        config = {**self.config, "cap_policy": fixed_rate}
+        snapshot = self.root / "cli-snapshot.db"
+        with closing(self.ledger._connect()) as source, closing(sqlite3.connect(snapshot)) as copy:
+            source.backup(copy)
+            copy.execute("PRAGMA journal_mode=DELETE")
+        upgrade_policy_in_place(self.ledger, GroupBudget(**config), snapshot=snapshot,
+                                snapshot_sha=sha256(snapshot.read_bytes()).hexdigest(), writers_stopped=True)
+        return config
+
+    def test_default_cli_does_not_read_environment_key_or_credential_file(self):
+        environment = FixtureEnvironment(DEEPSEEK_API_KEY=FIXTURE_KEY)
+        code, output, serve, factory = self.cli(self.config, environment, "--credential-file", "/absent.fixture")
+        self.assertEqual((code, output), (0, "READY offline Unix provider fixture\n"))
+        self.assertEqual(environment.key_reads, 0)
+        factory.assert_not_called()
+        self.assertEqual(serve.call_args.args[0].mode, "offline_fixture")
+
+    def test_approved_cli_refuses_missing_finance_before_reading_credential(self):
+        environment = FixtureEnvironment(DEEPSEEK_API_KEY=FIXTURE_KEY)
+        code, output, serve, factory = self.cli(self.config, environment, "--provider-mode", "approved_unix")
+        self.assertEqual((code, output, environment.key_reads), (1, "", 0))
+        factory.assert_not_called()
+        serve.assert_not_called()
+
+    def test_approved_cli_refuses_missing_key_after_finance_is_checked(self):
+        environment = FixtureEnvironment()
+        code, output, serve, factory = self.cli(self.migrated_config(), environment, "--provider-mode", "approved_unix")
+        self.assertEqual((code, output, environment.key_reads), (1, "", 1))
+        factory.assert_not_called()
+        serve.assert_not_called()
+
+    def test_approved_cli_uses_environment_and_explicit_private_file_without_network(self):
+        config = self.migrated_config()
+        environment = FixtureEnvironment(DEEPSEEK_API_KEY=FIXTURE_KEY)
+        mode = ("--provider-mode", "approved_unix")
+        code, output, serve, factory = self.cli(config, environment, *mode)
+        self.assertEqual((code, output, environment.key_reads), (0, "READY approved Unix provider broker\n", 1))
+        self.assertEqual(serve.call_args.args[0].mode, "approved_unix")
+        factory.assert_called_once_with(FIXTURE_KEY)
+
+        credential = self.root / "mimic-systemd-credential"
+        credential.write_text(FIXTURE_KEY + "\n")
+        credential.chmod(0o400)
+        code, output, serve, factory = self.cli(config, environment, *mode, "--credential-file", os.fspath(credential))
+        self.assertEqual((code, output, environment.key_reads), (0, "READY approved Unix provider broker\n", 1))
+        self.assertEqual(serve.call_args.args[0].mode, "approved_unix")
+        factory.assert_called_once_with(FIXTURE_KEY)
+
+        credential.chmod(0o444)
+        code, output, serve, factory = self.cli(config, environment, *mode, "--credential-file", os.fspath(credential))
+        self.assertEqual((code, output, environment.key_reads), (1, "", 1))
+        factory.assert_not_called()
+        serve.assert_not_called()
 
 
 if __name__ == "__main__":

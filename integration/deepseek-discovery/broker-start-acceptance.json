@@ -1,0 +1,84 @@
+{
+  "base": "b0ab8ad2d3adeecbd17e229204a2fe30fe94e4a0",
+  "date": "2026-11-18",
+  "offline_tests_passed": 96,
+  "deployed_by_cloud": false,
+  "actual_paid_calls": 0,
+  "prior_candidate_loopback": {
+    "panelPresent": true,
+    "legacyVerifyEnabled": false,
+    "preview": {
+      "http": 200,
+      "mode": "single",
+      "status": "ready",
+      "providerMode": "offline_fixture",
+      "pagesAndBlocks": [
+        {
+          "page": 7,
+          "block": 3
+        }
+      ],
+      "online": true
+    },
+    "confirm": {
+      "http": 200,
+      "mode": "single",
+      "status": "draft_for_review",
+      "providerMode": "offline_fixture",
+      "pagesAndBlocks": [
+        {
+          "page": 7,
+          "block": 3
+        }
+      ]
+    }
+  },
+  "injected_browser_response": {
+    "browser": "156.0.8078.79",
+    "source": "injected catalog and completion only; no upstream network",
+    "actual_paid_calls": 0,
+    "synthetic_confirm": "draft_for_review",
+    "provider_mode_in_exercised_path": "approved_unix",
+    "generation_receipt": {
+      "status": "available",
+      "model": "deepseek-flash",
+      "usage": {
+        "prompt_tokens": 101,
+        "completion_tokens": 17,
+        "total_tokens": 118
+      },
+      "provider_request_id_sha256": "85ba95a11a7aa3d7b84fd686a952056daff1ac6f3db91efb42bcd88f93e0389f"
+    },
+    "browser_receipt_text": "响应模型 deepseek-flash · 输入 101、输出 17，共 118 tokens · 请求编号摘要 85ba95a11a7a",
+    "physical_page": 2,
+    "block": 1,
+    "original_pdf_matched": true,
+    "raw_provider_id_exposed": false,
+    "historical_sources": "two synthetic request bounds and synthetic prices",
+    "opening_fixture": true,
+    "unix_fake_dispatches": 1,
+    "audit": {
+      "groups_with_reservations": 1,
+      "reserved_operations": {
+        "model": 1
+      },
+      "reserved_nano_usd": 315187200,
+      "reserved_usd": "0.315187200",
+      "limit_nano_usd": 2500000000,
+      "provider_invoiced_amount": "not_observed",
+      "historical_opening_reserve": {
+        "historical_requests": 2,
+        "booked_upper_bound_nano_usd": 630662400,
+        "effective_upper_bound_nano_usd": 630662400,
+        "effective_upper_bound_usd": "0.630662400",
+        "usd_component_nano": 630662400,
+        "cny_component_nano": 0
+      },
+      "groups_counting_toward_limit": 3,
+      "total_reserved_nano_usd": 945849600,
+      "total_reserved_usd": "0.945849600",
+      "remaining_group_capacity": 97,
+      "remaining_nano_usd": 1554150400
+    }
+  }
+}

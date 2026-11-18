@@ -21,9 +21,10 @@ const style=el('style');style.textContent=`
 `;
 const head=el('header'),ey=el('div','研究工具 / 原文问答');ey.className='eyebrow';head.append(ey,title,help);
 const grid=el('div'),left=el('div'),right=el('div');grid.className='s-grid';left.className='s-card';right.className='s-card';scopeSources.className='s-proof';
+const receiptView=el('p');receiptView.id='synthesis-receipt';receiptView.hidden=true;
 const raw=el('details');raw.append(el('summary','查看本次将发送的完整请求（JSON）'),pre);
 left.append(el('h3','1 · 选择文献和问题'),refresh,docs,promptLabel,q,preview);
-right.append(el('h3','2 · 核对原文与发送范围'),status,provider,scopeSources,raw,label,send,claims);grid.append(left,right);root.append(style,head,grid);
+right.append(el('h3','2 · 核对原文与发送范围'),status,provider,scopeSources,raw,label,send,receiptView,claims);grid.append(left,right);root.append(style,head,grid);
 const api=async(path,body)=>{const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});if(!r.ok)throw Error('请求没有完成（'+r.status+'）');return r.json()};
 const names=new Map();let token='',rev=0;
 const selected=()=>[...docs.querySelectorAll(':checked')].map(i=>i.value);
@@ -34,7 +35,8 @@ const syncButtons=()=>{
 };
 const reset=()=>{
   rev++;token='';pre.textContent='';scopeSources.replaceChildren();label.hidden=true;send.disabled=true;
-  consent.checked=false;claims.replaceChildren();status.textContent='';provider.hidden=true;syncButtons();
+  consent.checked=false;claims.replaceChildren();status.textContent='';provider.hidden=true;
+  receiptView.hidden=true;receiptView.textContent='';syncButtons();
 };
 const markProvider=mode=>{
   const fixture=mode==='offline_fixture';
@@ -87,6 +89,19 @@ send.onclick=async()=>{
     status.textContent=r.mode==='single'?
       (r.status==='abstained'?'本次未返回可核对的回答。':'草稿已返回，请逐句核对所引原文。'):
       '草稿状态：'+r.status+'。请逐句审签。';
+    if(r.provider_mode==='approved_unix'){
+      const receipt=r.generation_receipt;
+      const parts=[];
+      if(receipt?.model)parts.push('响应模型 '+receipt.model);
+      if(receipt?.usage){
+        const u=receipt.usage;
+        parts.push('输入 '+u.prompt_tokens+'、输出 '+u.completion_tokens+'，共 '+u.total_tokens+' tokens');
+      }else{
+        parts.push('本次响应未附可核对的 token 用量');
+      }
+      if(receipt?.provider_request_id_sha256)parts.push('请求编号摘要 '+receipt.provider_request_id_sha256.slice(0,12));
+      receiptView.textContent=parts.join(' · ');receiptView.hidden=false;
+    }
     for(const c of r.claims||[]){
       const item=el('article');item.append(el('p',c.text));
       for(const ref of c.evidence||c.citations||[]){

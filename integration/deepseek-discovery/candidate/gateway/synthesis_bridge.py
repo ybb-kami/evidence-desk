@@ -20,11 +20,45 @@ _AFFIRMATIVE_TRAINING=re.compile(
 _AMBIGUOUS_TRAINING=re.compile(
     r'\b(?:no|not|never|neither|without|instead of|rather than|would|could|might|should|proposed|prior work|et al|'
     r'inference|evaluation|testing|fine[- ]tun\w*|benchmarked)\b|并未|而不是|推理|测试|既有研究',re.I)
+_RECEIPT_MODEL = re.compile(r'deepseek-(?:flash|v4\.1-flash(?:-1017)?)', re.ASCII | re.I)
+_RECEIPT_ID = re.compile(r'[!-~]{1,256}')
+_TOKEN_FIELDS = ('prompt_tokens', 'completion_tokens', 'total_tokens')
+_MAX_JSON_INTEGER = (1 << 53) - 1
 
 
 def _training_hardware(text):
     return any(_DEVICE.search(line) and _AFFIRMATIVE_TRAINING.search(line) and not _AMBIGUOUS_TRAINING.search(line)
                for line in re.split(r'(?<=[.!?])\s+(?=[A-Z])|(?<=[。！？])',' '.join(text.split())))
+
+
+def _generation_receipt(response):
+    """Report only recognized metadata from this provider response body."""
+    if isinstance(response, bytes) and len(response) <= 32768:
+        try:
+            response = json.loads(response)
+        except (ValueError, RecursionError):
+            response = None
+
+    model = usage = request_digest = None
+    if (isinstance(response, dict) and isinstance(response.get('choices'), list)
+            and 'error' not in response and response.get('offline_fixture') is not True):
+        observed_model = response.get('model')
+        if isinstance(observed_model, str) and _RECEIPT_MODEL.fullmatch(observed_model):
+            model = observed_model
+        observed_id = response.get('id')
+        if isinstance(observed_id, str) and _RECEIPT_ID.fullmatch(observed_id):
+            request_digest = hashlib.sha256(observed_id.encode('ascii')).hexdigest()
+        observed_usage = response.get('usage')
+        if isinstance(observed_usage, dict):
+            prompt, completion, total = (observed_usage.get(key) for key in _TOKEN_FIELDS)
+            if (all(type(value) is int and 0 <= value <= _MAX_JSON_INTEGER for value in (prompt, completion, total))
+                    and prompt + completion == total):
+                usage = dict(zip(_TOKEN_FIELDS, (prompt, completion, total)))
+
+    fields = {'model': model, 'usage': usage, 'provider_request_id_sha256': request_digest}
+    present = sum(value is not None for value in fields.values())
+    status = 'available' if present == len(fields) else 'partial' if present else 'unavailable'
+    return {'status': status, **fields}
 
 
 class SynthesisBridge:
@@ -80,13 +114,22 @@ class SynthesisBridge:
         now,token,query,ids,expected,anchor_expected,gid=row
         item=self._prepare(query,ids,backend)
         if item.get('status')!='ready' or hashlib.sha256(item['wire']).hexdigest()!=expected or self._anchor_digest(item)!=anchor_expected:return 409,{'error':'source changed, preview again'}
+        response = None
+
         def send(wire):
+            nonlocal response
             if wire!=item['wire']:raise RuntimeError('request changed')
             rid=hashlib.sha256(token.encode()).hexdigest()
             if self.discovery:
-                result=self.discovery.caller.call(seat,gid,'model',rid,json.loads(wire))
-                return json.dumps(result).encode()
+                response = self.discovery.caller.call(seat,gid,'model',rid,json.loads(wire))
+                return json.dumps(response).encode()
             self.gate.reserve(request_id=rid,session_id=seat,request_body=wire)
-            return self.transport(wire)
-        try:return 200,{**synthesis.generate(item,send=send),**provider}
+            response = self.transport(wire)
+            return response
+
+        try:
+            result = synthesis.generate(item, send=send)
+            if provider.get('provider_mode') == 'approved_unix':
+                result['generation_receipt'] = _generation_receipt(response)
+            return 200, {**result, **provider}
         except Exception:return 503,{"error":"generation unavailable; no automatic retry",**provider}
