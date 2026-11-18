@@ -1,6 +1,7 @@
 """Offline extraction, conservative lexical retrieval, and duplicate hints."""
 from collections import Counter
 import hashlib
+from itertools import zip_longest
 import math
 import re
 import unicodedata
@@ -30,6 +31,95 @@ _STOPWORDS = frozenset(
     "i in is it its me of on or please show tell that the their these this those "
     "to us was were what when where which who why will with would you your".split()
 )
+_GPU = ("gpu", "gpus", "graphics processing unit", "graphics processing units")
+_OPTIMIZER = ("optimizer", "optimizers", "optimiser", "optimisers", "optimization algorithm",
+              "optimisation algorithm")
+_RESEARCH_TERMS = {
+    "训练硬件": (*_GPU, "hardware", "tpu", "tpus", "cpu", "cpus", "accelerator", "accelerators"),
+    "训练设备": (*_GPU, "hardware", "tpu", "tpus", "cpu", "cpus", "accelerator", "accelerators"),
+    "图形处理器": _GPU,
+    "显卡": _GPU,
+    "优化器": _OPTIMIZER,
+    "优化算法": _OPTIMIZER,
+    "层归一化": ("layer normalization", "layer normalisation", "layer norm", "layernorm"),
+    "批归一化": ("batch normalization", "batch normalisation", "batch norm", "batchnorm"),
+    "残差连接": ("residual connection", "residual connections", "skip connection", "skip connections"),
+    "学习率": ("learning rate", "learning rates"),
+    "超参数": ("hyperparameter", "hyperparameters", "hyper parameter", "hyper parameters"),
+    "训练步数": ("training steps", "steps"),
+    "自注意力": ("self attention", "selfattention"),
+    "激活函数": ("activation function", "activation functions"),
+    "交叉熵": ("cross entropy", "crossentropy"),
+    "权重衰减": ("weight decay",),
+    "梯度裁剪": ("gradient clipping",),
+    "困惑度": ("perplexity",),
+    "贝塔": ("beta", "β"),
+}
+_QUERY_FILLER = re.compile(
+    r"请问|请指出|请给出|告诉我|给出|列出|在论文中|在文中|论文中|文章中|这篇论文|这篇文章|该论文|本文|"
+    r"该模型|这个模型|训练过程中|模型训练|训练时|训练|实验中|"
+    r"分别是多少|分别是什么|分别为|分别|是什么|叫什么|是多少|有多少|多少|一共|总共|"
+    r"用了哪种|使用了哪种|使用哪些|采用哪种|哪一种|哪种|什么|几个|几块|几张|"
+    r"在哪里|哪里|何处|具体|设置为|设为|参数值|取值|型号|数量|个数|分数|得分|使用了|用到了|采用了|用了|使用|采用|"
+    r"完整参考文献|参考文献|完整引文|引文|条目|引用|"
+    r"以及|或者|并且|值|是|为|的|了|在|有|块|张|和|与|及|吗|呢"
+)
+_ARITHMETIC_SYMBOL = re.compile(r"(?<![a-z0-9])(?:β|beta)\s*[_-]?\s*(\d+)(?![a-z0-9])")
+_EN_ALIASES = {word: _GPU for word in ("gpu", "gpus")}
+_EN_ALIASES.update({word: _OPTIMIZER for word in _OPTIMIZER if " " not in word})
+_EN_QUERY_FILLER = frozenset("article paper research authors used use using employed employ".split())
+_MEASUREMENT = re.compile(r"硬件|设备|型号|数量|多少|几块|几张|how many|hardware|gpu models?")
+_NUMBER_TERM = r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)"
+_HARDWARE_MODIFIER = rf"(?!(?:{_NUMBER_TERM}|and|for|from|of|on|the|to|with)\b)[a-z][a-z0-9]*"
+_HARDWARE_DETAIL = re.compile(
+    rf"\b{_NUMBER_TERM}\s+((?:{_HARDWARE_MODIFIER}\s+){{0,3}})(?:gpus?|cpus?|tpus?|accelerators?)\b"
+)
+_CITATION_QUERY = re.compile(r"参考文献|引文|引用|\b(?:cite|citation|reference)\b")
+_REFERENCE_ENTRY = re.compile(r"^\s*\[\d+\]")
+
+
+def _search_text(text):
+    text = _ARITHMETIC_SYMBOL.sub(r" beta\1 ", _normalized(text))
+    return " ".join(re.sub(r"(?<=\w)[\u2010-\u2014-](?=\w)", " ", text).split())
+
+
+def _query_groups(query):
+    """Represent each topic as alternatives that count as a single matched concept."""
+    groups = {}
+    normalized = _search_text(query)
+    remaining = normalized
+    for chinese, aliases in sorted(_RESEARCH_TERMS.items(), key=lambda entry: -len(entry[0])):
+        if chinese in remaining:
+            groups.setdefault(aliases, set()).add(chinese)
+            remaining = remaining.replace(chinese, " ")
+
+    # Keep unmatched subject terms, including Han bigrams, as normal evidence requirements.
+    if _HAN_RUN.search(normalized) and (groups or re.search(r"[a-z]{2,}", normalized)):
+        remaining = _QUERY_FILLER.sub(" ", remaining)
+    terms = set(_terms(remaining)) - _STOPWORDS
+    if groups or any(term in _EN_ALIASES for term in terms):
+        terms -= _EN_QUERY_FILLER
+    for term in terms:
+        if len(term) > 1 or term.isdigit() or _HAN_RUN.fullmatch(term):
+            groups.setdefault(_EN_ALIASES.get(term, (term,)), set()).add(term)
+    return [(tuple(sorted(original)), alternatives) for alternatives, original in groups.items()]
+
+
+def _group_matches(groups, passage, tokens, frequencies):
+    phrase_text = f" {' '.join(tokens)} "
+    total = 0
+    matched = 0
+    for original, alternatives in groups:
+        count = max(
+            (phrase_text.count(f" {term} ") if " " in term else
+             passage.count(term) if _HAN_RUN.fullmatch(term)
+             else frequencies.get(term, 0))
+            for term in (*original, *alternatives)
+        )
+        if count:
+            matched += 1
+            total += min(count, 3)
+    return matched, total
 
 
 def _normalized(text):
@@ -40,7 +130,10 @@ def _normalized(text):
 
 
 def _terms(text):
-    normalized = _normalized(text)
+    yield from _normalized_terms(_normalized(text))
+
+
+def _normalized_terms(normalized):
     for run_or_word in _WORDS.findall(normalized):
         # PDF text can mix CJK and Latin without intervening whitespace.
         for part in _HAN_SPLIT.split(run_or_word):
@@ -149,30 +242,64 @@ def find_evidence(docs: list[dict], query: str) -> list[dict]:
     """Return ranked verbatim extracts, not generated answers or verified claims."""
     if not isinstance(query, str) or not query.strip() or len(query) > MAX_QUERY:
         return []
-    query_terms = set(_terms(query)) - _STOPWORDS
-    # Single Latin letters generally identify notation, not searchable evidence.
-    query_terms = {term for term in query_terms
-                   if len(term) > 1 or term.isdigit() or _HAN_RUN.fullmatch(term)}
-    if not query_terms:
+
+    hits = _ranked_evidence(docs, query)
+    if hits:
+        return hits
+    # A conjunction between explicit research topics can refer to separate passages.
+    parts = re.split(r"以及|和|与|及", query, maxsplit=1)
+    if len(parts) != 2 or not all(any(term in part for term in _RESEARCH_TERMS) for part in parts):
         return []
-    minimum = len(query_terms) if len(query_terms) <= 3 else math.ceil(0.75 * len(query_terms))
-    normalized_query = " ".join(_normalized(query).split())
+    branches = [_ranked_evidence(docs, part) for part in parts]
+    if not all(branches):
+        return []
+    result, seen = [], set()
+    for pair in zip_longest(*branches):
+        for row in pair:
+            if row is None:
+                continue
+            key = row["id"], row["page"], row["block"]
+            if key not in seen:
+                result.append(row)
+                seen.add(key)
+                if len(result) == MAX_RESULTS:
+                    return result
+    return result
+
+
+def _ranked_evidence(docs, query):
+    groups = _query_groups(query)
+    if not groups:
+        return []
+    minimum = len(groups) if len(groups) <= 3 else math.ceil(0.75 * len(groups))
+    normalized_query = _search_text(query)
+    training_context = bool(re.search(r"训练|\btrain(?:ed|ing)?\b", normalized_query))
+    hardware_detail = bool(_MEASUREMENT.search(normalized_query)) and any(
+        "gpu" in alternatives for _, alternatives in groups
+    )
+    citation_query = bool(_CITATION_QUERY.search(normalized_query))
     candidates = []
     for doc in docs:
         for chunk in doc["chunks"]:
-            freqs = Counter(term for term in _terms(chunk["text"]) if term in query_terms)
-            # A single Chinese character may be inside an indexed bigram.
-            for term in query_terms - freqs.keys():
-                if len(term) == 1 and _HAN_RUN.fullmatch(term):
-                    count = chunk["text"].count(term)
-                    if count:
-                        freqs[term] = count
-            if len(freqs) < minimum:
+            passage = _search_text(chunk["text"])
+            tokens = list(_normalized_terms(passage))
+            frequencies = Counter(tokens)
+            matched, occurrences = _group_matches(groups, passage, tokens, frequencies)
+            if matched < minimum:
                 continue
-            exact = normalized_query in " ".join(_normalized(chunk["text"]).split())
-            score = len(freqs) / len(query_terms)
-            # Break ties by exact phrase, then by capped term occurrences.
-            rank = (score, exact, sum(min(n, 3) for n in freqs.values()), -len(chunk["text"]))
+            exact = normalized_query in passage
+            score = matched / len(groups)
+            training = sum(frequencies[term] for term in ("train", "trained", "training"))
+            reference_entry = bool(_REFERENCE_ENTRY.match(passage))
+            detail_words = max(
+                (len(detail[1].split()) + 1 for detail in _HARDWARE_DETAIL.finditer(passage)),
+                default=0,
+            ) if hardware_detail else 0
+            substantive = len(frequencies) >= 8
+            # Prefer direct phrases and evidence with the context requested in the question.
+            rank = (score, exact, reference_entry == citation_query, detail_words,
+                    min(training, 3) if training_context else 0, substantive,
+                    occurrences, -len(chunk["text"]))
             page = chunk["page"]
             try:
                 label = doc["page_labels"][page - 1]
