@@ -262,7 +262,7 @@ def browser_request(browser, port, endpoint, values):
             turn = page.locator("#history section").last
             turn.wait_for()
             heading = turn.locator("h2").inner_text()
-            assert heading == values["question"] and observed == values
+            assert heading == values["question"] and observed == {**values, "model_consent": False}
             assert (turn.locator("strong").text_content() if result.get("answer") else None) == result.get("answer")
             assert_displayed_evidence(turn, result["hits"])
         else:

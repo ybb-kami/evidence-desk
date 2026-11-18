@@ -63,8 +63,9 @@ def combine(parts):
             if rank < len(ranked) and len(hits)<12:
                 add(ranked[rank])
     for question, result in parts:
+        generation = result.get("generation", {})
         field_claims=[]
-        for claim in result.get("generation",{}).get("claims",[]):
+        for claim in generation.get("claims", []):
             key=(claim["id"],claim["page"],claim["block"],claim.get("part",1))
             if key in indices:
                 field_claims.append(dict(claim,hit_index=indices[key]))
@@ -75,9 +76,11 @@ def combine(parts):
             supported+=1
         fields.append(dict(question=question,answer=answer,
                            gap=None if answer else result.get("gap") or describe_gap(
-                               question, result.get("hits", []), result.get("generation", {}).get("reason")),
+                               question, result.get("hits", []), generation.get("reason")),
                            method=result.get("answer_method"),claims=field_claims,
-                           cells=result.get("table_cells",[])))
+                           cells=result.get("table_cells",[]),
+                           has_evidence=bool(result.get("hits")),
+                           generation={key:generation[key] for key in ("status", "model", "reason", "model_reply") if key in generation}))
     status="complete" if supported==len(parts) else ("partial" if supported else "insufficient_evidence")
     return dict(hits=hits, fields=fields, answer="\n".join(f"{f['question']} — {f['answer']}" for f in fields if f["answer"]) or None,
                 answer_method="fieldwise", completeness=status,

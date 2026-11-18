@@ -19,7 +19,7 @@ from deepseek_live import (ANSWER, MODEL, HTTPFailure, call, fixture, followup, 
                            page_case, write_or_verify_fixture)
 
 ROOT = Path(__file__).resolve().parents[2]
-TERMS = 'public fictional tram calibration standard'
+TERMS = 'Attention Is All You Need arXiv 1706.03762'
 CANARY = 'SYNTHETIC NONPUBLIC CANARY this is deliberately absent from all provider requests'
 
 
@@ -57,10 +57,17 @@ def serve_stub(repo, data, events):
                 item = {'finish_reason': 'tool_calls', 'message': {'tool_calls': [{'type': 'function', 'function': function}]}}
             else:
                 user = payload['messages'][-1]['content']
-                cited = re.findall(r'\[(\d+)\]\n(.*?)(?=\n\n(?:\[\d+\]\n|Question:)|\Z)', user, flags=re.S)
-                proof = next(((int(label), text.strip()) for label, text in cited if ANSWER in text), None)
-                output = dict(status='answered', source=proof[0], answer=ANSWER, quote=proof[1]) if (
-                    proof and 'What type of box held' in user) else dict(status='insufficient', source=0, answer='', quote='')
+                if user.startswith('{'):
+                    context = json.loads(user)
+                    quote = 'The optical power during heating was 43 mW.'
+                    assert context['question'] == 'What was the optical power during heating?'
+                    source = next(label for label, text in context['excerpts'].items() if quote in text)
+                    output = {'claims': [dict(text='43 mW', source=source, quote=quote)]}
+                else:
+                    cited = re.findall(r'\[(\d+)\]\n(.*?)(?=\n\n(?:\[\d+\]\n|Question:)|\Z)', user, flags=re.S)
+                    proof = next(((int(label), text.strip()) for label, text in cited if ANSWER in text), None)
+                    output = dict(status='answered', source=proof[0], answer=ANSWER, quote=proof[1]) if (
+                        proof and 'What type of box held' in user) else dict(status='insufficient', source=0, answer='', quote='')
                 item = {'finish_reason': 'stop', 'message': {'content': json.dumps(output)}}
             result = {'choices': [item]}
         else:
@@ -73,7 +80,7 @@ def serve_stub(repo, data, events):
         assert json.loads(request.data) == {'query': TERMS, 'count': 5, 'need_content': False}
         assert CANARY not in request.data.decode()
         log('search')
-        return Reply(json.dumps({'results': [{'url': 'https://www.nist.gov/', 'title': 'A fixture result',
+        return Reply(json.dumps({'results': [{'url': 'https://arxiv.org/abs/1706.03762', 'title': 'A fixture result',
                                              'snippet': 'A synthetic result returned by a stub.'}]}).encode())
 
     flash_transport._response = flash
@@ -84,7 +91,8 @@ def serve_stub(repo, data, events):
 
 @contextmanager
 def worker(directory):
-    env = {key: value for key, value in os.environ.items() if key in {'PATH', 'LANG', 'LC_ALL', 'TZ'}}
+    env = {key: value for key, value in os.environ.items()
+           if key in {'PATH', 'LANG', 'LC_ALL', 'TZ', 'EVIDENCE_DENSE_MODEL_DIR'}}
     store = directory / 'library'
     ledger = directory / 'budget.sqlite3'
     events = directory / 'stub-calls.txt'

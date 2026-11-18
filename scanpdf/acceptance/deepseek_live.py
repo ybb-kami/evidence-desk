@@ -7,6 +7,7 @@ import http.client
 import json
 import os
 from pathlib import Path
+import re
 import select
 import subprocess
 import sys
@@ -45,12 +46,14 @@ def fixture():
 
 @contextmanager
 def workbench(repo, server_python, *, protocol_only=False):
-    names = ('PATH', 'LANG', 'LC_ALL', 'TZ', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'DEEPSEEK_API_KEY', 'DEEPSEEK_MODEL')
+    names = ('PATH', 'LANG', 'LC_ALL', 'TZ', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'EVIDENCE_DENSE_MODEL_DIR')
+    if not protocol_only:
+        names += ('DEEPSEEK_API_KEY', 'DEEPSEEK_MODEL', 'EVIDENCE_BUDGET_DB',
+                  'DEEPSEEK_INPUT_USD_PER_MILLION', 'DEEPSEEK_OUTPUT_USD_PER_MILLION',
+                  'DEEPSEEK_SEARCH_USD_PER_CALL', 'DEEPSEEK_FETCH_USD_PER_CALL')
     env = {name: os.environ[name] for name in names if name in os.environ}
     env['PYTHONDONTWRITEBYTECODE'] = '1'
     env.setdefault('DEEPSEEK_MODEL', MODEL)
-    if protocol_only:
-        env.pop('DEEPSEEK_API_KEY', None)
     with tempfile.TemporaryDirectory(prefix='evidence-deepseek-live-') as store:
         command = [server_python, 'scanpdf/workbench.py', '--port', '0', '--data', store, '--enable-deepseek']
         child = subprocess.Popen(command, cwd=repo, env=env, stdout=subprocess.PIPE,
@@ -162,24 +165,47 @@ def provider_answer(response, model):
 def page_case(port, doc_id, model, data):
     response = followup(port, doc_id, PAGE_QUERY)
     provenance, status = provider_answer(response, model)
+    receipt = (response.get('generation') or {}).get('model_reply') == 'accepted'
     answer = response.get('answer') or ''
     correct_value = isinstance(answer, str) and ANSWER in answer.casefold()
     claims = (response.get('generation') or {}).get('claims', [])
     citations = [{**claim, 'text': claim.get('span', claim.get('quote'))} for claim in claims]
     citations.extend(response.get('quotes', []))
     source = any(source_match(port, doc_id, citation, data) for citation in citations)
-    return dict(passed=provenance and status in {'cited_draft', 'supported'} and correct_value and source,
+    return dict(passed=provenance and status == 'cited_draft' and receipt and correct_value and source,
                 model_identity_verified=provenance, model_status=status, expected_value_present=correct_value,
+                provider_reply_confirmed=receipt,
                 verified_physical_page=ANSWER_PAGE if source else None, original_citation_locator_verified=source)
 
 
 def missing_case(port, doc_id, model):
     response = followup(port, doc_id, MISSING_QUERY)
     provenance, status = provider_answer(response, model)
+    receipt = (response.get('generation') or {}).get('model_reply') == 'declined'
     absent = not response.get('answer')
     gap = bool(response.get('gap')) or status == 'insufficient_evidence'
-    return dict(passed=absent and gap, final_value_supplied=not absent, gap_reported=gap,
-                model_identity_verified=provenance, model_status=status)
+    return dict(passed=provenance and status == 'insufficient_evidence' and receipt and absent and gap,
+                final_value_supplied=not absent, gap_reported=gap,
+                model_identity_verified=provenance, model_status=status, provider_reply_confirmed=receipt)
+
+
+def search_case(port):
+    events = call(port, '/api/copilot', dict(ids=[], question='Find the original paper.', model_planner=False, model_consent=False,
+                  publisher_consent=False, search_terms='Attention Is All You Need arXiv 1706.03762',
+                  fetch_first=False), events=True)
+    final = events[-1] if events else {}
+    web = final.get('web') or {}
+    items = web.get('items') or []
+    paper_found = False
+    for item in items:
+        url = urlsplit(item['url'])
+        if (url.scheme == 'https' and url.hostname in {'arxiv.org', 'www.arxiv.org'}
+                and re.fullmatch(r'/(abs|pdf|html)/1706[.]03762(v[0-9]+)?([.]pdf)?/?', url.path)):
+            paper_found = True
+    ok = (final.get('event') == 'final' and web.get('state') == 'ok'
+          and web.get('provider') == 'DeepSeek Search API' and web.get('fetch') is None)
+    return dict(passed=ok and paper_found, search_returned=ok, results=len(items),
+                expected_paper_source=paper_found)
 
 
 def timed(operation):
@@ -236,8 +262,10 @@ def run(args):
     data = fixture()
     doc_id = sha256(data).hexdigest()
     result = dict(schema_version=1, status='blocked', expected_model=MODEL, model_calls_requested=0,
-                  scope='generated public fictional fixture only', pdf_sha256=doc_id,
-                  search_enabled=False, fetch_enabled=False, planned=list(OPERATIONS), cases={})
+                  scope=('public fictional PDF and fixed public paper search' if args.with_search
+                         else 'generated public fictional fixture only'), pdf_sha256=doc_id,
+                  search_enabled=args.with_search, fetch_enabled=False,
+                  planned=[*OPERATIONS, 'public_search'] if args.with_search else list(OPERATIONS), cases={})
     if not args.protocol_only and not os.environ.get('DEEPSEEK_API_KEY', '').strip():
         return {**result, 'reason': 'deepseek_credential_not_configured'}
     if not args.protocol_only and not Path(os.environ.get('EVIDENCE_BUDGET_DB', '')).is_absolute():
@@ -254,6 +282,8 @@ def run(args):
                                                   configured=status.get('configured') is True)
             if not verified:
                 return {**result, 'reason': 'deepseek_flash_configuration_not_confirmed'}
+            if not status.get('model_price_configured') or (args.with_search and not status.get('search_price_configured')):
+                return {**result, 'reason': 'deepseek_rates_not_configured_in_workbench'}
             if not write_or_verify_fixture(port, data, doc_id):
                 return {**result, 'status': 'failed', 'reason': 'fixture_import_not_verified'}
             operations = {
@@ -264,6 +294,8 @@ def run(args):
             for name, operation in operations.items():
                 result['model_calls_requested'] += 1
                 result['cases'][name] = timed(operation)
+            if args.with_search:
+                result['cases']['public_search'] = timed(lambda: search_case(port))
             result['status'] = 'passed' if all(case['passed'] for case in result['cases'].values()) else 'failed'
             return result
     except HTTPFailure as exc:
@@ -280,8 +312,11 @@ def main():
     parser.add_argument('--repo', type=Path, default=ROOT)
     parser.add_argument('--server-python', default=sys.executable)
     parser.add_argument('--protocol-only', action='store_true', help='Exercise local HTTP routes with credentials removed')
+    parser.add_argument('--with-search', action='store_true', help='Also check one public paper with DeepSeek Search (no Fetch)')
     parser.add_argument('--out', type=Path)
     args = parser.parse_args()
+    if args.protocol_only and args.with_search:
+        parser.error('--with-search requires live mode')
     result = run(args)
     record = json.dumps(result, indent=2) + '\n'
     if args.out:

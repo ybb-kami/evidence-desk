@@ -17,6 +17,12 @@ python3.12 -m venv .venv
 
 启动后打开本机 `http://127.0.0.1:8765/`。模型状态在 `/api/model-status`。在“科研 Copilot”内勾选本次模型授权，或只填公开检索词做联网检索。在“证据追问”可选定文献或从原页跳到指定段落。部署方需将科研助手的独立评委入口指向工作台，并遵循现有 Host／Origin 校验。使用专属进程和文库，外网复核应覆盖无密码框的首页、PDF 上传和带出处的回答。现有 ETH 监控由其原工作区管理。[隔离配置](../deploy/README.md) · [容器说明](container/README.md)
 
+## 从作品页面调用
+
+启动上面的工作台后，在首页上传 PDF，打开「证据追问」，勾选本次允许 Flash，提交一个需要原文回答的问题。页上显示本次回答的来源。能够直接从原表或原句核出的字段会走本地处理。需要验证模型时，可使用下面的独立验收，它会向工作台上传新样本，并检查模型返回和原件定位。科研 Copilot 内的公开检索词触发 Search；仅选择抓取时才会请求 Fetch。
+
+使用根目录 `app.py`、另一条整合分支的默认网关或静态导出的作品页，会进入各自不同的流程。此版 Flash 和 Search 的配置和验收针对 `scanpdf/workbench.py`。服务端启动时读取环境变量，页面的 `configured` 字段表示本机配置状态，真实调用的证明是本次请求的供应商响应与对应的来源校验。
+
 ## 模型、搜索和预算
 
 唯一生成服务是 DeepSeek。聊天请求使用官方模型名 `deepseek-flash`。付费生成前访问官方模型目录，核对展示名 `DeepSeek-V4.1-Flash` 与发布标记 `1017`。账号返回其他版本、缺乏发布标记或版本无法核验时停止。工作台不会启动 Qwen。逐次同意的 PDF 问答只发送问题与有界摘录；独立 Search 只接收用户填写的公开检索词。Fetch 可选择读取首个合格的公开结果。网页资料带 URL，PDF 证据保留文件指纹与物理页定位。[官方协议出处与验证范围](discovery/DEEPSEEK-SEARCH.md)
@@ -37,7 +43,7 @@ python3.12 -m venv .venv
 
 ```sh
 .venv/bin/python scanpdf/acceptance/deepseek_live.py --protocol-only
-.venv/bin/python scanpdf/acceptance/deepseek_live.py
+.venv/bin/python scanpdf/acceptance/deepseek_live.py --with-search
 .venv/bin/python scanpdf/acceptance/official_http.py /path/to/pdf
 ```
 

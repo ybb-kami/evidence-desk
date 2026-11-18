@@ -52,5 +52,16 @@ class FieldTests(unittest.TestCase):
         self.assertEqual([(c['page'],r['page']) for c,r in zip(result['generation']['claims'],result['hits'])],[(1,1),(2,2)])
         self.assertIn('序列号',describe_gap('Which serial number was assigned?', [first]))
 
+    def test_each_field_keeps_its_own_model_reply(self):
+        first, last = hit(1, 'Power measurement'), hit(2, 'Frequency measurement')
+        combined = combine([
+            ('Power?', dict(answer='1 W', hits=[first], answer_method='direct_measurement')),
+            ('Frequency?', dict(answer=None, hits=[last], generation={
+                'status': 'insufficient_evidence', 'model': 'DeepSeek-V4.1-Flash-1017', 'model_reply': 'declined'})),
+        ])
+        self.assertEqual(combined['fields'][0]['generation'], {})
+        self.assertTrue(combined['fields'][0]['has_evidence'])
+        self.assertEqual(combined['fields'][1]['generation']['model_reply'], 'declined')
+
 if __name__=='__main__':
     unittest.main()

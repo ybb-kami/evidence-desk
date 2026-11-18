@@ -23,6 +23,7 @@
     "model_identity_verified": true,
     "model_status": "cited_draft",
     "expected_value_present": true,
+    "provider_reply_confirmed": true,
     "verified_physical_page": 2,
     "original_citation_locator_verified": true
   },
@@ -31,7 +32,8 @@
     "final_value_supplied": false,
     "gap_reported": true,
     "model_identity_verified": true,
-    "model_status": "insufficient_evidence"
+    "model_status": "insufficient_evidence",
+    "provider_reply_confirmed": true
   },
   "budget_saturated": {
     "reserved_nusd": 710000000,

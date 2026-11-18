@@ -114,9 +114,10 @@ class LocalGenerator:
             return {"status": "misconfigured"}
         sources = excerpts(hits, candidates, english or question)
         if not sources:
-            return {"status": "insufficient_evidence", "model": self.model}
+            return {"status": "insufficient_evidence", "model": self.model, "reason": "no_source"}
         if not self._lock.acquire(blocking=False):
             return {"status": "busy"}
+        response_received = False
         try:
             zh = bool(re.search(r"[\u3400-\u9fff]", question))
             labels = ("原文段落", "问题") if zh else ("Passages", "Question")
@@ -139,14 +140,18 @@ class LocalGenerator:
                     if response.getheader("Content-Type", "").partition(";")[0].strip() != "text/event-stream":
                         raise ValueError("expected local SSE stream")
                     result = read_completion(response, on_delta)
+            response_received = True
             choice = result["choices"][0]
             if choice["finish_reason"] != "stop":
-                return {"status": "incomplete", "model": self.model}
+                return {"status": "incomplete", "model": self.model, "model_reply": "rejected"}
             decoded = _decode(choice["message"]["content"])
             if not isinstance(decoded, dict) or set(decoded) != {"status", "answer", "source", "quote"}:
                 raise ValueError("invalid model output")
             if decoded["status"] == "insufficient":
-                return {"status": "insufficient_evidence", "model": self.model}
+                if (type(decoded["source"]) is not int or decoded["source"] != 0
+                        or decoded["answer"] != "" or decoded["quote"] != ""):
+                    raise ValueError("invalid model refusal")
+                return {"status": "insufficient_evidence", "model": self.model, "model_reply": "declined"}
             label, text = decoded["source"], decoded["answer"]
             if (decoded["status"] != "answered" or type(label) is not int or label not in sources
                     or not isinstance(text, str) or not 1 <= len(text.strip()) <= 450):
@@ -154,9 +159,9 @@ class LocalGenerator:
             i, offset, raw = sources[label]
             span = _bind_span(decoded["quote"], raw)
             if not span:
-                return {"status":"validation_failed", "model":self.model, "reason":"quote_not_bound"}
+                return {"status":"validation_failed", "model":self.model, "reason":"quote_not_bound", "model_reply":"rejected"}
             if not _numbers(text).issubset(_numbers(raw[span[0]:span[1]])):
-                return {"status":"validation_failed", "model":self.model, "reason":"unsupported_number"}
+                return {"status":"validation_failed", "model":self.model, "reason":"unsupported_number", "model_reply":"rejected"}
             hit = hits[i]
             claim = {"text": text.strip(), "quote": raw, "id": hit["id"], "page": hit["page"],
                      "block": hit["block"], "part": hit.get("part", 1), "hit_index": i,
@@ -165,11 +170,12 @@ class LocalGenerator:
             from claim_support import check
             reason = check(question, english, hits, claim)
             if reason:
-                return {"status":"insufficient_evidence", "model":self.model, "reason":reason}
-            return {"status": "cited_draft", "model": self.model, "claims": [claim]}
+                return {"status":"insufficient_evidence", "model":self.model, "reason":reason, "model_reply":"rejected"}
+            return {"status": "cited_draft", "model": self.model, "claims": [claim], "model_reply": "accepted"}
         except (OSError, http.client.HTTPException):
             return {"status":"unavailable", "model":self.model}
         except (ValueError, IndexError, KeyError, TypeError, AttributeError, RecursionError):
-            return {"status":"validation_failed", "model":self.model, "reason":"invalid_response"}
+            return {"status":"validation_failed", "model":self.model, "reason":"invalid_response",
+                    **({"model_reply": "rejected"} if response_received else {})}
         finally:
             self._lock.release()

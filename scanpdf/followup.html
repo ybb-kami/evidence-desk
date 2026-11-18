@@ -7,6 +7,8 @@ label{display:block;font-weight:600}select,input,button{font:inherit;padding:.45
 select,input{width:100%;margin:.3rem 0 .6rem}button{cursor:pointer}button:disabled{cursor:default}button.primary{background:#18574d;color:white}
 blockquote{white-space:pre-wrap;overflow-wrap:anywhere;margin:.5rem 0;padding-left:.8rem;border-left:3px solid #b2c7ba}h2{font-size:1.15rem}
 article{padding:.7rem 0;border-top:1px solid #d6dfd8}article a{margin-right:.7rem}
+.model-receipt{margin:.45rem 0;padding:.35rem .6rem;background:#f2f6f2;border-left:3px solid #7d9e8c;font-size:.92rem;overflow-wrap:anywhere}
+.model-receipt[data-state="failed"]{background:#fff3ec;border-color:#a45437}
 </style>
 <main><a href="/">返回工作台</a><h1>证据追问</h1><label for="doc">当前文献</label><select id="doc"></select>
 <p>先在整篇文献中提问。选中命中摘录的「在此段追问」后，后续问题只查询该段原文。</p>
@@ -28,6 +30,7 @@ function selectAnchor(value){
   scope.textContent='检索范围：'+(value?locationText(value):'当前文献全文');
   release.hidden=!value;
   byId('status').textContent='';
+  byId('flash-consent').checked=false;
   byId('send').disabled=!picker.value;
 }
 function clearSession(){
@@ -57,35 +60,69 @@ function cite(hit){
   block.append(node('blockquote',hit.text),focus);
   return block;
 }
-function modelDraft(turn, question, id, current) {
-  const button=node('button','根据摘录生成有引文的回答');
-  button.type='button';
-  const output=node('div','');
-  output.setAttribute('role','status');
+const localMethods=new Set(['local_extractive','direct_measurement','source_fields','abbreviation',
+  'table_calculation','scan_table','native_table']);
+const flashModel='DeepSeek-V4.1-Flash-1017';
+function receipt(state,text){
+  const result=node('p','模型回执 · '+text);
+  result.className='model-receipt'; result.dataset.state=state;
+  return result;
+}
+function verifiedFlashReply(result){
+  const generation=result.generation||{};
+  const {status,model,model_reply:reply}=generation;
+  const method=result.answer_method||result.method;
+  const claims=result.claims||generation.claims||[];
+  if(model===flashModel && reply==='accepted' && status==='cited_draft' && method==='deepseek_cited_draft' && result.answer && claims.length)
+    return 'returned';
+  if(model===flashModel && reply==='declined' && status==='insufficient_evidence' && !result.answer)
+    return 'declined';
+}
+function authorizedReceipt(result){
+  const {status,model,reason,model_reply:reply}=result.generation||{};
+  const method=result.answer_method||result.method;
+  const verified=verifiedFlashReply(result);
+  if(verified==='returned')return receipt(verified,model+' 已返回回答，服务端引文核对通过。');
+  if(verified==='declined')return receipt(verified,model+' 已明确返回证据不足，未给出答案。');
+  if(model===flashModel && reply==='rejected')
+    return receipt('failed','DeepSeek Flash 已返回，响应或引文未通过核对。');
+  if(localMethods.has(method))
+    return receipt('local',result.answer?'本地规则已给出结果，未调用模型。':'已按本地证据规则处理，未调用模型。');
+  if(['validation_failed','incomplete','misconfigured','unavailable','busy'].includes(status))
+    return receipt('failed','模型请求或响应校验未完成。');
+  if(reason==='no_source' || (status==='insufficient_evidence' && !model && reason) || result.hits?.length===0 || result.has_evidence===false)
+    return receipt('no-evidence','当前原文不足以供模型回答，未调用模型。');
+  return receipt('unverified','本次没有可核实的模型回执。');
+}
+function modelDraft(turn,question,id,current){
+  const button=node('button','根据摘录生成有引文的回答'); button.type='button';
+  const output=node('div',''); output.setAttribute('role','status');
   button.onclick=async()=>{
-    if(!window.confirm('本次将问题和最多六条原文摘录发送至 DeepSeek，以生成带引文的回答。继续吗？'))return;
+    if(button.disabled || !window.confirm('本次将问题和最多六条原文摘录发送至 DeepSeek，以生成带引文的回答。继续吗？'))return;
     button.disabled=true;
-    output.replaceChildren(node('p','正在核对模型回答中的引文…'));
+    output.replaceChildren(node('p','正在核对草稿引文…'));
     try{
-      const r=await fetch('/api/followup/model',{method:'POST',headers:{'Content-Type':'application/json'},
+      const response=await fetch('/api/followup/model',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id,question,anchor:current,consent:true})});
-      const data=await r.json();
-      if(!r.ok)throw Error(data.error||'模型请求未完成。');
-      output.replaceChildren();
-      if(data.status==='cited_draft'){
-        output.append(node('p','模型 '+data.model+' · 已核对引文与数值，请对照原句判断结论。'));
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||'草稿请求未完成。');
+      if(data.status==='cited_draft' && data.model===flashModel && data.claims?.length){
+        output.replaceChildren(receipt('returned',data.model+' 已返回草稿，服务端引文核对通过。'));
         for(const claim of data.claims){
           const article=node('article','');
           const link=node('a','物理页 '+claim.page+' · 文本块 '+claim.block);
           link.href='/pdf/'+claim.id+'#page='+claim.page; link.target='_blank'; link.rel='noopener';
-          article.append(node('p',claim.text),link,node('blockquote',claim.quote));
+          article.append(node('p',claim.text),link,locator(claim),node('blockquote',claim.quote));
           output.append(article);
         }
+      }else if(data.status==='not_configured'){
+        output.replaceChildren(receipt('not-configured','服务端未配置或未启用 DeepSeek Flash。'));
+      }else if(data.status==='validation_failed'){
+        output.replaceChildren(receipt('failed','模型草稿未通过引文或数值核对。'));
       }else{
-        const reason={not_configured:'当前服务未启用模型。',validation_failed:'模型引文或数值未通过核对。'};
-        output.append(node('p',reason[data.status]||'当前摘录不足以生成有据回答。'));
+        output.replaceChildren(receipt('unverified','本次没有可用的带引文草稿。'));
       }
-    }catch(e){output.replaceChildren(node('p',e.message));}
+    }catch(error){output.replaceChildren(receipt('failed','草稿请求未完成，未确认模型返回。'+error.message));}
     finally{button.disabled=false;}
   };
   turn.append(button,output);
@@ -98,27 +135,31 @@ byId('ask').onsubmit=async event=>{
   const question=field.value.trim();
   if(!picker.value||!question||byId('send').disabled)return;
   const active=++version, current=anchor, id=picker.value;
+  const consent=byId('flash-consent').checked;
+  byId('flash-consent').checked=false;
   byId('send').disabled=true; byId('status').textContent='正在查找原文…';
   try{
-    const consent=byId('flash-consent').checked;
-    byId('flash-consent').checked=false;
     const response=await fetch('/api/followup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,question,anchor:current,model_consent:consent})});
     const data=await response.json();
     if(active!==version)return;
     if(!response.ok)throw Error(data.error||'检索失败。');
     const turn=document.createElement('section');
-    if(data.model_status==='not_configured')turn.append(node('p','服务端未启用 DeepSeek；以下为本地原文检索结果。'));
     turn.append(node('h2',question),node('p',picker.selectedOptions[0].text+' · '+(current?locationText(current):'全文')));
+    const configured=data.model_status!=='not_configured' && data.model_available!==false;
+    if(!consent)turn.append(receipt('not-authorized','本次未授权，使用本地处理。'));
+    else if(!configured)turn.append(receipt('not-configured','服务端未配置或未启用 DeepSeek Flash，本次使用本地处理。'));
+    else if(!data.fields?.length)turn.append(authorizedReceipt(data));
     if(data.fields?.length) {
       for(const field of data.fields) {
         const panel=node('article',''); panel.append(node('h3',field.question));
+        if(consent && configured)panel.append(authorizedReceipt(field));
         panel.append(node(field.answer?'strong':'p',field.answer||field.gap));
         for(const claim of field.claims||[])panel.append(locator(claim,claim.answer_start,claim.answer_end));
         turn.append(panel);
       }
     } else if(data.answer) {
       turn.append(node('strong',data.answer));
-      const method={deepseek_cited_draft:'DeepSeek-V4.1-Flash-1017 · 引文已匹配',local_extractive:'本机 MobileBERT 原文抽取',local_cited_draft:'本机模型生成 · 引文已匹配',
+      const method={local_extractive:'本机 MobileBERT 原文抽取',
         fieldwise:'按问题逐项核对',direct_measurement:'原句中的唯一明确读数',source_fields:'原文字段核对',abbreviation:'原文括号中的全称',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
       if(method[data.answer_method])turn.append(node('p',method[data.answer_method]));
     }
@@ -150,7 +191,7 @@ byId('ask').onsubmit=async event=>{
       turn.append(cells);
     }
     if(data.retrieval){
-      const labels={bm25:'全文检索',keyword:'关键词', 'multilingual-e5-small':'本机多语向量'};
+      const labels={bm25:'全文检索','bm25-phrase':'短语匹配','bm25-recall':'扩展词项检索',keyword:'关键词','multilingual-e5-small':'本机多语向量'};
       const methods=data.retrieval.methods.map(m=>labels[m]||m);
       const states={index_preparing:'语义索引正在后台建立',busy:'语义索引正忙'};
       if(states[data.retrieval.dense])methods.push(states[data.retrieval.dense]);
@@ -158,11 +199,14 @@ byId('ask').onsubmit=async event=>{
     }
     if(!data.fields?.length && (data.gap || !data.hits.length)) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
     for(const hit of data.hits)turn.append(cite(hit));
-    if(data.model_available && data.hits.length && (!data.table_cells || data.answer))
+    const alreadyReplied=consent && (data.fields?.length ? data.fields.every(verifiedFlashReply) : verifiedFlashReply(data));
+    if(data.model_available && data.hits.length && (!data.table_cells || data.answer) && !alreadyReplied)
       modelDraft(turn,question,id,current);
     historyBox.append(turn); field.value=''; byId('status').textContent='';
     field.focus();
-  }catch(error){if(active===version)byId('status').textContent=error.message;}
+  }catch(error){
+    if(active===version)byId('status').textContent=(consent?'本次追问未完成，未确认模型返回。':'')+error.message;
+  }
   finally{if(active===version)byId('send').disabled=false;}
 };
 (async()=>{
