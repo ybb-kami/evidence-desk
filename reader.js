@@ -72,14 +72,14 @@
     documentRequest = controller;
     status.textContent = "正在读取本地提取文本…";
     try {
-      const data = await get(`/api/reader/${id}`, controller.signal);
+      const data = await get(`/api/reader/${id}?view=outline`, controller.signal);
       if (controller.signal.aborted) return;
-      render(data, id);
+      render(data, id, controller.signal);
     } catch (error) {
       if (!controller.signal.aborted) status.textContent = "无法打开所选文献。请刷新文库后重试。";
     }
   }
-  function render(data, id) {
+  function render(data, id, signal) {
     const sectionList = element("ul", undefined, { class: "reader-directory" });
     const pages = element("select", undefined, { "aria-label": "选择物理页" });
     const rawPage = element("a", "打开 PDF 原页 ↗", { target: "_blank", rel: "noopener noreferrer" });
@@ -157,14 +157,26 @@
         refBody.scrollIntoView({ block: "nearest" });
       }
     }
-    function toPage(page, target) {
-      const p = data.pages[page - 1];
+    let pageRequest = 0;
+    const localPages = new Map();
+    async function toPage(page, target) {
+      let p = data.pages[page - 1];
       if (!p) return;
       pages.value = String(page);
       pageHeader.textContent = pages.selectedOptions[0].textContent;
       rawPage.href = `/pdf/${id}#page=${page}`;
       prev.disabled = page === 1;
       next.disabled = page === data.pages.length;
+      const serial=++pageRequest;
+      if (data.paged) {
+        pageBody.replaceChildren(element('p','读取这一页…'));
+        try {
+          p=localPages.get(page) || await get(`/api/reader/${id}?view=page&page=${page}`,signal);
+          if(signal.aborted || serial!==pageRequest)return;
+          localPages.set(page,p);
+          if(localPages.size>8)localPages.delete(localPages.keys().next().value);
+        } catch (_) {if(!signal.aborted && serial===pageRequest)pageBody.replaceChildren(element('p','本页未能加载，请重选页码。'));return;}
+      }
       const frag = document.createDocumentFragment();
       for (const block of p.blocks) {
         const node = element("p", undefined, { class: "reader-text", id: `reader-${block.id}`, tabindex: "-1" });

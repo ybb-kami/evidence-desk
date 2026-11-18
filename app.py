@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 from local_ocr_jobs import LocalOCRJobs, OCRJobError
+from reader_cache import ReaderCache
 from engine import parse_pdf, find_evidence, duplicates
 from graph import build_graph
 from revisions import describe_revision
@@ -144,7 +145,7 @@ class Handler(BaseHTTPRequestHandler):
                     '/index.html':('index.html','text/html; charset=utf-8'),
                     '/sample.pdf':('sample.pdf','application/pdf'),
                     '/csv-stats.js':('csv-stats.js','application/javascript; charset=utf-8')}
-            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js'):
+            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js','scan-sidecar.js','compare-matrix.js'):
                 assets['/'+name]=(name, 'text/css; charset=utf-8' if name.endswith('.css') else 'application/javascript; charset=utf-8')
             if path in assets:
                 filename,mime=assets[path]
@@ -155,10 +156,13 @@ class Handler(BaseHTTPRequestHandler):
                 if data is None:raise Bad(404,'找不到指定文献。')
                 return self.payload(200,inspect_page(data,int(m[2])))
             if path.startswith('/api/reader/') and ID.fullmatch(path[12:]):
-                from reader import build_reader
-                matches=store.records([path[12:]],archived=None)
-                if not matches: raise Bad(404,'找不到指定文献。')
-                return self.payload(200,build_reader(matches[0]))
+                params=parse_qs(u.query); mode=params.get('view',['all'])[0]
+                value=params.get('page',['0'])[0]
+                if mode not in ('all','outline','page') or not re.fullmatch(r'[0-9]{1,3}',value):
+                    raise Bad(400,'阅读参数无效。')
+                data=self.server.reader_cache.get(store,path[12:],mode,int(value))
+                if data is None:raise Bad(404,'找不到指定文献。')
+                return self.payload(200,data)
             if path=='/api/ocr':return self.payload(200,self.server.ocr_jobs.status())
             if path.startswith('/api/ocr/result/'):
                 content,name=self.server.ocr_jobs.result(path[len('/api/ocr/result/'):])
@@ -201,15 +205,20 @@ class Handler(BaseHTTPRequestHandler):
             if doc['pages']>20 or len(doc['textless_pages'])!=doc['pages']:
                 raise Bad(400,'仅支持不超过 20 页且无文本层的活动扫描件。')
             return self.payload(202,self.server.ocr_jobs.start(docid,doc['name'],store.pdf(docid)))
-        elif path=='/api/questions':
-            from evidence_questions import locate_question
+        elif path in ('/api/questions','/api/compare-evidence'):
             req=self.json_request(); q=req.get('query');ids=req.get('ids')
             if (set(req)!={'query','ids'} or not isinstance(q,str) or not 1<=len(q.strip())<=500 or
-                    not isinstance(ids,list) or not 1<=len(ids)<=8 or
+                    not isinstance(ids,list) or not (2 if path=='/api/compare-evidence' else 1)<=len(ids)<=8 or
                     any(not isinstance(i,str) or not ID.fullmatch(i) for i in ids) or len(set(ids))!=len(ids)):
                 raise Bad(400,'请填写问题并明确选择 1 至 8 篇本地文献。')
             docs=store.records(ids)
             if len(docs)!=len(ids):raise Bad(404,'未找到所选活动文献。')
+            positions={docid:i for i,docid in enumerate(ids)}
+            docs.sort(key=lambda doc:positions[doc['id']])
+            if path=='/api/compare-evidence':
+                from compare_evidence import compare_evidence
+                return self.payload(200,compare_evidence(docs,q.strip()))
+            from evidence_questions import locate_question
             return self.payload(200,locate_question(docs,q.strip()))
         elif path=='/api/tracking':
             req=self.json_request()
@@ -270,6 +279,7 @@ def main():
     p.add_argument('--enable-deepseek',action='store_true',help='允许用户逐次确认向 DeepSeek 发送问题和证据摘录')
     args=p.parse_args()
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
+    server.reader_cache=ReaderCache()
     server.ocr_jobs=LocalOCRJobs()
     def on_term(*_):raise KeyboardInterrupt
     signal.signal(signal.SIGTERM,on_term)

@@ -82,6 +82,15 @@ class EvidenceQuestionsTests(unittest.TestCase):
                 self.assertTrue(any("A100" in h["text"] and h["concept_ids"] == ["hardware"] for h in hits))
                 self.assertTrue(any("frobnicator baseline" in h["text"] and h["concept_ids"] == [] for h in hits))
 
+    def test_compound_english_question_discards_interrogative_scaffolding(self):
+        raw = fixture("Training Architecture in a Fictional Study",
+                      "Our training uses 8 A100 GPUs.",
+                      "The learning rate was 0.003.")
+        r = locate_question([parse_pdf(raw,"mixed.pdf")], "What GPU and learning rate were used?")
+        hits = r["papers"][0]["hits"]
+        self.assertTrue(any("A100" in hit["text"] and hit["page"] == 1 for hit in hits))
+        self.assertTrue(any("learning rate was 0.003" in hit["text"] and hit["page"] == 2 for hit in hits))
+
     @unittest.skipUnless(os.getenv("EVIDENCE_DESK_PUBLIC_ATTENTION_V7"), "Optional public original not supplied")
     def test_actual_public_attention_v7(self):
         p = Path(os.environ["EVIDENCE_DESK_PUBLIC_ATTENTION_V7"])

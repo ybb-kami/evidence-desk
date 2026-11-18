@@ -48,6 +48,11 @@ def _literal_queries(query):
     # Preserve the original query and independently search unmapped clauses.
     for piece in CLAUSE.split(query):
         piece = piece.strip()
+        # Separate conjunctions in common English questions can leave
+        # interrogative scaffolding on the final constituent.
+        if re.match(r"^(?:what|which)\b", query, re.I):
+            piece = re.sub(r"^\s*(?:what|which)\s+(?:(?:is|are|was|were)\s+)?", "", piece, flags=re.I)
+            piece = re.sub(r"\s+(?:was|were|is|are)\s+(?:used|reported|chosen|selected|specified)\s*$", "", piece, flags=re.I)
         if piece and piece != query and not any(re.search(c[2], _norm(piece)) for c in CONCEPTS):
             variants.append(piece)
     return list(dict.fromkeys(variants))[:1 + MAX_PER_CONCEPT]
