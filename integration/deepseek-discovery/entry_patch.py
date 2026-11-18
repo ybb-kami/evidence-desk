@@ -18,7 +18,12 @@ def render(data, expected_sha):
     calls = [n for n in ast.walk(start) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)]
     slots, = [n for n in calls if n.func.id == 'demo_slots']
     gateway, = [n for n in calls if n.func.id == 'serve']
-    if [ast.unparse(a) for a in slots.args] != ['DEFAULT_APP', "run_dir / 'sessions'", '4', 'loopback_origin'] or slots.keywords:
+    known_slot_calls = (
+        "demo_slots(DEFAULT_APP, run_dir / 'sessions', 4, loopback_origin)",
+        "demo_slots(DEFAULT_APP, Path(run_dir) / 'sessions', 4, f'http://127.0.0.1:{port}')",
+    )
+    if not any(ast.dump(slots) == ast.dump(ast.parse(source, mode='eval').body)
+               for source in known_slot_calls):
         raise ValueError('unexpected seat creation')
     settings = {'local_test': 'False', 'anonymous': 'True', 'rotate_slot': 'slots.rotate_slot',
                 'ttl': '3600', 'model_bridge': 'None'}

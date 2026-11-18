@@ -20,6 +20,17 @@ def start(runtime, port):
 
 
 class EntryTest(unittest.TestCase):
+    def test_installed_entry_with_inline_loopback(self):
+        installed = ENTRY.replace(b"run_dir / 'sessions', 4, loopback_origin",
+                                  b'Path(run_dir) / "sessions", 4, f"http://127.0.0.1:{port}"')
+        diff = render(installed, sha256(installed).hexdigest())
+        self.assertIn("serve_four_seats(serve, slots, port, PUBLIC_ORIGIN", diff)
+        for changed in (installed.replace(b'127.0.0.1', b'0.0.0.0'),
+                        installed.replace(b'Path(run_dir)', b'Path(runtime)'),
+                        installed.replace(b', 4,', b', 2,')):
+            with self.assertRaises(ValueError):
+                render(changed, sha256(changed).hexdigest())
+
     def test_entry_hash_and_real_four_seat_contract(self):
         diff = render(ENTRY, sha256(ENTRY).hexdigest())
         self.assertIn('serve_four_seats(serve, slots, port, PUBLIC_ORIGIN', diff)
