@@ -40,7 +40,7 @@ def package(output):
             for name in result_files:
                 if name.endswith('.json'):
                     write('verification/' + name, git('show', f'{commit}:scanpdf/acceptance/results/{name}'))
-            pointer = f'证据台 · 可溯源科研文献助手\n青海大学 · 队伍 26CZB0001406 · 袁瑞\n\n源代码及 Git 历史\n{REPO_URL}/tree/{commit}\n\n提交前待参赛者填写及确认的项目见 SUBMISSION-CHECKLIST.md。\n'
+            pointer = f'证据台 · 可溯源科研文献助手\n个人赛 · 唯一参赛者 袁瑞 · 青海大学\n报名系统队伍名 26CZB0001406\n\n源代码及 Git 历史\n{REPO_URL}/tree/{commit}\n\n提交前待参赛者填写及确认的项目见 SUBMISSION-CHECKLIST.md。\n'
             write('SOURCE.txt', pointer.encode())
             write('SHA256SUMS.txt', ('\n'.join(sums) + '\n').encode())
         with zipfile.ZipFile(archive) as checkout:

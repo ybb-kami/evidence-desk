@@ -79,4 +79,4 @@ SCANPDF_OFFICIAL_SAMPLE=/data/pdf/1706.03762v1_img.pdf python -m unittest -v tes
 
 ### 复现交付包
 
-在已签出的参赛分支、仓库根目录运行 `python scanpdf/delivery/package_review.py evidence-desk-review.zip`。脚本读取当前提交中已追踪的推荐 MP4、技术 PDF、讲稿、音色来源和双语样例，生成带逐文件 SHA-256 与源代码提交链接的新 ZIP。已有同名文件会保留。填写团队身份、评委访问及线上地址的位置见包内清单。
+在已签出的参赛分支、仓库根目录运行 `python scanpdf/delivery/package_review.py evidence-desk-review.zip`。脚本读取当前提交中已追踪的推荐 MP4、技术 PDF、讲稿、音色来源和双语样例，生成带逐文件 SHA-256 与源代码提交链接的新 ZIP。已有同名文件会保留。包内清单已列明个人赛署名，并留有评委访问方式和线上地址的填写位置。

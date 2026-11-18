@@ -62,6 +62,6 @@
 
 A-lantern.pdf、B-cloud.pdf 及模拟测量数据为项目演示材料。扫描实例与双语选区来自赛题资料包镜像，样本来源和哈希见仓库 scanpdf/SAMPLE_REVIEW.md 及 scanpdf/acceptance/。
 
-历史版使用 sherpa-onnx 公开发布的 zh_CN-huayan-medium 模型配音。该模型卡将训练数据许可标为 Unknown，参赛团队可核对使用条件或据此稿录制自己的普通话讲解。[模型发行包](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2)
+历史版使用 sherpa-onnx 公开发布的 zh_CN-huayan-medium 模型配音。该模型卡将训练数据许可标为 Unknown，参赛者可核对使用条件或据此稿录制自己的普通话讲解。[模型发行包](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2)
 
 推荐版采用 Kokoro v1.0 官方中文音色表中的 zf_xiaoxiao。详见[配音说明](VOICE-NOTES.md)。

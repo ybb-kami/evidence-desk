@@ -18,8 +18,8 @@
 | 既有 Piper 华燕 | 7 | 9 | 10 | 26 / 344（7.6%） |
 | eSpeak NG 规则合成 cmn | 25 | 13 | 25 | 63 / 344（18.3%） |
 
-规则合成测试使用 eSpeak NG 的普通话字典及共振峰合成。它可以辨明段落大意，三段对照里专名和术语误听更多。历史版 `evidence-desk-mandarin-1080p.mp4` 使用 Piper 华燕。华燕发行资料将其训练语料许可标为 Unknown。当前推荐提交 Kokoro 版，或使用团队自行录制的普通话。人工重录可使用[时间码讲稿](mandarin-transcript.md)。[eSpeak NG 项目说明](https://github.com/espeak-ng/espeak-ng) · [历史配音模型说明所在发行包](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2)
+规则合成测试使用 eSpeak NG 的普通话字典及共振峰合成。它可以辨明段落大意，三段对照里专名和术语误听更多。历史版 `evidence-desk-mandarin-1080p.mp4` 使用 Piper 华燕。华燕发行资料将其训练语料许可标为 Unknown。当前推荐提交 Kokoro 版，或使用参赛者自行录制的普通话。人工重录可使用[时间码讲稿](mandarin-transcript.md)。[eSpeak NG 项目说明](https://github.com/espeak-ng/espeak-ng) · [历史配音模型说明所在发行包](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2)
 
 ## 成片技术核验
 
-推荐版时长 375.675 秒，1920×1080 H.264，44.1 kHz AAC。全部 9,382 帧与音轨经 FFmpeg 完整解码；压缩视频流的 SHA-256 与历史版一致。成片综合响度 −16.0 LUFS，真峰值 −1.6 dBTP。MP4 文件 SHA-256 为 `806314fbe392285265ebb60e242c43758c321250186d49a48204cfe1044526a2`。
+推荐版时长 375.675 秒，1920×1080 H.264，44.1 kHz AAC。全部 9,382 帧与音轨经 FFmpeg 完整解码；压缩视频流的 SHA-256 与历史版一致。成片综合响度 −16.0 LUFS，真峰值 −1.6 dBTP。MP4 文件 SHA-256 为 `d342500c3eebd69c03da68b05231fcd5021de9e7e639f8603e961d5b67c62527`。
