@@ -42,6 +42,7 @@ _CLAUSE = re.compile(
 )
 _COORDINATION = re.compile(r"\b(?:and|versus|as well as)\b|以及|与|和", re.IGNORECASE)
 _PAIRED = re.compile(r"\b(?:between|overlap|correlation|relationship|association)\b|之间|重合|重叠|相关", re.I)
+_EXCLUDED = re.compile(r"\b(?:rather than|instead of|as opposed to)\b|而不是|而非", re.I)
 _GREEK = dict(zip("αβγδεθλμπρστφω", (
     "alpha", "beta", "gamma", "delta", "epsilon", "theta", "lambda", "mu", "pi", "rho", "sigma",
     "tau", "phi", "omega",
@@ -202,14 +203,23 @@ def _locality(tokens, ordered, matches, weights):
     return proximity * 0.6 + (adjacent / available if available else 0.0) * 0.4
 
 
-def _rank(index, ordered):
-    terms = tuple(dict.fromkeys(ordered))
+def _rank(index, ordered, recall=False, qualifiers=()):
+    terms = tuple(dict.fromkeys((*ordered, *qualifiers)))
     count = len(terms)
-    minimum = count if count <= 2 else max(2, math.ceil(count * 0.55))
+    expanded = recall and count > 2
+    minimum = count
+    if count > 2:
+        minimum = 2 if expanded else max(2, math.ceil(count * 0.55))
     common = {term: index.postings.get(term, ()) for term in terms}
     if sum(bool(rows) for rows in common.values()) < minimum:
         return
     numeric = {term for term in terms if term[0].isdigit()}
+    if expanded:
+        # Out-of-vocabulary prose does not vote against an otherwise useful candidate.
+        # An explicitly requested number still has to occur in the source.
+        if any(not common[term] for term in numeric):
+            return
+        common = {term: rows for term, rows in common.items() if rows}
     weights = {term: math.log1p((index.size - len(rows) + 0.5) / (len(rows) + 0.5))
                for term, rows in common.items()}
     total = sum(weights.values())
@@ -221,13 +231,20 @@ def _rank(index, ordered):
         if len(frequencies) < minimum or not numeric.issubset(frequencies):
             continue
         cover = sum(weights[term] for term in frequencies) / total
-        if cover < 0.55:
+        if cover < (0.24 if expanded else 0.55):
             continue
         tokens = index.terms[passage]
         normalization = 1.2 * (0.25 + 0.75 * len(tokens) / index.average)
         bm25 = sum(weights[term] * frequency / (frequency + normalization)
                    for term, frequency in frequencies.items()) / total
         proximity = _locality(tokens, ordered, frequencies, weights)
+        if expanded:
+            informative = any(weights[term] >= math.log(2) for term in frequencies)
+            # Keep a short lexical overlap only if it is local. A common-word
+            # overlap needs the stronger signal of an adjacent query phrase.
+            if ((not informative and proximity <= 0.60)
+                    or (len(frequencies) == 2 and proximity < 0.50)):
+                continue
         # Short headings can locate a topic, but a fuller source usually
         # carries more context. Exact short source passages still qualify.
         substance = min(1.0, 0.76 + 0.04 * len(tokens))
@@ -237,6 +254,15 @@ def _rank(index, ordered):
 
 def retrieve(doc, query, limit=8):
     """Return source passages with original anchors and a ranking score."""
+    return _retrieve(doc, query, limit, recall=False)
+
+
+def retrieve_candidates(doc, query, limit=8):
+    """Return broader lexical candidates for fusion with an operational dense index."""
+    return [dict(hit, retrieval_candidate=True) for hit in _retrieve(doc, query, limit, recall=True)]
+
+
+def _retrieve(doc, query, limit, *, recall):
     if (not isinstance(query, str) or not query.strip() or len(query) > engine.MAX_QUERY
             or type(limit) is not int or limit <= 0):
         return []
@@ -247,9 +273,14 @@ def retrieve(doc, query, limit=8):
     if not index.size:
         return []
     translated = english_query(query) if index.has_latin else ""
+    qualifiers = ()
+    if recall:
+        query = _EXCLUDED.split(query, maxsplit=1)[0]
+        translated = _EXCLUDED.split(translated, maxsplit=1)[0]
+        qualifiers = tuple(term for term in _terms(query, query=True) if term[0].isdigit())
     candidates = defaultdict(dict)
     for terms, branch in _query_variants(query, translated).items():
-        for position, score in _rank(index, terms):
+        for position, score in _rank(index, terms, recall, qualifiers):
             scores = candidates[position]
             scores[branch] = max(scores.get(branch, 0), score)
     if not candidates:
@@ -259,8 +290,9 @@ def retrieve(doc, query, limit=8):
     for scores in candidates.values():
         for branch, score in scores.items():
             best[branch] = max(best[branch], score)
+    fraction = 0.45 if recall else 0.65
     candidates = {position: {branch: score for branch, score in scores.items()
-                             if score >= best[branch] * 0.65}
+                             if score >= best[branch] * fraction}
                   for position, scores in candidates.items()}
     candidates = {position: scores for position, scores in candidates.items() if scores}
     results, selected_branches = [], set()

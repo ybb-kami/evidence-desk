@@ -6,6 +6,8 @@ from unittest.mock import patch
 
 import workbench
 import hybrid_retrieval
+from rag_search import ranked_passages
+from semantic import DenseUnavailable
 
 
 def passage(page, block, text, **metadata):
@@ -74,3 +76,49 @@ class HybridRetrievalTests(unittest.TestCase):
         self.assertEqual(hybrid_retrieval.retrieve(old, "Raman spectroscopy")[0]["page"], 1)
         self.assertEqual(hybrid_retrieval.retrieve(new, "Raman spectroscopy"), [])
         self.assertEqual(hybrid_retrieval.retrieve(new, "infrared spectroscopy")[0]["page"], 2)
+
+    def test_recall_retains_phrase_when_many_query_words_are_unindexed(self):
+        source = "Raman spectroscopy measured crystallinity at 532 nm in the annealed films."
+        unrelated = "An index lists Raman badges above the table and near the closing apparatus file."
+        distant = "Raman badges occupy the cupboard over the entry in the hallway by the glass. Spectroscopy is listed in a separate catalog."
+        doc = document(passage(1, 1, unrelated), passage(2, 2, source), passage(3, 3, distant))
+        q = "Does Xylophone's pseudodictionary lexical token phlogiston annotate Raman spectroscopy crystallinity?"
+        self.assertEqual(hybrid_retrieval.retrieve(doc, q), [])
+        hits = hybrid_retrieval.retrieve_candidates(doc, q)
+        self.assertEqual([(row["page"], row["text"]) for row in hits], [(2, source)])
+        self.assertTrue(hits[0]["retrieval_candidate"])
+
+    def test_sparse_candidates_require_numeric_source_support_even_if_translation_drops_it(self):
+        doc = document(passage(1, 2, "Raman spectroscopy assessed crystallinity at 532 nm."))
+        with patch.object(hybrid_retrieval, "english_query", return_value="Raman spectroscopy assessed crystallinity"):
+            self.assertEqual(hybrid_retrieval.retrieve_candidates(doc, "900 nm 测量结晶度？"), [])
+            hits = hybrid_retrieval.retrieve_candidates(doc, "532 nm 测量结晶度？")
+        self.assertEqual([hit["block"] for hit in hits], [2])
+
+    def test_candidate_channel_runs_with_ready_e5_and_falls_back_on_failure(self):
+        doc = document(passage(1, 1, "Raman spectroscopy measured crystallinity at 532 nm."))
+        q = "Raman spectroscopy in pseudodictionary token phlogiston and xylophone"
+        anchor = dict(doc["chunks"][0], id=doc["id"], name=doc["name"])
+
+        class Dense:
+            def search(self, docs, question, *, limit):
+                return [anchor]
+
+        class Unavailable:
+            def search(self, docs, question, *, limit):
+                raise DenseUnavailable("model_missing")
+
+        hits, meta = ranked_passages(doc, q, [], Dense())
+        self.assertEqual(meta["methods"], ["bm25-recall", "multilingual-e5-small"])
+        self.assertTrue(hits[0]["retrieval_candidate"])
+        self.assertEqual(hits[0]["retrieval_ranks"], {"bm25-recall": 1, "multilingual-e5-small": 1})
+        with patch("rag_search.retrieve_candidates", side_effect=AssertionError("unexpected recall")):
+            hits, meta = ranked_passages(doc, q, [anchor], Unavailable())
+            self.assertEqual(meta, {"methods": ["keyword"], "dense": "model_missing"})
+            self.assertNotIn("retrieval_candidate", hits[0])
+            hits, meta = ranked_passages(doc, q, [anchor], Dense())
+            self.assertEqual(meta["methods"], ["keyword", "multilingual-e5-small"])
+            self.assertNotIn("retrieval_candidate", hits[0])
+            hits, meta = ranked_passages(doc, "Raman spectroscopy", [], Dense())
+            self.assertEqual(meta["methods"], ["bm25", "multilingual-e5-small"])
+            self.assertNotIn("retrieval_candidate", hits[0])

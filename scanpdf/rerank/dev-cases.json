@@ -1,0 +1,27 @@
+{
+  "sources": {
+    "dpr-dev.pdf": {
+      "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+      "sha256": "2abfc7991519be2b8ce30215905516fdb593218b7bf59e50ece0d8a088a7c4d5",
+      "url": "https://raw.githubusercontent.com/jasleenjk07/research-paper-rag/a47111944d0f5f0923995e12c3d1ae0831c6584f/data/papers/2020.emnlp-main.550-Dense-Passage-Retrieval.pdf"
+    },
+    "sbert-dev.pdf": {
+      "title": "Sentence-BERT for Interpretable Topic Modeling in Web Browsing Data",
+      "sha256": "7f987d9b23e9b3ea6016d55c34dc4af33ebb94e878b7acaa84a18141ede191d8",
+      "url": "https://raw.githubusercontent.com/jasleenjk07/research-paper-rag/a47111944d0f5f0923995e12c3d1ae0831c6584f/data/papers/report017-sentence-bert.pdf"
+    },
+    "repr.pdf": {
+      "title": "Sequence to Sequence Learning with Neural Networks",
+      "sha256": "de493aa7b13e9d61813cec52ff751aedc869ce9ba56ea3dfd4e54297b99195b9",
+      "url": "https://raw.githubusercontent.com/NLPcourse/Representation/6c063e520f4496834d7a944fade39bfa6d2c5cd4/Sequence%20to%20Sequence%20Learning%20with%20Neural%20Networks.pdf"
+    }
+  },
+  "cases": [
+    {"id":"cross-1", "group":"cross-language", "file":"dpr-dev.pdf", "question":"小批次共享训练样本时，别的问题对应的正确段落对当前问题算什么训练样本？", "gold":[[3,14,1],[6,3,1]]},
+    {"id":"cross-2", "group":"cross-language", "file":"repr.pdf", "question":"为缩短对应词之间的时间跨度，作者反转了源句还是目标句的词序？", "gold":[[1,6,2],[2,4,1],[2,7,1],[3,13,1],[4,12,1],[4,13,1]]},
+    {"id":"paraphrase-1", "group":"english-paraphrase", "file":"repr.pdf", "question":"What event makes an unfinished translation leave the decoder's beam and join the collection of finished translations?", "gold":[[4,9,1]]},
+    {"id":"paraphrase-2", "group":"english-paraphrase", "file":"sbert-dev.pdf", "question":"How many coordinates were left in each document vector after compression and before grouping the browser pages?", "gold":[[4,14,1]]},
+    {"id":"same-1", "group":"same-page", "file":"repr.pdf", "question":"How many distinct words were allowed in the output-language vocabulary, rather than how many target-language training tokens were used?", "gold":[[4,3,1],[5,3,1]], "distractors":[[4,2,1]]},
+    {"id":"same-2", "group":"same-page", "file":"dpr-dev.pdf", "question":"How exactly is the similarity between a question and a passage computed, rather than which encoder produces their representations?", "gold":[[3,2,1],[3,8,1]], "distractors":[[3,4,1],[3,5,1]]}
+  ]
+}

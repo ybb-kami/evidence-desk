@@ -47,7 +47,7 @@ function cite(hit){
   const block=document.createElement('article'), position=[hit.page,hit.block,hit.part||1];
   const source=node('a',locationText(position)+' · 打开原 PDF');
   source.href='/pdf/'+hit.id+'#page='+hit.page; source.target='_blank'; source.rel='noopener';
-  block.append(source,locator(hit));
+  block.append(source,locator(hit,hit.start,hit.end));
   if(hit.source==='ocr'){
     const scan=node('a','核对 OCR 图像'); scan.href='/scan?id='+hit.id+'&page='+hit.page; block.append(scan);
   }
@@ -105,13 +105,20 @@ byId('ask').onsubmit=async event=>{
     if(!response.ok)throw Error(data.error||'检索失败。');
     const turn=document.createElement('section');
     turn.append(node('h2',question),node('p',picker.selectedOptions[0].text+' · '+(current?locationText(current):'全文')));
-    if(data.answer) {
+    if(data.fields?.length) {
+      for(const field of data.fields) {
+        const panel=node('article',''); panel.append(node('h3',field.question));
+        panel.append(node(field.answer?'strong':'p',field.answer||field.gap));
+        for(const claim of field.claims||[])panel.append(locator(claim,claim.answer_start,claim.answer_end));
+        turn.append(panel);
+      }
+    } else if(data.answer) {
       turn.append(node('strong',data.answer));
       const method={local_extractive:'本机 MobileBERT 原文抽取',local_cited_draft:'本机模型生成 · 引文已匹配',
-        source_fields:'原文字段核对',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
+        fieldwise:'按问题逐项核对',direct_measurement:'原句中的唯一明确读数',source_fields:'原文字段核对',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
       if(method[data.answer_method])turn.append(node('p',method[data.answer_method]));
     }
-    for(const claim of data.generation?.claims||[]){
+    for(const claim of data.fields?.length?[]:data.generation?.claims||[]){
       const cited=node('p','引文 · '+claim.span+' ');
       cited.append(locator(claim,claim.answer_start,claim.answer_end));
       turn.append(cited);
@@ -145,7 +152,7 @@ byId('ask').onsubmit=async event=>{
       if(states[data.retrieval.dense])methods.push(states[data.retrieval.dense]);
       if(methods.length)turn.append(node('small',methods.join(' · ')));
     }
-    if(data.gap || !data.hits.length) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
+    if(!data.fields?.length && (data.gap || !data.hits.length)) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
     for(const hit of data.hits)turn.append(cite(hit));
     if(data.model_available && data.hits.length && (!data.table_cells || data.answer))
       modelDraft(turn,question,id,current);

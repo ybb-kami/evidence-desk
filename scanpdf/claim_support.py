@@ -4,6 +4,7 @@ import re
 from evidence_context import sentences, terms
 from grounded_draft import _numbers
 from passage_answer import FIELD
+from measurement_units import supports_units
 
 # Synonyms are only used to identify incompatible, explicitly named conditions.
 _GROUPS = (
@@ -13,7 +14,12 @@ _GROUPS = (
     (r"\bbaseline\b|基线",r"\bablated\b|消融"),
     (r"\bminimum\b|最小值",r"\bmedian\b|中位数",r"\bmaximum\b|最大值"),
 )
-_SCALAR = re.compile(r"(?<![\w.])[+−-]?\d+(?:,\d{3})*(?:\.\d+)?\s*(%|milliseconds?|ms|seconds?|minutes?|hours?|days?|kg|mg|Hz|kHz|MHz|MB|GB|W|kW)?(?!\w)", re.I)
+_UNIT = (r"%|°[CF]|milliseconds?|microseconds?|nanoseconds?|seconds?|minutes?|hours?|days?|"
+         r"milligrams?|kilograms?|grams?|kilometers?|kilometres?|meters?|metres?|liters?|litres?|"
+         r"million|billion|trillion|[kMGT]?i?B|[kMGT]?Hz|[kMmunµμ]?s|[kmunµμ]?m|"
+         r"[kmunµμ]?g|[kmunµμ]?L|[kMunµμ]?W|[kmunµμ]?V|[kM]?Pa|dB|rpm|fps|BLEU")
+_SCALAR = re.compile(r"(?<![\w.])[+−-]?\d+(?:,\d{3})*(?:\.\d+)?(?:[eE][+-]?\d+)?(?:\s*("
+                     + _UNIT + r"))?(?!\w)", re.I)
 
 
 def _sentence_around(hit, start, end):
@@ -30,6 +36,8 @@ def _scalars(text):
 def check(question, english, hits, claim):
     hit = hits[claim["hit_index"]]
     raw = _sentence_around(hit, claim["answer_start"], claim["answer_end"])
+    if not supports_units(claim["text"], claim.get("span") or raw):
+        return "different_unit"
     query = question + " " + (english or "")
     if any(re.search(pattern, query, re.I) and not re.search(field, raw, re.I) for pattern,field in FIELD):
         return "field_missing"

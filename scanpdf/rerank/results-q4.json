@@ -1,0 +1,516 @@
+{
+  "case_file_sha256": "e391703236d05debbd261deab4fa4db8c582830a89898580adcf613e6358b75c",
+  "documents": {
+    "dpr-dev.pdf": {
+      "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+      "sha256": "2abfc7991519be2b8ce30215905516fdb593218b7bf59e50ece0d8a088a7c4d5",
+      "url": "https://raw.githubusercontent.com/jasleenjk07/research-paper-rag/a47111944d0f5f0923995e12c3d1ae0831c6584f/data/papers/2020.emnlp-main.550-Dense-Passage-Retrieval.pdf"
+    },
+    "sbert-dev.pdf": {
+      "title": "Sentence-BERT for Interpretable Topic Modeling in Web Browsing Data",
+      "sha256": "7f987d9b23e9b3ea6016d55c34dc4af33ebb94e878b7acaa84a18141ede191d8",
+      "url": "https://raw.githubusercontent.com/jasleenjk07/research-paper-rag/a47111944d0f5f0923995e12c3d1ae0831c6584f/data/papers/report017-sentence-bert.pdf"
+    },
+    "repr.pdf": {
+      "title": "Sequence to Sequence Learning with Neural Networks",
+      "sha256": "de493aa7b13e9d61813cec52ff751aedc869ce9ba56ea3dfd4e54297b99195b9",
+      "url": "https://raw.githubusercontent.com/NLPcourse/Representation/6c063e520f4496834d7a944fade39bfa6d2c5cd4/Sequence%20to%20Sequence%20Learning%20with%20Neural%20Networks.pdf"
+    }
+  },
+  "pool_limit": 3,
+  "warmup_seconds": 21.205,
+  "results": [
+    {
+      "id": "cross-1",
+      "group": "cross-language",
+      "file": "dpr-dev.pdf",
+      "question": "小批次共享训练样本时，别的问题对应的正确段落对当前问题算什么训练样本？",
+      "gold": [
+        [
+          3,
+          14,
+          1
+        ],
+        [
+          6,
+          3,
+          1
+        ]
+      ],
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "rrf_rank": null,
+      "reranked_rank": null,
+      "rrf_seconds": 0.0918,
+      "rerank_extra_seconds": 7.523,
+      "pool": [
+        [
+          8,
+          2,
+          1
+        ],
+        [
+          5,
+          2,
+          1
+        ],
+        [
+          4,
+          8,
+          1
+        ]
+      ],
+      "reranked_pool": [
+        [
+          [
+            8,
+            2,
+            1
+          ],
+          0.023732565343379974
+        ],
+        [
+          [
+            5,
+            2,
+            1
+          ],
+          0.017169320955872536
+        ],
+        [
+          [
+            4,
+            8,
+            1
+          ],
+          0.015278766863048077
+        ]
+      ]
+    },
+    {
+      "id": "cross-2",
+      "group": "cross-language",
+      "file": "repr.pdf",
+      "question": "为缩短对应词之间的时间跨度，作者反转了源句还是目标句的词序？",
+      "gold": [
+        [
+          1,
+          6,
+          2
+        ],
+        [
+          2,
+          4,
+          1
+        ],
+        [
+          2,
+          7,
+          1
+        ],
+        [
+          3,
+          13,
+          1
+        ],
+        [
+          4,
+          12,
+          1
+        ],
+        [
+          4,
+          13,
+          1
+        ]
+      ],
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "rrf_rank": null,
+      "reranked_rank": null,
+      "rrf_seconds": 0.0901,
+      "rerank_extra_seconds": 5.9168,
+      "pool": [
+        [
+          4,
+          11,
+          1
+        ],
+        [
+          6,
+          21,
+          1
+        ],
+        [
+          6,
+          36,
+          1
+        ]
+      ],
+      "reranked_pool": [
+        [
+          [
+            4,
+            11,
+            1
+          ],
+          0.9770642518997192
+        ],
+        [
+          [
+            6,
+            21,
+            1
+          ],
+          0.006466574035584927
+        ],
+        [
+          [
+            6,
+            36,
+            1
+          ],
+          0.0025174934417009354
+        ]
+      ]
+    },
+    {
+      "id": "paraphrase-1",
+      "group": "english-paraphrase",
+      "file": "repr.pdf",
+      "question": "What event makes an unfinished translation leave the decoder's beam and join the collection of finished translations?",
+      "gold": [
+        [
+          4,
+          9,
+          1
+        ]
+      ],
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "rrf_rank": 1,
+      "reranked_rank": 1,
+      "rrf_seconds": 0.0405,
+      "rerank_extra_seconds": 14.3784,
+      "pool": [
+        [
+          4,
+          9,
+          1
+        ],
+        [
+          8,
+          2,
+          1
+        ],
+        [
+          2,
+          5,
+          1
+        ]
+      ],
+      "reranked_pool": [
+        [
+          [
+            4,
+            9,
+            1
+          ],
+          0.992175281047821
+        ],
+        [
+          [
+            2,
+            5,
+            1
+          ],
+          0.35613128542900085
+        ],
+        [
+          [
+            8,
+            2,
+            1
+          ],
+          0.09894046187400818
+        ]
+      ]
+    },
+    {
+      "id": "paraphrase-2",
+      "group": "english-paraphrase",
+      "file": "sbert-dev.pdf",
+      "question": "How many coordinates were left in each document vector after compression and before grouping the browser pages?",
+      "gold": [
+        [
+          4,
+          14,
+          1
+        ]
+      ],
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "rrf_rank": null,
+      "reranked_rank": null,
+      "rrf_seconds": 0.0516,
+      "rerank_extra_seconds": 10.5873,
+      "pool": [
+        [
+          3,
+          15,
+          1
+        ],
+        [
+          4,
+          1,
+          1
+        ],
+        [
+          1,
+          9,
+          1
+        ]
+      ],
+      "reranked_pool": [
+        [
+          [
+            4,
+            1,
+            1
+          ],
+          0.04168536886572838
+        ],
+        [
+          [
+            3,
+            15,
+            1
+          ],
+          0.03501981124281883
+        ],
+        [
+          [
+            1,
+            9,
+            1
+          ],
+          0.001172709628008306
+        ]
+      ]
+    },
+    {
+      "id": "same-1",
+      "group": "same-page",
+      "file": "repr.pdf",
+      "question": "How many distinct words were allowed in the output-language vocabulary, rather than how many target-language training tokens were used?",
+      "gold": [
+        [
+          4,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          1
+        ]
+      ],
+      "distractors": [
+        [
+          4,
+          2,
+          1
+        ]
+      ],
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "rrf_rank": 1,
+      "reranked_rank": 1,
+      "rrf_seconds": 0.0335,
+      "rerank_extra_seconds": 13.3668,
+      "pool": [
+        [
+          4,
+          3,
+          1
+        ],
+        [
+          4,
+          2,
+          1
+        ],
+        [
+          5,
+          3,
+          1
+        ]
+      ],
+      "reranked_pool": [
+        [
+          [
+            4,
+            3,
+            1
+          ],
+          0.9996982216835022
+        ],
+        [
+          [
+            5,
+            3,
+            1
+          ],
+          0.7284852266311646
+        ],
+        [
+          [
+            4,
+            2,
+            1
+          ],
+          0.07478495687246323
+        ]
+      ]
+    },
+    {
+      "id": "same-2",
+      "group": "same-page",
+      "file": "dpr-dev.pdf",
+      "question": "How exactly is the similarity between a question and a passage computed, rather than which encoder produces their representations?",
+      "gold": [
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          8,
+          1
+        ]
+      ],
+      "distractors": [
+        [
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          5,
+          1
+        ]
+      ],
+      "methods": [
+        "multilingual-e5-small"
+      ],
+      "rrf_rank": 1,
+      "reranked_rank": 1,
+      "rrf_seconds": 0.0372,
+      "rerank_extra_seconds": 17.2454,
+      "pool": [
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          14,
+          1
+        ]
+      ],
+      "reranked_pool": [
+        [
+          [
+            3,
+            2,
+            1
+          ],
+          0.9999411702156067
+        ],
+        [
+          [
+            3,
+            4,
+            1
+          ],
+          0.9997494220733643
+        ],
+        [
+          [
+            3,
+            14,
+            1
+          ],
+          0.9928712248802185
+        ]
+      ]
+    }
+  ],
+  "groups": {
+    "cross-language": {
+      "cases": 2,
+      "rrf": {
+        "top1": 0,
+        "top3": 0,
+        "mrr": 0.0
+      },
+      "reranked": {
+        "top1": 0,
+        "top3": 0,
+        "mrr": 0.0
+      },
+      "median_rerank_seconds": 6.7199
+    },
+    "english-paraphrase": {
+      "cases": 2,
+      "rrf": {
+        "top1": 1,
+        "top3": 1,
+        "mrr": 0.5
+      },
+      "reranked": {
+        "top1": 1,
+        "top3": 1,
+        "mrr": 0.5
+      },
+      "median_rerank_seconds": 12.48285
+    },
+    "same-page": {
+      "cases": 2,
+      "rrf": {
+        "top1": 2,
+        "top3": 2,
+        "mrr": 1.0
+      },
+      "reranked": {
+        "top1": 2,
+        "top3": 2,
+        "mrr": 1.0
+      },
+      "median_rerank_seconds": 15.3061
+    }
+  },
+  "rrf": {
+    "top1": 3,
+    "top3": 3,
+    "mrr": 0.5
+  },
+  "reranked": {
+    "top1": 3,
+    "top3": 3,
+    "mrr": 0.5
+  },
+  "median_rerank_seconds": 11.97705
+}

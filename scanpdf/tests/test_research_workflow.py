@@ -35,6 +35,14 @@ class StreamTests(unittest.TestCase):
         self.assertGreater(len(seen), 1)
         self.assertEqual(json.loads(result['choices'][0]['message']['content'])['source'], 1)
 
+    def test_pdf_quote_normalization_retains_source_offsets_and_rejects_ambiguous_match(self):
+        from quoted_span import bind
+        raw = "Our classiﬁer compares inter-\nnational samples and carries a −5 bias."
+        a,b = bind("classifier compares international samples",raw)
+        self.assertEqual(raw[a:b],"classiﬁer compares inter-\nnational samples")
+        self.assertIsNone(bind("completely different",raw))
+        self.assertIsNone(bind("50", "The two plate counts were 50 and 50."))
+
     def test_incomplete_and_oversize_streams_are_rejected(self):
         for body in [event({'content':'{"answer":"in progress'}), b'data: [DONE]\n\n',
                      b'data: '+b'x'*20000+b'\n\n', frame({'error': 'unavailable'})]:

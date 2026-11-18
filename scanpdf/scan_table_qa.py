@@ -22,7 +22,9 @@ REFERENCE = re.compile(r"\s*[\[|]\s*(?:[0-9]{1,3}|[a-z][a-z+]{1,10}[0-9]{2,4})\s
 DECIMAL = r"[+-]?(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?"
 SUPERSCRIPT = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻", "0123456789+-")
 DASHES = str.maketrans("‐‑–—−", "-----")
-UNIT = r"%|flops|ms|s|sec(?:onds?)?|kb|mb|gb|tb|[kmbt]|thousand|million|billion|trillion"
+UNIT = (r"%|flops|ms|msec|s|sec(?:onds?)?|us|μs|ns|milliseconds?|microseconds?|seconds?|minutes?|"
+        r"mins?|hours?|hrs?|days?|h|kb|mb|gb|tb|[kmbt]|thousand|million|billion|trillion|"
+        r"mhz|ghz|w|kw|v|tokens?|examples?|samples?")
 NATIVE_CANDIDATE_LIMIT = 6
 NATIVE_GRID_LOCK = Lock()
 QUERY_TERMS = {"a", "an", "and", "are", "did", "for", "from", "how", "in", "is", "many", "much", "of", "on",
@@ -67,6 +69,22 @@ CONCEPTS = {
     "complexity": ("complexity", "per layer complexity", "单层复杂度", "每层复杂度", "复杂度"),
     "path length": ("maximum path length", "max path length", "path length", "最大路径长度", "最长路径"),
     "sequential operations": ("sequential operations", "顺序操作", "串行操作"),
+    "training time": ("training time", "training duration", "训练时间", "训练耗时", "训练时长"),
+    "runtime": ("runtime", "run time", "execution time", "运行时间", "运行耗时"),
+    "learning rate": ("learning rate", "lr", "base lr", "学习率"),
+    "learning rate schedule": ("learning rate schedule", "lr schedule", "learning rate decay", "lr decay", "学习率衰减", "学习率调度"),
+    "weight decay": ("weight decay", "权重衰减"),
+    "dropout": ("dropout", "dropout prob", "dropout probability", "丢弃概率"),
+    "layers": ("layers", "num layers", "number of layers", "layer count", "层数"),
+    "attention heads": ("attention heads", "num attention heads", "number of attention heads", "注意力头数", "头数"),
+    "hidden dimension": ("hidden dimension", "hidden dim", "hidden size", "隐藏维度", "隐藏层维度"),
+    "sequence length": ("sequence length", "seq length", "序列长度"),
+    "epochs": ("epochs", "epoch", "training epochs", "训练轮数", "训练轮次"),
+    "batch size": ("batch size", "minibatch size", "批量大小"),
+    "global batch size": ("global batch size", "全局批量大小"),
+    "micro batch size": ("micro batch size", "microbatch size", "微批量大小"),
+    "optimizer": ("optimizer", "optimiser", "优化器"),
+    "warmup steps": ("warmup steps", "warm up steps", "预热步数"),
 }
 VARIANTS = {
     "base": ("base model", "baseline model", "base", "基础模型", "基础版本", "基础版", "基本版", "基础型"),
@@ -74,6 +92,8 @@ VARIANTS = {
     "small": ("small model", "small", "小型模型", "小模型", "小型版", "小版"),
 }
 VARIANT_LEADS = {"a", "an", "and", "are", "between", "compare", "for", "from", "is", "of", "or", "the", "to", "versus", "vs", "was", "with"}
+CONDITION_HEADERS = {"dataset", "data set", "corpus", "task", "domain", "split", "objective", "condition",
+                     "training", "training setting", "training objective", "benchmark", "precision"}
 
 
 def _normal(text):
@@ -132,7 +152,11 @@ def _header_directions(label):
 
 
 def _concepts(text):
-    return {key for key, aliases in CONCEPTS.items() if any(_find(alias, text) for alias in aliases)}
+    mentions = [(key, match.start(), match.end()) for key, aliases in CONCEPTS.items() for alias in aliases
+                for match in re.finditer(r"(?<![a-z0-9])" + re.escape(alias) + r"(?![a-z0-9])", text)]
+    return {key for key, start, end in mentions if not any(
+        other != key and left <= start and end <= right and end - start < right - left
+        for other, left, right in mentions)}
 
 
 def _variants(text):
@@ -194,7 +218,7 @@ def _header_grid(region):
             for column in range(col, col + cell.get("column_span", 1)):
                 if cell.get("text"):
                     headers[column].append(cell)
-        elif col == 1 and cell.get("text"):
+        elif col == 1 and cell.get("text") and cell.get("column_span", 1) == 1:
             rows[row] = cell
     return depth, headers, rows
 
@@ -205,6 +229,9 @@ def _row_matches(rows, query, cells):
         name = REFERENCE.sub("", _normal(cell["text"]))
         plain = _words(name)
         aliases = {plain}
+        for concept in _concepts(plain):
+            if plain in CONCEPTS[concept]:
+                aliases.update(CONCEPTS[concept])
         author = re.fullmatch(r"(.+?)\s+(?:et al\.|el al\.)\s*\([0-9]{4}\)", name)
         if author:
             aliases.update((_words(author[1]), _words(author[1]) + " et al"))
@@ -235,23 +262,49 @@ def _row_matches(rows, query, cells):
     by_mention = defaultdict(set)
     for row, span, _ in best:
         by_mention[span].add(row)
-    result = set()
+    result, qualifiers = set(), {}
     for candidates in by_mention.values():
         if len(candidates) > 1:
-            qualified = {cell["row"] for cell in cells if cell["row"] in candidates and cell["column"] > 1
-                         and len(_words(cell["text"])) > 2 and not re.search(r"[0-9]", cell["text"])
-                         and _find(_words(cell["text"]), query)}
-            if len(qualified) != 1:
-                return [], True
-            candidates = qualified
+            by_label = defaultdict(set)
+            for cell in cells:
+                row, text = cell["row"], cell["text"]
+                label = _words(text)
+                if (row in candidates and cell["column"] > 1 and len(label) >= 2
+                        and _numeric(text) is None and _find(label, query)):
+                    by_label[label].add(row)
+            distinct = {next(iter(rows)): label for label, rows in by_label.items() if len(rows) == 1}
+            if not distinct:
+                return [], True, {}
+            candidates = set(distinct)
+            for row, label in distinct.items():
+                qualifiers[row] = next(cell["text"] for cell in cells if cell["row"] == row and _words(cell["text"]) == label)
         result.update(candidates)
-    return sorted(result), False
+    return sorted(result), False, qualifiers
 
 
-def _columns(headers, query, caption):
+def _condition_rows(selected, headers, cells, query):
+    remaining, labels = set(selected), {}
+    for column, path in headers.items():
+        if column == 1 or not any(_words(header["text"]) in CONDITION_HEADERS for header in path):
+            continue
+        matched = []
+        for cell in cells:
+            if cell["column"] == column and cell["row"] > 1 and cell["text"] and _numeric(cell["text"]) is None:
+                if len(phrase := _words(cell["text"])) >= 2 and (mention := _find(phrase, query)):
+                    matched.append((cell, mention.span()))
+        matches = [cell for cell, (start, end) in matched if not any(
+            left <= start <= end <= right and end - start < right - left for _, (left, right) in matched)]
+        if matches:
+            remaining &= {cell["row"] for cell in matches}
+            for cell in matches:
+                labels.setdefault(cell["row"], cell["text"])
+    return sorted(remaining), labels
+
+
+def _columns(headers, query, caption, consumed=()):
     wanted_tasks = _directions(query)
     plain = _words(query)
-    concepts = _concepts(plain)
+    concepts = _concepts(plain) - set(consumed)
     caption_concepts = _concepts(_words(caption["text"])) if caption else set()
     header_concepts = set().union(*(_concepts(_words(cell["text"])) for path in headers.values() for cell in path))
     all_directions = set().union(*(_header_directions(_normal(cell["text"])) for path in headers.values() for cell in path))
@@ -266,6 +319,7 @@ def _columns(headers, query, caption):
             if {direction[3:] for direction in wanted_tasks} != targets:
                 return [], targets
     matches = {}
+    names = defaultdict(list)
     for col, path in headers.items():
         if col == 1:
             continue
@@ -275,7 +329,9 @@ def _columns(headers, query, caption):
             continue
         labels = [_words(text) for text in head if not _header_directions(text)]
         column_concepts = set().union(*(_concepts(label) for label in labels))
-        named = any(_find(label, plain) for label in labels)
+        direct = [match for label in labels if (match := _find(label, plain))]
+        named = bool(direct)
+        names[col] = [match.span() for match in direct]
         direction_only = not labels and bool(directions & wanted_tasks)
         if direction_only and not concepts:
             metric = re.search(r"\b(?:what (?:is|was)|report|give(?: me)?) (?:the )?([a-z][a-z0-9]*) (?:score )?(?:for|of)\b", plain)
@@ -284,7 +340,7 @@ def _columns(headers, query, caption):
         named = named or direction_only
         if named:
             column_concepts |= caption_concepts - header_concepts
-        if concepts and not column_concepts & concepts:
+        if concepts and not column_concepts & concepts and not named:
             continue
         # A reused metric can have a different numbered dataset or split.
         datasets = re.findall(r"\b([a-z][a-z0-9]{1,14}) ([0-9]+) (?=(?:f1|bleu|accuracy)\b)", " ".join(labels))
@@ -293,6 +349,12 @@ def _columns(headers, query, caption):
             continue
         if column_concepts & concepts or named:
             matches[col] = (column_concepts, directions)
+    exact = {col for col in matches if names[col]}
+    for col in exact:
+        if not (matches[col][0] & concepts) and all(any(
+                other != col and start <= a <= b <= end and end - start > b - a
+                for other in exact for start, end in names[other]) for a, b in names[col]):
+            matches.pop(col)
     concepts_found = set().union(*(value[0] for value in matches.values()))
     tasks_found = set().union(*(value[1] for value in matches.values()))
     if concepts - concepts_found or wanted_tasks - tasks_found:
@@ -305,29 +367,56 @@ def _contains(cell, row, col):
             and cell["column"] <= col < cell["column"] + cell.get("column_span", 1))
 
 
-def _cell_refs(cells, headers, rows, selected_rows, selected_cols):
+def _clause_pairs(query, cells, headers, caption, labels, selected_rows, selected_cols):
+    if len(selected_rows) < 2 or len(selected_cols) < 2:
+        return None
+    clauses = re.split(r"\s+and\s+|\s+as well as\s+|[;；]|以及|并且", query)
+    if len(clauses) < 2:
+        return None
+    pairs = []
+    for clause in clauses:
+        plain = _words(clause)
+        qualified = [row for row in selected_rows if _find(_words(labels[row].get("qualifier", "")), plain)]
+        if qualified:
+            rows = qualified
+        else:
+            rows, ambiguous, _ = _row_matches({row: labels[row] for row in selected_rows}, plain, cells)
+            if ambiguous:
+                return None
+        consumed = set().union(*(_concepts(_words(labels[row]["text"])) for row in rows))
+        columns, _ = _columns(headers, clause, caption, consumed)
+        columns = sorted(set(columns) & set(selected_cols))
+        if not rows or not columns:
+            return None
+        pairs.extend((row, col) for row in rows for col in columns)
+    if {row for row, _ in pairs} == set(selected_rows) and {col for _, col in pairs} == set(selected_cols):
+        return pairs
+    return None
+
+
+def _cell_refs(cells, headers, rows, pairs):
     selections = {}
-    for row in selected_rows:
-        for col in selected_cols:
-            matches = [cell for cell in cells if _contains(cell, row, col)]
-            if len(matches) != 1 or matches[0].get("row_span", 1) != 1:
-                return []
-            cell = matches[0]
-            covered = range(cell["column"], cell["column"] + cell.get("column_span", 1))
-            levels = list(dict.fromkeys(header["text"] for covered_col in covered for header in headers.get(covered_col, [])))
-            label = " · ".join(" ".join(text.split()) for text in levels) or f"第 {col} 列"
-            selections[cell["row"], cell["column"]] = (cell, rows[row], label)
+    for row, col in pairs:
+        matches = [cell for cell in cells if _contains(cell, row, col)]
+        if len(matches) != 1 or matches[0].get("row_span", 1) != 1:
+            return []
+        cell = matches[0]
+        covered = range(cell["column"], cell["column"] + cell.get("column_span", 1))
+        levels = list(dict.fromkeys(header["text"] for covered_col in covered for header in headers.get(covered_col, [])))
+        label = " · ".join(" ".join(text.split()) for text in levels) or f"第 {col} 列"
+        selections[cell["row"], cell["column"]] = (cell, rows[row], label)
     return list(selections.values())
 
 
 def _numeric(text):
+    original = unicodedata.normalize("NFKC", text).strip()
     text = re.sub(r"(?<=10)([⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]+)", lambda m: "^" + m[1].translate(SUPERSCRIPT), text)
     text = _normal(text).lstrip("= ")
     direct = re.fullmatch(rf"({DECIMAL})\s*({UNIT})?", text)
     scientific = re.fullmatch(rf"({DECIMAL})\s*(?:[·×x*]\s*10\s*\^\s*|e\s*)([+-]?[0-9]{{1,3}})\s*({UNIT})?", text)
     if direct:
         scalar, unit = direct.groups()
-        suffix = unit if unit == "%" else unit.upper() if unit in {"k", "m", "b", "t"} else f" {unit}" if unit else ""
+        suffix = unit if unit == "%" else unit.upper() if unit in {"k", "m", "b", "t"} else f" {original[-len(unit):]}" if unit else ""
         return Decimal(scalar.replace(",", "")), scalar + suffix, unit
     if scientific:
         mantissa, exponent, unit = scientific.groups()
@@ -489,37 +578,51 @@ def _response(store, doc, question, page, number, region, cells, hits, anchor):
             value = _recover_numeric(store, doc["id"], page, cell)
             method = "crop_ocr" if value else "unresolved"
         concepts = _concepts(_words(column_label))
-        if value and concepts & {"bleu", "f1", "accuracy", "precision", "recall"} and not 0 <= value[0] <= 100:
+        invalid_score = value and concepts & {"bleu", "f1", "accuracy", "precision", "recall"} and not 0 <= value[0] <= 100
+        if invalid_score:
             value = None
+        if (not value and not invalid_score and source == "native" and cell.get("status") == "native_text"
+                and cell.get("bbox_pt") and not DIFFERENCE.search(question)):
+            literal = " ".join(raw.split())
+            if (0 < len(literal) <= 180 and any(char.isalnum() for char in literal)
+                    and literal.casefold() not in {"n/a", "not available", "not reported", "unreported"}):
+                suffix = re.search(rf"\s({UNIT})$", literal, re.I)
+                value = (None, literal, suffix[1] if suffix else None)
         if value is None:
             method = "unresolved"
-        units_match = re.search(r"\((flops|%|ms|s|kb|mb|gb|tb)\)", column_label, re.I)
+        units_match = re.search(rf"\(({UNIT})\)", column_label, re.I)
         unit = units_match[1] if units_match else None
         if value:
             scalar, display, written_unit = value
-            if unit and not written_unit:
+            if unit and not written_unit and (scalar is not None or any(char.isdigit() for char in display)):
                 display += " " + unit
             values.append((scalar, display, written_unit or unit, column_label))
+        row_label = REFERENCE.sub("", " ".join(row["text"].split()))
+        if row.get("qualifier"):
+            row_label += " · " + " ".join(row["qualifier"].split())
         entry = {"page": page["physical_page"], "region": region["id"], "table": number,
                  "row": cell["row"], "column": cell["column"], "column_span": cell.get("column_span", 1),
-                 "row_label": REFERENCE.sub("", " ".join(row["text"].split())), "column_label": column_label,
+                 "row_label": row_label, "column_label": column_label,
                  "text": raw, "value": values[-1][1] if value else None, "method": method,
+                 "value_kind": ("number" if value[0] is not None else "reported_text") if value else None,
                  "bbox_pt": cell.get("bbox_pt"), "line_id": line, "region_status": region["status"], "source": source}
-        for key in ("ocr_raw", "ocr_confidence", "numeric_ocr"):
+        for key in ("ocr_raw", "ocr_confidence", "numeric_ocr", "span_evidence"):
             if key in cell:
                 entry[key] = cell[key]
         if hit:
             entry.update(block=hit["block"], part=hit["part"])
         evidence.append(entry)
     hits = list((cell_hits | context_hits).values())[:8]
-    if len(values) != len(evidence):
-        return _gap("目标单元格为空、未读出或数值格式无法确认，请核对原页。", hits, evidence)
+    if not values:
+        return _gap("未能确认目标单元格内容。请核对原页。", hits, evidence)
     prefix = f"表 {number}" if number is not None else "识别表格"
     prefix += f"（物理页 {page['physical_page']}）"
-    claims = [f"{item['row_label']} · {item['column_label']} = {item['value']}" for item in evidence]
+    supported = [item for item in evidence if item["value"] is not None]
+    claims = [f"{item['row_label']} · {item['column_label']} = {item['value']}" for item in supported]
     answer = prefix + "中，" + "。".join(claims) + "。"
     if DIFFERENCE.search(question):
-        if len(values) != 2 or (values[0][2] or "").lower() != (values[1][2] or "").lower() or values[0][3] != values[1][3]:
+        if (len(values) != 2 or len(values) != len(evidence) or any(value[0] is None for value in values)
+                or (values[0][2] or "").lower() != (values[1][2] or "").lower() or values[0][3] != values[1][3]):
             return _gap("计算差值需要同一列中两个格式与单位一致的数值。", hits, evidence)
         difference = abs(values[0][0] - values[1][0])
         unit = values[0][2]
@@ -528,7 +631,9 @@ def _response(store, doc, question, page, number, region, cells, hits, anchor):
         if not unit and "bleu" in _concepts(_words(values[0][3])):
             unit = "BLEU"
         answer += f"两项相差 {difference:f}" + (f" {unit}" if unit else "") + "。"
-    return {"answer": answer, "gap": None, "hits": hits, "table_cells": evidence}
+    missing = [f"{item['row_label']} · {item['column_label']}" for item in evidence if item["value"] is None]
+    gap = "未能确认 " + "、".join(missing) + " 的单元格。" if missing else None
+    return {"answer": answer, "gap": gap, "hits": hits, "table_cells": evidence}
 
 
 def _query_shape(question):
@@ -545,8 +650,9 @@ def _query_shape(question):
 
 def _table_answers(store, doc, anchor, shape, pages):
     query, table_numbers, page_numbers, row_numbers, col_numbers, explicit = shape
-    if any(len(numbers) > 1 for numbers in (table_numbers, page_numbers, row_numbers, col_numbers)):
-        return _gap("请指定同一张表或一个行列坐标。") if explicit else None
+    if (len(table_numbers) > 1 or len(page_numbers) > 1 or len(row_numbers) * len(col_numbers) > 8
+            or (len(row_numbers) > 1 and len(col_numbers) > 1)):
+        return _gap("请核对表号与行列范围。") if explicit else None
     plain = _words(query)
     results, inspected = [], []
     ambiguity = False
@@ -565,8 +671,17 @@ def _table_answers(store, doc, anchor, shape, pages):
             if not depth:
                 continue
             cells = region["cells"]
-            selected_rows, rows_ambiguous = _row_matches(labels, plain, cells)
-            columns, directions = _columns(headers, query, caption)
+            selected_rows, rows_ambiguous, qualifiers = _row_matches(labels, plain, cells)
+            if selected_rows and not row_numbers:
+                selected_rows, conditions = _condition_rows(selected_rows, headers, cells, plain)
+                qualifiers.update(conditions)
+            consumed = set().union(*(_concepts(_words(labels[row]["text"])) for row in selected_rows))
+            columns, directions = _columns(headers, query, caption, consumed)
+            if (not columns and set(headers) == {1, 2} and selected_rows and not directions
+                    and (_concepts(plain) <= consumed or col_numbers == {2})
+                    and (_find("value", _words(headers[2][-1]["text"])) or ASK.search(query)
+                         or col_numbers == {2} or len(selected_rows) > 1)):
+                columns = [2]
             if row_numbers:
                 if not selected_rows:
                     for row in row_numbers - labels.keys():
@@ -598,9 +713,16 @@ def _table_answers(store, doc, anchor, shape, pages):
             if UNSUPPORTED.search(operation):
                 ambiguity = True
                 continue
-            selected = _cell_refs(cells, headers, labels, selected_rows, columns)
+            for row in selected_rows:
+                if row in qualifiers:
+                    labels[row] = dict(labels[row], qualifier=qualifiers[row])
+            pairs = _clause_pairs(query, cells, headers, caption, labels, selected_rows, columns)
+            selected = _cell_refs(cells, headers, labels, pairs or ((row, col) for row in selected_rows for col in columns))
             multi_metric = len(_concepts(plain)) > 1
-            if not selected or len(selected) > 8 or (len(selected) > len(selected_rows) and not (len(directions) > 1 or multi_metric or MULTIPLE.search(query) or DIFFERENCE.search(query))):
+            named_fields = {label for col in columns for head in headers.get(col, [])
+                            if head.get("column_span", 1) == 1 and (label := _words(head["text"])) and _find(label, plain)}
+            if not selected or len(selected) > 8 or (len(selected) > len(selected_rows) and not (
+                    len(directions) > 1 or multi_metric or len(named_fields) > 1 or MULTIPLE.search(query) or DIFFERENCE.search(query))):
                 ambiguity = True
                 continue
             if len(selected) < 2 and COMPARE.search(query):
@@ -656,20 +778,24 @@ def _caption_pages(chunks):
 
 def _native_candidates(chunks, shape, anchor):
     query, table_numbers, page_numbers, rows, cols, _ = shape
+    native_pages = {chunk["page"] for chunk in chunks}
     if page_numbers or anchor is not None:
         requested = page_numbers or {anchor["page"]}
-        return sorted(requested & {chunk["page"] for chunk in chunks})
+        return sorted(requested & native_pages)
     caption_pages = _caption_pages(chunks)
     pages_with_captions = set().union(*caption_pages.values())
     if table_numbers:
         return sorted(set().union(*(caption_pages.get(number, set()) for number in table_numbers)))
     if rows and cols and len(pages_with_captions) <= NATIVE_CANDIDATE_LIMIT:
-        return sorted(pages_with_captions)
-    if not pages_with_captions:
-        return []
+        return sorted(pages_with_captions or (native_pages if len(native_pages) == 1 else set()))
     words = _words(query)
+    concepts = _concepts(words)
+    open_search = (len(concepts) >= 2 or len(native_pages) == 1
+                   or re.search(r"\b(?:table|fields|configuration|hyperparameters)\b|表格|字段|配置项|超参数", query))
+    if not pages_with_captions and not open_search:
+        return []
     terms = {word for word in words.split() if len(word) > 1 and word not in QUERY_TERMS}
-    for concept in _concepts(words):
+    for concept in concepts:
         terms.update(CONCEPTS[concept][0].split())
     for direction in _directions(query):
         terms.update((direction.replace("-", ""), direction.replace("-", " ")))
@@ -677,11 +803,11 @@ def _native_candidates(chunks, shape, anchor):
         return []
     terms_by_page = defaultdict(set)
     for chunk in chunks:
-        if chunk["page"] in pages_with_captions:
+        if chunk["page"] in pages_with_captions or open_search:
             excerpt = _words(chunk["text"])
             terms_by_page[chunk["page"]].update(term for term in terms if _find(term, excerpt))
     ordered = sorted(((len(matched), page) for page, matched in terms_by_page.items() if len(matched) >= 2),
-                     key=lambda item: (-item[0], item[1]))
+                     key=lambda item: (-item[0], item[1] not in pages_with_captions, item[1]))
     return [page for _, page in ordered[:NATIVE_CANDIDATE_LIMIT]]
 
 
@@ -778,6 +904,7 @@ def _native_dividers(page, region):
 
 def _native_page(page):
     from metric_qa import DPI, _native_tables, _render
+    from native_layout import recover_region, recover_single_rules, recover_unruled
 
     image = _render(page, DPI)
     if image is None:
@@ -788,9 +915,9 @@ def _native_page(page):
             for table in page.find_tables(strategy="lines").tables:
                 if region := _mupdf_grid(table, f"p{page.number + 1}-r{len(regions) + 1}"):
                     regions.append(region)
-    if not regions:
-        return None
     lines = _native_lines(page)
+    captions = [line for line in lines if CAPTION.match(_normal(line["text"]))]
+    words = [word for line in lines for word in line["words"]]
     for index, region in enumerate(regions, 1):
         if "id" not in region:
             region.update(id=f"p{page.number + 1}-r{index}", bbox_pt=[float(v) * 72 / DPI for v in region["bbox"]])
@@ -798,9 +925,27 @@ def _native_page(page):
                 cell["bbox_pt"] = [float(v) * 72 / DPI for v in cell["bbox"]]
                 if cell["text"]:
                     cell["status"] = "native_text"
-                    if formatted := _native_power(cell["text"], cell["bbox_pt"], lines):
-                        cell["number_text"] = formatted
             regions[index - 1] = _native_dividers(page, region)
+        if region["status"] == "detected_only":
+            recovered = recover_region(words, region, captions)
+            if recovered:
+                regions[index - 1] = recovered
+    addressed = {line["line_id"] for _, line, region in _tables({"lines": lines, "regions": regions})
+                 if line is not None and region["status"] != "detected_only"}
+    unmatched = [line for line in captions if line["line_id"] not in addressed]
+    if unmatched and not page.rotation:
+        covered = [box["bbox_pt"] for box in regions]
+        rules = [(rect.x0, (rect.y0 + rect.y1) / 2, rect.x1) for item in page.get_drawings()
+                 if (rect := item["rect"]).width >= 55 and rect.height <= 1.4]
+        regions.extend(recover_single_rules(words, rules[:60], unmatched, covered, page.number + 1))
+    if not regions and (unruled := recover_unruled(words, page.number + 1)):
+        regions.append(unruled)
+    if not regions:
+        return None
+    for region in regions:
+        for cell in region["cells"]:
+            if cell["text"] and (formatted := _native_power(cell["text"], cell["bbox_pt"], lines)):
+                cell["number_text"] = formatted
     return {"physical_page": page.number + 1, "source": "native", "lines": lines, "regions": regions}
 
 

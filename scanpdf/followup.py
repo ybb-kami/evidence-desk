@@ -111,16 +111,38 @@ def lookup(store, request, *, dense=None):
             "gap": ("已找到相关段落，请核对其中的条件和数值。" if ranked else
                     "所选范围未找到足以回答这个问题的原文。")}
 
-def answer_question(store, request, *, on_delta=None):
-    """Local retrieval runs first; optional local models receive only the selected evidence."""
-    result = lookup(store, request, dense=store.dense)
-    if result.get("answer") or not result["hits"] or "table_cells" in result or result.get("answer_method"):
+def _answer_one(store, request, result, *, on_delta=None):
+    if not result["hits"] and not result.get("answer"):
+        from question_parts import describe_gap
+        result["gap"] = describe_gap(request["question"], [])
+        return result
+    if result.get("answer") or "table_cells" in result or result.get("answer_method"):
         return result
     from passage_answer import assess_spans
     question = request["question"]
-    candidates, status, english = store.passage_reader.candidates(question, result["hits"])
+    from direct_measurement import extract
+    from hybrid_retrieval import english_query
+    from claim_support import check
+    from question_parts import describe_gap
+    english = english_query(question) if re.search(r"[㐀-鿿]", question) else question
+    measurement, reason = extract(question, english, result["hits"])
+    if reason:
+        result.update(gap=describe_gap(question,result["hits"],reason), generation={"status":"insufficient_evidence","reason":reason})
+        return result
+    if measurement:
+        result.update(answer=measurement["text"],answer_method="direct_measurement",gap=None,
+                      generation={"status":"source_measurement","claims":[measurement]})
+        return result
+    candidates, status, translated = store.passage_reader.candidates(question, result["hits"])
+    english = translated or english
     checked, direct = assess_spans(question, english, candidates, result["hits"]) if candidates else ([], None)
     result["reader"] = {"status": status, "candidates": checked}
+    if direct:
+        claim = dict(direct, text=direct["answer"].strip(), quote=direct["context"], span=direct["answer"])
+        if not check(question, english, result["hits"], claim):
+            result.update(answer=claim["text"],answer_method="local_extractive",gap=None,
+                          generation={"status":"source_extraction","claims":[claim]})
+            return result
     options = {"english": english} if english else {}
     if on_delta:
         options["on_delta"] = on_delta
@@ -129,11 +151,27 @@ def answer_question(store, request, *, on_delta=None):
     if draft["status"] == "cited_draft":
         claim = draft["claims"][0]
         result.update(answer=claim["text"], answer_method="local_cited_draft", gap=None)
-    elif direct and draft["status"] in {"disabled", "busy", "unavailable", "misconfigured"}:
-        result.update(answer=direct["answer"].strip(), answer_method="local_extractive", gap=None)
     elif draft["status"] == "insufficient_evidence":
-        reasons = {"field_missing":"所引原句没有说明问题所问的字段。",
+        reasons = {"different_unit":"回答的数值单位与所引原文不一致。", "field_missing":"所引原句没有说明问题所问的字段。",
                    "different_condition":"原句对应的实验条件与问题不符。",
                    "ambiguous_measurement":"多个条件的原文报告不同读数，请指定实验条件后再核对。"}
-        result["gap"] = reasons.get(draft.get("reason"), "在已检索的原文中，本机模型没有找到问题所需的直接依据。")
+        result["gap"] = reasons.get(draft.get("reason"), describe_gap(question,result["hits"]))
+    elif not result.get("answer"):
+        result["gap"]=describe_gap(question,result["hits"])
     return result
+
+
+def answer_question(store, request, *, on_delta=None):
+    """Split explicitly coordinated questions while preserving every field's source."""
+    from question_parts import combine, split_question
+    full = lookup(store, request, dense=store.dense)
+    parts = split_question(request["question"])
+    if (len(parts) == 1 or full.get("answer_method") in {"source_fields","table_calculation","native_table","scan_table"}):
+        return _answer_one(store,request,full,on_delta=on_delta)
+    results=[]
+    for part in parts:
+        scoped=dict(request,question=part)
+        # Each field obtains its own original observations and conditions.
+        raw=lookup(store,scoped,dense=store.dense)
+        results.append((part,_answer_one(store,scoped,raw)))
+    return combine(results)

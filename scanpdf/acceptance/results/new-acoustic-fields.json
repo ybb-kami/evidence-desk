@@ -1,0 +1,347 @@
+{
+  "document_sha256": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+  "transport": "Chromium",
+  "cases": [
+    {
+      "question": "What was the sensor sampling frequency during heating, and how many annotated spectra did the validation split contain?",
+      "status": "complete",
+      "result": {
+        "hits": [
+          {
+            "page": 1,
+            "block": 2,
+            "part": 1,
+            "offset": 0,
+            "text": "The sensor sampling frequency during heating was 92 Hz. The sensor sampling\nfrequency during cooling was 67 Hz.",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.095238,
+            "page_label": "1",
+            "retrieval_ranks": {
+              "bm25": 1,
+              "multilingual-e5-small": 1
+            }
+          },
+          {
+            "page": 2,
+            "block": 2,
+            "part": 1,
+            "offset": 0,
+            "text": "The validation split contains 31 annotated spectra. The test split contains 85\nannotated spectra.",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.095238,
+            "page_label": "2",
+            "retrieval_ranks": {
+              "bm25": 1,
+              "multilingual-e5-small": 1
+            }
+          },
+          {
+            "page": 1,
+            "block": 1,
+            "part": 1,
+            "offset": 0,
+            "text": "Acoustic sampling",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.045455,
+            "page_label": "1",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 2
+            }
+          },
+          {
+            "page": 2,
+            "block": 1,
+            "part": 1,
+            "offset": 0,
+            "text": "Validation",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.045455,
+            "page_label": "2",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 2
+            }
+          }
+        ],
+        "fields": [
+          {
+            "question": "What was the sensor sampling frequency during heating",
+            "answer": "92 Hz",
+            "gap": null,
+            "method": "direct_measurement",
+            "claims": [
+              {
+                "text": "92 Hz",
+                "quote": "The sensor sampling frequency during heating was 92 Hz.",
+                "span": "The sensor sampling frequency during heating was 92 Hz.",
+                "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+                "page": 1,
+                "block": 2,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 0,
+                "answer_end": 55
+              }
+            ],
+            "cells": []
+          },
+          {
+            "question": "how many annotated spectra did the validation split contain",
+            "answer": "31",
+            "gap": null,
+            "method": "direct_measurement",
+            "claims": [
+              {
+                "text": "31",
+                "quote": "The validation split contains 31 annotated spectra.",
+                "span": "The validation split contains 31 annotated spectra.",
+                "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+                "page": 2,
+                "block": 2,
+                "part": 1,
+                "hit_index": 1,
+                "answer_start": 0,
+                "answer_end": 51
+              }
+            ],
+            "cells": []
+          }
+        ],
+        "answer": "What was the sensor sampling frequency during heating — 92 Hz\nhow many annotated spectra did the validation split contain — 31",
+        "answer_method": "fieldwise",
+        "completeness": "complete",
+        "gap": null,
+        "generation": {
+          "status": "complete",
+          "claims": [
+            {
+              "text": "92 Hz",
+              "quote": "The sensor sampling frequency during heating was 92 Hz.",
+              "span": "The sensor sampling frequency during heating was 92 Hz.",
+              "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+              "page": 1,
+              "block": 2,
+              "part": 1,
+              "hit_index": 0,
+              "answer_start": 0,
+              "answer_end": 55
+            },
+            {
+              "text": "31",
+              "quote": "The validation split contains 31 annotated spectra.",
+              "span": "The validation split contains 31 annotated spectra.",
+              "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+              "page": 2,
+              "block": 2,
+              "part": 1,
+              "hit_index": 1,
+              "answer_start": 0,
+              "answer_end": 51
+            }
+          ]
+        },
+        "model_available": false
+      }
+    },
+    {
+      "question": "What was the sensor sampling frequency?",
+      "status": "ambiguous",
+      "result": {
+        "hits": [
+          {
+            "page": 1,
+            "block": 2,
+            "part": 1,
+            "offset": 0,
+            "text": "The sensor sampling frequency during heating was 92 Hz. The sensor sampling\nfrequency during cooling was 67 Hz.",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.095238,
+            "page_label": "1",
+            "retrieval_ranks": {
+              "bm25": 1,
+              "multilingual-e5-small": 1
+            }
+          },
+          {
+            "page": 1,
+            "block": 1,
+            "part": 1,
+            "offset": 0,
+            "text": "Acoustic sampling",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.045455,
+            "page_label": "1",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 2
+            }
+          },
+          {
+            "page": 2,
+            "block": 2,
+            "part": 1,
+            "offset": 0,
+            "text": "The validation split contains 31 annotated spectra. The test split contains 85\nannotated spectra.",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.043478,
+            "page_label": "2",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 3
+            }
+          },
+          {
+            "page": 2,
+            "block": 1,
+            "part": 1,
+            "offset": 0,
+            "text": "Validation",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.041667,
+            "page_label": "2",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 4
+            }
+          }
+        ],
+        "answer": null,
+        "retrieval": {
+          "methods": [
+            "bm25",
+            "multilingual-e5-small"
+          ],
+          "dense": "ready"
+        },
+        "gap": "已检索的 4 段原文中有多个条件及不同读数。请指定所问的组别、阶段或单位后再核对。",
+        "generation": {
+          "status": "insufficient_evidence",
+          "reason": "ambiguous_measurement"
+        },
+        "model_available": false
+      }
+    },
+    {
+      "question": "What was the sensor sampling frequency during cooling, and what was the instrument serial number?",
+      "status": "partial",
+      "result": {
+        "hits": [
+          {
+            "page": 1,
+            "block": 2,
+            "part": 1,
+            "offset": 0,
+            "text": "The sensor sampling frequency during heating was 92 Hz. The sensor sampling\nfrequency during cooling was 67 Hz.",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.095238,
+            "page_label": "1",
+            "retrieval_ranks": {
+              "bm25": 1,
+              "multilingual-e5-small": 1
+            }
+          },
+          {
+            "page": 1,
+            "block": 1,
+            "part": 1,
+            "offset": 0,
+            "text": "Acoustic sampling",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.045455,
+            "page_label": "1",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 2
+            }
+          },
+          {
+            "page": 2,
+            "block": 2,
+            "part": 1,
+            "offset": 0,
+            "text": "The validation split contains 31 annotated spectra. The test split contains 85\nannotated spectra.",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.045455,
+            "page_label": "2",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 2
+            }
+          },
+          {
+            "page": 2,
+            "block": 1,
+            "part": 1,
+            "offset": 0,
+            "text": "Validation",
+            "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+            "name": "acoustic-study.pdf",
+            "score": 0.041667,
+            "page_label": "2",
+            "retrieval_ranks": {
+              "multilingual-e5-small": 4
+            }
+          }
+        ],
+        "fields": [
+          {
+            "question": "What was the sensor sampling frequency during cooling",
+            "answer": "67 Hz",
+            "gap": null,
+            "method": "direct_measurement",
+            "claims": [
+              {
+                "text": "67 Hz",
+                "quote": "The sensor sampling\nfrequency during cooling was 67 Hz.",
+                "span": "The sensor sampling\nfrequency during cooling was 67 Hz.",
+                "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+                "page": 1,
+                "block": 2,
+                "part": 1,
+                "hit_index": 0,
+                "answer_start": 56,
+                "answer_end": 111
+              }
+            ],
+            "cells": []
+          },
+          {
+            "question": "what was the instrument serial number",
+            "answer": null,
+            "gap": "已检索的 4 段原文中没有明确报告设备序列号的原文，无法据此给出「what was the instrument serial number」的答案。",
+            "method": null,
+            "claims": [],
+            "cells": []
+          }
+        ],
+        "answer": "What was the sensor sampling frequency during cooling — 67 Hz",
+        "answer_method": "fieldwise",
+        "completeness": "partial",
+        "gap": "已检索的 4 段原文中没有明确报告设备序列号的原文，无法据此给出「what was the instrument serial number」的答案。",
+        "generation": {
+          "status": "partial",
+          "claims": [
+            {
+              "text": "67 Hz",
+              "quote": "The sensor sampling\nfrequency during cooling was 67 Hz.",
+              "span": "The sensor sampling\nfrequency during cooling was 67 Hz.",
+              "id": "50fc95fb4655b006830d517eca3f3a5e75c403b06af3eecf8c9d5b39d3fca567",
+              "page": 1,
+              "block": 2,
+              "part": 1,
+              "hit_index": 0,
+              "answer_start": 56,
+              "answer_end": 111
+            }
+          ]
+        },
+        "model_available": false
+      }
+    }
+  ]
+}

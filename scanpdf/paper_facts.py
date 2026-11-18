@@ -19,17 +19,20 @@ def byline_answer(doc, number, hits):
         answer += f'署名机构为 {affiliation}。'
     else:
         answer += '该署名块未列出机构。'
-    evidence = [hit]
+    start = hit["text"].find(lines[0])
+    end = hit["text"].find(lines[-1], start)
+    evidence = [dict(hit, start=start, end=end) if 0 <= start < end else hit]
     for mark in ('†', '‡'):
         if mark not in lines[0][len(name):]:
             continue
         pattern = re.compile(r'^' + mark + r'\s*Work (?:performed|done) while at ([^\n.]{2,100})\.[ \t]*$', re.I | re.M)
         notes = [(chunk, pattern.search(chunk['text'])) for chunk in doc['chunks'] if chunk['page'] == hit['page']]
-        matches = [(chunk,m[1]) for chunk,m in notes if m]
+        matches = [(chunk,m) for chunk,m in notes if m]
         if len(matches) == 1:
-            chunk, org = matches[0]
+            chunk, note = matches[0]
+            org = note[1]
             answer += f'作者的 {mark} 脚注说明，这项工作是在 {org} 完成的。'
-            evidence.append(dict(chunk, id=doc['id'], name=doc['name']))
+            evidence.append(dict(chunk, id=doc['id'], name=doc['name'], start=note.start(), end=note.end()))
     return {'answer':answer, 'hits':evidence}
 
 
@@ -50,7 +53,14 @@ def training_hardware(question, hits):
                     continue
             units = re.findall(r'\b(\d{1,5})\s+((?:[A-Z][\w-]*\s+){0,2}[A-Z][\w-]*\d[\w-]*)\s+GPUs?\b',clause[0])
             if len(units) == 1:
-                found.setdefault(units[0],hit)
+                # Keep exact, PDF-native offsets. Normalization was used only
+                # for recognition; a transformed string cannot supply offsets.
+                sentence = re.compile(r"\s+".join(re.escape(word) for word in clause[0].split()), re.I)
+                positions = list(sentence.finditer(hit["text"]))
+                marked = hit
+                if len(positions) == 1:
+                    marked = dict(hit, start=positions[0].start(), end=positions[0].end())
+                found.setdefault(units[0],marked)
     if len(found) == 1:
         (count,model), hit = next(iter(found.items()))
         return {'answer':f'文中报告的训练硬件为 {count} 块 {model} GPU。', 'hits':[hit]}

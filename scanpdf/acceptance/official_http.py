@@ -254,7 +254,8 @@ def browser_request(browser, port, endpoint, values):
             page.click(submit)
         response = pending.value
         if not response.ok:
-            raise RuntimeError(f"{endpoint}: HTTP {response.status}")
+            body = response.json()
+            raise RuntimeError(f"{endpoint}: HTTP {response.status} {body.get('error','')} · {values.get('question',values.get('query',''))}")
         result = response.json()
         observed = response.request.post_data_json
         if single:

@@ -100,7 +100,11 @@ def report(doc, result):
                     citations.append(item)
                     break
     for hit in result.get("hits", [])[:5]:
-        item = source(doc, hit)
+        begin,finish = hit.get("start"),hit.get("end")
+        if type(begin) is int and type(finish) is int and 0 <= begin < finish <= len(hit["text"]):
+            item = source(doc, hit, quote=hit["text"][begin:finish], start=begin, end=finish)
+        else:
+            item = source(doc, hit)
         if item and item not in citations:
             citations.append(item)
     cells = []
@@ -145,7 +149,7 @@ def execute(store, docs, req, doi, emit):
             item = report(doc, data)
             groups.append(item)
             pages = len(item["sources"]) + len(item["cells"])
-            if not item["answer"]:
+            if not item["answer"] or data.get("completeness") == "partial":
                 state = "gap"
         elif action == "compare_papers":
             from architecture import compare

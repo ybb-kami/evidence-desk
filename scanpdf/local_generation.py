@@ -8,6 +8,8 @@ from contextlib import contextmanager
 from urllib.parse import urlsplit
 
 from grounded_draft import _numbers
+from provider import _decode
+from quoted_span import bind as _bind_span
 
 
 SYSTEM = {'en': 'Answer only from the numbered paper passages. Give a short answer in English. When a '
@@ -31,16 +33,6 @@ MAX_OUTPUT = 65536
 def excerpts(hits, candidates=(), query=""):
     from evidence_context import select_excerpts
     return select_excerpts(hits, candidates, query)
-
-
-def _bind_span(span, raw):
-    if not isinstance(span, str) or not 1 <= len(span.strip()) <= 420:
-        return None
-    # PDF line breaks and repeated spaces can be flattened by chat models. Keep
-    # the original string and offsets, allowing only this whitespace difference.
-    words = span.strip().split()
-    match = re.search(r"\s+".join(re.escape(word) for word in words), raw)
-    return match.span() if match else None
 
 
 class LocalGenerator:
@@ -79,7 +71,7 @@ class LocalGenerator:
             body = response.read(MAX_OUTPUT + 1)
             if len(body) > MAX_OUTPUT:
                 raise ValueError("local model response too large")
-            return json.loads(body)
+            return _decode(body)
 
     def choose_tools(self, question, count, tools):
         """Only a provider-returned message.tool_calls can select this route."""
@@ -130,6 +122,7 @@ class LocalGenerator:
             labels = ("原文段落", "问题") if zh else ("Passages", "Question")
             material = "\n\n".join(f"[{n}]\n{raw}" for n, (_, _, raw) in sources.items())
             user = f"{labels[0]}:\n{material}\n\n{labels[1]}: {question}"
+            user = user.replace("<|", "\\u003c|").replace("|>", "|\\u003e")
             payload = {
                 "model": self.model, "temperature": 0, "seed": 42, "max_tokens": 220, "stream": on_delta is not None,
                 "chat_template_kwargs": {"enable_thinking": False},
@@ -149,7 +142,7 @@ class LocalGenerator:
             choice = result["choices"][0]
             if choice["finish_reason"] != "stop":
                 return {"status": "incomplete", "model": self.model}
-            decoded = json.loads(choice["message"]["content"])
+            decoded = _decode(choice["message"]["content"])
             if not isinstance(decoded, dict) or set(decoded) != {"status", "answer", "source", "quote"}:
                 raise ValueError("invalid model output")
             if decoded["status"] == "insufficient":
@@ -160,8 +153,10 @@ class LocalGenerator:
                 raise ValueError("invalid claim")
             i, offset, raw = sources[label]
             span = _bind_span(decoded["quote"], raw)
-            if not span or not _numbers(text).issubset(_numbers(raw[span[0]:span[1]])):
-                return {"status": "validation_failed", "model": self.model}
+            if not span:
+                return {"status":"validation_failed", "model":self.model, "reason":"quote_not_bound"}
+            if not _numbers(text).issubset(_numbers(raw[span[0]:span[1]])):
+                return {"status":"validation_failed", "model":self.model, "reason":"unsupported_number"}
             hit = hits[i]
             claim = {"text": text.strip(), "quote": raw, "id": hit["id"], "page": hit["page"],
                      "block": hit["block"], "part": hit.get("part", 1), "hit_index": i,
@@ -175,6 +170,6 @@ class LocalGenerator:
         except (OSError, http.client.HTTPException):
             return {"status":"unavailable", "model":self.model}
         except (ValueError, IndexError, KeyError, TypeError, AttributeError, RecursionError):
-            return {"status":"validation_failed", "model":self.model}
+            return {"status":"validation_failed", "model":self.model, "reason":"invalid_response"}
         finally:
             self._lock.release()

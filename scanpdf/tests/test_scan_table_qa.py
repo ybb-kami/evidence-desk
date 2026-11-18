@@ -88,6 +88,55 @@ class ScanTableTests(unittest.TestCase):
 
 
 class NativeTableTests(unittest.TestCase):
+    def test_unruled_key_value_fields_and_original_units(self):
+        with TemporaryDirectory() as directory, pymupdf.open() as pdf:
+            page = pdf.new_page(width=480, height=420)
+            page.insert_text((45, 45), "Equipment profile", fontsize=14)
+            for y, key, value in ((94, "Component", "Specification"), (124, "Controller", "MICA-9"),
+                                  (154, "Actuator", "Linear drive"), (184, "Power source", "18 V"),
+                                  (214, "Protection", "Thermal relay")):
+                page.insert_text((55, y), key)
+                page.insert_text((268, y), value)
+            store = ScanLibrary(Path(directory))
+            docid = store.add(pdf.tobytes(), "profile.pdf")["doc"]["id"]
+            doc = store.records([docid])[0]
+            found = answer_native_table(store, doc, "On page 1, what controller and power source are listed?")
+            self.assertEqual([cell["value"] for cell in found["table_cells"]], ["MICA-9", "18 V"])
+            self.assertEqual([cell["value_kind"] for cell in found["table_cells"]], ["reported_text", "number"])
+            for cell in found["table_cells"]:
+                self.assertIsNone(cell["table"])
+                self.assertEqual(native_cell_box(page, cell["region"], cell["row"], cell["column"])["text"], cell["text"])
+            unscoped = answer_native_table(store, doc, "What controller and power source are listed?")
+            self.assertEqual(unscoped["table_cells"], found["table_cells"])
+
+    def test_known_condition_conflict_and_partial_row_fields(self):
+        with TemporaryDirectory() as directory, pymupdf.open() as pdf:
+            page = pdf.new_page(width=430, height=480)
+            page.insert_text((42, 68), "Table 4: Comparison by data source")
+            for x in (40, 123, 210, 290, 390):
+                page.draw_line((x, 84), (x, 204))
+            for y in (84, 114, 144, 174, 204):
+                page.draw_line((40, y), (390, y))
+            texts = (("System", "Dataset", "F1", "Latency (ms)"), ("Alpha", "Set-East", "81.4", "-"),
+                     ("Beta", "Set-West", "76.2", "3.7"), ("Gamma", "Set-North", "80.1", "2.6"))
+            for y, values in zip((102, 132, 162, 192), texts):
+                for x, value in zip((46, 130, 218, 299), values):
+                    page.insert_text((x, y), value)
+            store = ScanLibrary(Path(directory))
+            docid = store.add(pdf.tobytes(), "conditions.pdf")["doc"]["id"]
+            doc = store.records([docid])[0]
+            wrong = answer_native_table(store, doc, "In Table 4, what F1 does Alpha report on Set-West?")
+            self.assertIsNone(wrong["answer"])
+            self.assertTrue(wrong["gap"])
+            partial = answer_native_table(store, doc, "What are Alpha's F1 and latency for Set-East in Table 4?")
+            self.assertIn("81.4", partial["answer"])
+            self.assertIn("Latency", partial["gap"])
+            self.assertEqual([cell["value"] for cell in partial["table_cells"]], ["81.4", None])
+            paired = answer_native_table(store, doc,
+                "In Table 4, what F1 does Alpha report on Set-East and what latency does Beta report on Set-West?")
+            self.assertEqual([(cell["row"], cell["column"], cell["value"]) for cell in paired["table_cells"]],
+                             [(2, 3, "81.4"), (3, 4, "3.7 ms")])
+
     def test_native_hierarchical_caption_and_physical_cell(self):
         with TemporaryDirectory() as directory, pymupdf.open() as pdf:
             page = pdf.new_page(width=420, height=480)

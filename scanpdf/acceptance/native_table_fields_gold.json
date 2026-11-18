@@ -1,0 +1,12 @@
+[
+ {"doc":"2210.02414v2.pdf","page":48,"q":"表 11 里 optimizer、distributed backend、position embedding type 和 num layers 分别是什么？","want":["adam","nccl","rotary","70"]},
+ {"doc":"2210.02414v2.pdf","page":48,"q":"What are the global batch size, fp16 setting and seq_length in the configuration table?","want":["4224","True","2048"]},
+ {"doc":"2210.02414v2.pdf","page":48,"q":"What is the ion-mobility calibration setting in Table 11?","want":null},
+ {"doc":"2205.14135v2.pdf","page":7,"q":"What training time in minutes does Table 1 report for Nvidia MLPerf 1.1 and FlashAttention?","want":["20.0 ± 1.5","17.4 ± 1.4"]},
+ {"doc":"2010.11929v2.pdf","page":13,"q":"For ViT-B/{16,32} trained on ImageNet-21k in Table 3, give epochs, LR decay, weight decay, and dropout.","want":["90","linear","0.03","0.1"]},
+ {"doc":"2010.11929v2.pdf","page":13,"q":"In Table 3, how many epochs did ViT-B/{16,32} use on JFT-300M and ImageNet-21k?","want":["7","90"]},
+ {"doc":"2010.11929v2.pdf","page":13,"q":"In Table 3, how many epochs did ViT-B/{16,32} use?","want":null},
+ {"doc":"2106.09685v2.pdf","page":20,"q":"What batch size, warmup steps, dropout probability and learning rate schedule were used for DART in Table 11?","want":["8","500","0.0","Linear"]},
+ {"doc":"2211.05100v4.pdf","page":21,"q":"For BLOOM-7.1B in Table 3, how many layers and attention heads, and what was its hidden dimension?","want":["30","32","4096"]},
+ {"doc":"unlabeled.pdf","page":1,"q":"On page 1, what controller, actuator and power source are listed for Bench A?","want":["MICA-9","Linear drive","18 V"]}
+]
