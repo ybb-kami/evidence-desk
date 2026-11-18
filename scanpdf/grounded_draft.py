@@ -131,8 +131,10 @@ def route(handler):
     result = lookup(store, {k: request[k] for k in ("id", "question", "anchor")}, dense=store.dense)
     # Preserve scope restrictions when multiple source entries match or a
     # located exercise statement cannot substantiate the requested solution.
-    structured = "table_cells" in result or result.get("answer_method") in {"book_index", "exercise_locator"}
-    if structured and not result.get("answer") and not result.get("exercise", {}).get("read_statement"):
+    structured = ("table_cells" in result or result.get("answer_method") in {"book_index", "exercise_locator"}
+                  or result.get("training_scale", {}).get("status") == "ambiguous")
+    partial = result.get("index_status") == "partial" or result.get("exercise", {}).get("completeness") == "partial"
+    if partial or (structured and not result.get("answer") and not result.get("exercise", {}).get("read_statement")):
         return handler.payload(200, {"status": "insufficient_evidence", "claims": []})
     try:
         flash = handler.flash_model()

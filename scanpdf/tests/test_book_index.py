@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import workbench
 from book_index import answer
@@ -125,7 +125,7 @@ class BookIndexRetrievalFallbackTests(unittest.TestCase):
         doc = self.doc if doc is None else doc
         return ranked_passages(doc, question, workbench.engine.find_evidence([doc], question))
 
-    def test_unquoted_multipart_english_and_chinese_keep_ranked_candidates_only(self):
+    def test_unquoted_multipart_english_and_chinese_use_exact_index_rows(self):
         questions = (
             ("Can you check the alphabetical index and tell me where it points for drift correction and beam monitoring?", 2),
             ("请查看末尾的索引，告诉我漂移校正和束流监测分别有哪些印刷页。", 3),
@@ -133,13 +133,10 @@ class BookIndexRetrievalFallbackTests(unittest.TestCase):
         for question, index_block in questions:
             with self.subTest(question=question):
                 result = self.ask(question)
-                candidates, retrieval = self._ordinary_candidates(question)
                 self.assertEqual(result["answer_method"], "book_index")
-                self.assertEqual(result["index_status"], "unresolved")
-                self.assertIsNone(result["answer"])
-                self.assertTrue(result["gap"])
-                self.assertEqual((result["hits"], result["retrieval"]), (candidates, retrieval))
-                self.assertEqual((result["hits"][0]["page"], result["hits"][0]["block"]), (30, index_block))
+                self.assertIsNone(result["gap"])
+                self.assertEqual([item["printed_pages"] for item in result["book_index_items"]], [["12–14"], ["16"]])
+                self.assertEqual([(hit["page"], hit["block"]) for hit in result["hits"]], [(30, index_block)] * 2)
         self.generator.answer.assert_not_called()
         self.store.passage_reader.candidates.assert_not_called()
 
@@ -153,11 +150,10 @@ class BookIndexRetrievalFallbackTests(unittest.TestCase):
         self.assertEqual([(hit["page"], hit["block"]) for hit in result["hits"]], [(6, 1)])
 
     def test_unresolved_anchor_stays_in_selected_index_passage(self):
-        question = "Can you check the alphabetical index and tell me where it points for drift correction and beam monitoring?"
+        question = "Can you check the alphabetical index and tell me where drift correction and beam monitoring calibration go?"
         result = self.ask(question, [30, 2, 1])
         chunk = next(chunk for chunk in self.doc["chunks"] if (chunk["page"], chunk["block"]) == (30, 2))
         candidates, _ = self._ordinary_candidates(question, dict(self.doc, chunks=[chunk]))
-        self.assertTrue(candidates)
         self.assertEqual(result["hits"], candidates)
         self.assertIsNone(result["answer"])
         outside = self.ask(question, [9, 1, 1])
@@ -170,6 +166,29 @@ class BookIndexRetrievalFallbackTests(unittest.TestCase):
         self.assertNotIn("retrieval", result)
         hit, = result["hits"]
         self.assertEqual(hit["text"][hit["start"]:hit["end"]], "Quartz tubes, 18, 23")
+
+    def test_unknown_item_preserves_gap_and_does_not_borrow_shared_prefix(self):
+        result = self.ask('What printed pages does the book index list for "Quartz tubes" and drift correction offset?')
+        self.assertEqual([item["term"] for item in result["book_index_items"]], ["Quartz tubes"])
+        self.assertIn("drift correction offset", result["gap"])
+        self.assertEqual(result["index_status"], "partial")
+        uncertain = self.ask("What printed pages does the book index list for drift correction offset?")
+        self.assertIsNone(uncertain["answer"])
+
+    def test_source_bilingual_alias_and_same_root_ambiguity(self):
+        self.doc["chunks"][3]["text"] += "\nWaveguide (波导), 34\nResonant modes, 42\nResonant mode, 51"
+        result = self.ask("按书末索引，波导对应哪些印刷页？")
+        self.assertEqual(result["book_index"]["term"], "Waveguide (波导)")
+        self.assertEqual(result["book_index"]["printed_pages"], ["34"])
+        self.assertIsNone(self.ask("What pages does the book index list for resonant?")["answer"])
+        self.assertIsNone(self.ask('Which pages does the book index list for "Quartz tubes" rather than "Drift correction"?')["answer"])
+
+    def test_optional_translation_only_matches_complete_source_label(self):
+        with patch("hybrid_retrieval.english_query", return_value="drift correction"):
+            result = self.ask("书末索引将偏移标定指向哪些印刷页？")
+        self.assertEqual(result["book_index"]["term"], "Drift correction")
+        with patch("hybrid_retrieval.english_query", return_value="drift correction offset"):
+            self.assertIsNone(self.ask("书末索引将偏移标定指向哪些印刷页？")["answer"])
 
 
 if __name__ == "__main__":

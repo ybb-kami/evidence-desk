@@ -91,6 +91,10 @@ def lookup(store, request, *, dense=None):
     definition = abbreviation_answer(doc, question, chunk)
     if definition is not None:
         return definition
+    from training_scale import read_scale
+    scale = read_scale(doc, question, chunk)
+    if scale is not None:
+        return scale
     from scan_table_qa import answer_native_table, answer_scan_table
     metric = None
     if anchor is None:
@@ -202,6 +206,7 @@ def answer_question(store, request, *, on_delta=None, generator=None):
     parts = hardware_clauses(split_question(request["question"]))
     from direct_coverage import covers_parts
     if (len(parts) == 1 or full.get("exercise", {}).get("read_statement")
+            or full.get("exercise", {}).get("statement_fields")
             or (full.get("training_hardware") and hardware_parts(parts)) or covers_parts(full, parts)):
         return _answer_one(store,request,full,on_delta=on_delta,generator=generator)
     results=[]

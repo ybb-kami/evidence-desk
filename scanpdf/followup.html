@@ -7,6 +7,7 @@ label{display:block;font-weight:600}select,input,button{font:inherit;padding:.45
 select,input{width:100%;margin:.3rem 0 .6rem}button{cursor:pointer}button:disabled{cursor:default}button.primary{background:#18574d;color:white}
 blockquote{white-space:pre-wrap;overflow-wrap:anywhere;margin:.5rem 0;padding-left:.8rem;border-left:3px solid #b2c7ba}h2{font-size:1.15rem}
 article{padding:.7rem 0;border-top:1px solid #d6dfd8}article a{margin-right:.7rem}
+#flash-status{margin:.15rem 0 .7rem;color:#425b51;font-size:.92rem;overflow-wrap:anywhere}
 .model-receipt{margin:.45rem 0;padding:.35rem .6rem;background:#f2f6f2;border-left:3px solid #7d9e8c;font-size:.92rem;overflow-wrap:anywhere}
 .model-receipt[data-state="failed"]{background:#fff3ec;border-color:#a45437}
 </style>
@@ -15,7 +16,8 @@ article{padding:.7rem 0;border-top:1px solid #d6dfd8}article a{margin-right:.7re
 <div id="history" aria-live="polite"></div>
 <form id="ask"><p id="scope">检索范围：当前文献全文</p><button type="button" id="release" hidden>返回全文范围</button>
 <label for="question">问题</label><input id="question" maxlength="500" required autocomplete="off">
-<label><input type="checkbox" id="flash-consent" style="width:auto"> 本次允许 DeepSeek Flash 接收问题和命中摘录以生成回答</label>
+<label><input type="checkbox" id="flash-consent" aria-describedby="flash-status" style="width:auto"> 本次允许 DeepSeek Flash 接收问题和命中摘录以生成回答</label>
+<p id="flash-status" role="status">正在读取 DeepSeek Flash 配置…</p>
 <button class="primary" id="send">查找原文</button> <button type="button" id="clear">清空会话</button></form><p id="status" role="status"></p></main>
 <script>
 'use strict';
@@ -63,6 +65,19 @@ function cite(hit){
 const localMethods=new Set(['local_extractive','direct_measurement','source_fields','abbreviation',
   'table_calculation','scan_table','native_table','book_index','exercise_locator']);
 const flashModel='DeepSeek-V4.1-Flash-1017';
+async function loadFlashStatus(){
+  const message=byId('flash-status');
+  try{
+    const response=await fetch('/api/model-status');
+    if(!response.ok)throw Error();
+    const {provider,model,configured,release_verified,model_price_configured}=await response.json();
+    if(provider!=='deepseek'||model!==flashModel||[configured,release_verified,model_price_configured].some(value=>typeof value!=='boolean'))throw Error();
+    const config=configured?'服务端已配置':'服务端未配置或未启用';
+    const pricing=configured&&!model_price_configured?' · 模型费率未配置':'';
+    const release=configured&&release_verified?'型号已核验':'型号尚未核验';
+    message.textContent=`${config}${pricing} · 目标型号 ${flashModel} · ${release}。`;
+  }catch(error){message.textContent='暂时无法读取 DeepSeek Flash 状态，仍可查找本地原文。';}
+}
 function receipt(state,text){
   const result=node('p','模型回执 · '+text);
   result.className='model-receipt'; result.dataset.state=state;
@@ -200,7 +215,9 @@ byId('ask').onsubmit=async event=>{
     if(!data.fields?.length && (data.gap || !data.hits.length)) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
     for(const hit of data.hits)turn.append(cite(hit));
     const alreadyReplied=consent && (data.fields?.length ? data.fields.every(verifiedFlashReply) : verifiedFlashReply(data));
-    const structuredGap=!data.answer && (data.table_cells || ['book_index','exercise_locator'].includes(data.answer_method));
+    const structuredGap=data.training_scale?.status==='ambiguous' || data.index_status==='partial' ||
+      data.exercise?.completeness==='partial' ||
+      (!data.answer && (data.table_cells || ['book_index','exercise_locator'].includes(data.answer_method)));
     if(data.model_available && data.hits.length && !structuredGap && !alreadyReplied)
       modelDraft(turn,question,id,current);
     historyBox.append(turn); field.value=''; byId('status').textContent='';
@@ -210,6 +227,7 @@ byId('ask').onsubmit=async event=>{
   }
   finally{if(active===version)byId('send').disabled=false;}
 };
+loadFlashStatus();
 (async()=>{
   try{
     const response=await fetch('/api/library');

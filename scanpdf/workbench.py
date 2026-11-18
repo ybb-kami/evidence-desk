@@ -19,6 +19,7 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE))
 from scanpdf import parse_pdf as recognize_pdf
 from scanpdf import refresh_cached_figures
+from scanpdf.math_cells import review_math_cells
 import app
 import engine
 from graph import _blocks
@@ -90,7 +91,7 @@ class ScanLibrary(app.Library):
             raise app.Bad(400, "物理页码超出文献范围。")
         return docs[0]
 
-    def page_info(self, docid, number):
+    def page_info(self, docid, number, *, raw_cache=False):
         doc = self.lookup(docid, number)
         with closing(sqlite3.connect(self.db)) as db:
             row = db.execute("SELECT result FROM scan_pages WHERE id=? AND page=?",
@@ -99,17 +100,25 @@ class ScanLibrary(app.Library):
         page = json.loads(zlib.decompress(row[0])) if row else None
         revision = page.get("region_revision", 0) if page is not None else None
         native_textless = doc.get("native_textless", doc["textless_pages"])
-        return {"doc": app.summary(doc), "native_textless": native_textless,
+        info = {"doc": app.summary(doc), "native_textless": native_textless,
                 "pending_pages": [n for n in native_textless if n not in completed],
                 "region_revision": revision,
                 "region_update_available": revision is not None and revision < self.REGION_REVISION,
                 "page": page}
+        return info if raw_cache else self._visible_page(info)
+
+    @staticmethod
+    def _visible_page(info):
+        page = info["page"]
+        if page is not None:
+            review_math_cells(page["regions"])
+        return info
 
     def recognize(self, docid, number, *, region_revision=None):
         if not self.worker.acquire(blocking=False):
             raise app.Bad(409, "正在处理其他页面，请稍后重试。")
         try:
-            info = self.page_info(docid, number)
+            info = self.page_info(docid, number, raw_cache=True)
             cached = info["page"]
             if region_revision is not None:
                 if type(region_revision) is not int or region_revision < 0:
@@ -117,11 +126,11 @@ class ScanLibrary(app.Library):
                 if cached is None:
                     raise app.Bad(400, "请先识别本页。")
                 if not info["region_update_available"]:
-                    return info
+                    return self._visible_page(info)
                 if region_revision != info["region_revision"]:
                     raise app.Bad(409, "区域修订号已变化，请重新读取本页。")
             elif cached is not None:
-                return info
+                return self._visible_page(info)
             elif number not in info["native_textless"]:
                 raise app.Bad(400, "本页已有原生文字。")
             with tempfile.TemporaryDirectory() as folder:

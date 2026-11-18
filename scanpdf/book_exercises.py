@@ -225,6 +225,39 @@ def _sampling_dimensions(hits, question):
     return next(iter(found.items())) if len(found) == 1 else ((), None)
 
 
+def _statement_answer(result, question, zh):
+    from book_exercise_fields import statement_fields
+
+    fields, unhandled = statement_fields(question, result['hits'])
+    if not fields:
+        return None
+    answers, gaps, linked = [], [], {}
+    for field in fields:
+        if field.value:
+            answers.append(f'{field.label}：{field.value}' if zh else f'{field.label}: {field.value}')
+        elif field.reason == 'symbolic':
+            gaps.append(f'{field.label}只写成 {field.observation}，未给数值' if zh else
+                        f'{field.label} is written as {field.observation}. The statement gives no numeric value')
+        elif field.reason == 'ambiguous':
+            gaps.append(f'{field.label}有多个候选，题干未明确指向题问所需的一项' if zh else
+                        f'The statement does not identify one matching {field.label.lower()}')
+        else:
+            gaps.append(f'题干未明确给出{field.label}' if zh else f'{field.label} remains unconfirmed in the statement')
+        for hit in field.hits:
+            key = (hit['page'], hit['block'], hit.get('part', 1), hit['start'], hit['end'])
+            linked.setdefault(key, hit)
+    for part in unhandled:
+        quoted = part[:180].rstrip('？?，,。.')
+        gaps.append(f'题干未明确支持「{quoted}」' if zh else f'The statement does not directly support “{quoted}”')
+    result['exercise'].update(statement_fields=True,
+                              fields=[{'name': field.name, 'value': field.value, 'reason': field.reason} for field in fields],
+                              completeness='partial' if answers and gaps else 'complete' if answers else 'insufficient_evidence')
+    end = '。' if zh else '. '
+    return dict(result, answer=end.join(answers) + end.strip() if answers else None,
+                gap=end.join(gaps) + end.strip() if gaps else None,
+                hits=list(linked.values()) or result['hits'])
+
+
 def locate_exercise(doc, question):
     """Return verbatim exercise evidence, with a location or a bounded evidence gap."""
     requested = _request(question)
@@ -260,10 +293,11 @@ def locate_exercise(doc, question):
     exercise = {"status": "located", "number": number, "family": heading.family, "page": page,
                 "pages": list(dict.fromkeys(hit["page"] for hit in hits))}
     result = dict(responses, hits=hits, exercise=exercise)
-    if _SOLVE.search(question):
-        return dict(result, gap="已定位题干。当前原文证据只支持题目要求，无法据此验证解答。")
     zh = re.search(r"[㐀-鿿]", question)
-    dimension_field = _sampling_dimensions(hits, unicodedata.normalize("NFKC", question))
+    from question_parts import split_question
+
+    dimension_field = (_sampling_dimensions(hits, unicodedata.normalize("NFKC", question))
+                       if not _SOLVE.search(question) and len(split_question(question)) == 1 else None)
     if dimension_field is not None:
         values, support = dimension_field
         if not values:
@@ -274,6 +308,11 @@ def locate_exercise(doc, question):
         answer = (f"题干要求在 {'、'.join(values)} 维采样。" if zh
                   else f"The exercise specifies sampling in {', '.join(values)} dimensions.")
         return dict(result, answer=answer, hits=supported, gap=None)
+    details = _statement_answer(result, question, zh)
+    if details is not None:
+        return details
+    if _SOLVE.search(question):
+        return dict(result, gap="已定位题干。当前原文证据只支持题目要求，无法据此验证解答。")
     remainder = _QUERY.sub(" ", unicodedata.normalize("NFKC", question))
     if not _LOCATION_ONLY.fullmatch(remainder):
         exercise["read_statement"] = True

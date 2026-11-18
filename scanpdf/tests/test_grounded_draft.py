@@ -92,6 +92,16 @@ class GroundedDraftTests(unittest.TestCase):
                 handler.payload.assert_called_with(200, {"status": "insufficient_evidence", "claims": []})
                 handler.flash_model.assert_not_called()
 
+    def test_partial_structured_answers_keep_the_missing_fields(self):
+        handler = Mock()
+        handler.server = SimpleNamespace(enable_model=True, library=SimpleNamespace(dense=None))
+        handler.json_request.return_value = {"id": self.hits[0]["id"], "question": "Both?", "anchor": None, "consent": True}
+        for incomplete in ({"index_status": "partial"}, {"exercise": {"completeness": "partial"}}):
+            with self.subTest(incomplete=incomplete), patch("followup.lookup", return_value={"hits": self.hits, "answer": "First field", **incomplete}):
+                draft.route(handler)
+                handler.payload.assert_called_with(200, {"status": "insufficient_evidence", "claims": []})
+                handler.flash_model.assert_not_called()
+
     def test_route_propagates_budget_denial_without_falling_back(self):
         handler = Mock()
         handler.server = SimpleNamespace(enable_model=True, library=SimpleNamespace(dense=None))

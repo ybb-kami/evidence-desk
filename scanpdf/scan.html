@@ -65,6 +65,9 @@ function highlight(box) {
     width:100*(right-left)/width+'%',height:100*(bottom-top)/height+'%'});
   mark.hidden = false;
 }
+function cellLabel(cell) {
+  return cell.status === 'math_unverified' ? '数学式需核对原图' : cell.text || '空白或未读出';
+}
 function selectItem(item, button, cell, captionFocus=false) {
   const captionSelected = captionFocus || item.type==='figure_caption';
   const box = captionSelected ? item.caption_bbox_pt : cell?.bbox_pt || item.bbox_pt;
@@ -74,7 +77,10 @@ function selectItem(item, button, cell, captionFocus=false) {
   formulaLink(item.type==='formula' ? item.id : null);
   const detail = byId('detail');
   const coordinate = captionSelected ? '图注框' : item.type==='figure' ? '图框' : '框';
-  detail.textContent = (cell ? cell.text || '空白或未读出' : item.description) +
+  let description = cell ? cellLabel(cell) : item.description;
+  if (cell?.status === 'math_unverified' && cell.ocr_raw?.text)
+    description += '\n原始 OCR（未核验） '+cell.ocr_raw.text;
+  detail.textContent = description +
     '\n物理页 '+page.value+' · '+coordinate+'坐标（点） '+box.map(n=>n.toFixed(1)).join(', ');
   if (item.type==='figure' && item.caption_bbox_pt) {
     const action = document.createElement('button');
@@ -96,7 +102,7 @@ function selectItem(item, button, cell, captionFocus=false) {
   cells.id = 'table-cell';
   cells.add(new Option('整张表',''));
   for (const c of item.cells) {
-    const opt = new Option('第 '+c.row+' 行，第 '+c.column+' 列 · '+(c.text || '空白或未读出'), c.row+','+c.column);
+    const opt = new Option('第 '+c.row+' 行，第 '+c.column+' 列 · '+cellLabel(c), c.row+','+c.column);
     cells.add(opt);
   }
   if (cell) cells.value = cell.row+','+cell.column;
@@ -118,7 +124,7 @@ function showResults() {
   const items = [];
   for (const region of evidence.regions) {
     const title = (region.type==='table'?'表格':'公式')+' '+region.id;
-    const cells = (region.cells || []).map(cell=>'第 '+cell.row+' 行，第 '+cell.column+' 列  '+(cell.text || '空白或未读出'));
+    const cells = (region.cells || []).map(cell=>'第 '+cell.row+' 行，第 '+cell.column+' 列  '+cellLabel(cell));
     const description = [title,statusLabels[region.status] || region.status,region.text,...cells].filter(Boolean).join('\n');
     items.push({...region,title,description});
   }

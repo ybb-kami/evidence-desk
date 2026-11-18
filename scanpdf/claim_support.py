@@ -31,7 +31,9 @@ def _sentence_around(hit, start, end):
 
 
 def _scalars(text):
-    return [(m.group().strip(),(m[1] or "").casefold()) for m in _SCALAR.finditer(text)]
+    # A hyphenated identifier (for example a model generation) is not a scalar.
+    return [(m.group().strip(), (m[1] or "").casefold()) for m in _SCALAR.finditer(text)
+            if not re.search(r"[A-Za-z][A-Za-z0-9]*[-‐‑]$", text[max(0, m.start()-80):m.start()])]
 
 
 def check(question, english, hits, claim):

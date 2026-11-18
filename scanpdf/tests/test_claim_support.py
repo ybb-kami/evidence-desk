@@ -1,7 +1,7 @@
 import unittest
 
 import workbench
-from claim_support import check
+from claim_support import _scalars, check
 from evidence_context import MAX_SOURCE_CHARS, MAX_SOURCES, select_excerpts
 
 
@@ -11,6 +11,10 @@ def findings(text, quote, answer):
 
 
 class ClaimSupportTests(unittest.TestCase):
+    def test_model_identifier_is_not_a_reported_measurement(self):
+        self.assertEqual(_scalars("Juniper-17 and Orchid‑4 were compared."), [])
+        self.assertEqual(_scalars("Juniper-17 reached -3 Hz."), [("-3 Hz", "hz")])
+
     def test_splits_and_fields(self):
         text="The test split contained 95 annotated items. The validation split contained 71 annotated items."
         self.assertEqual(check("How many annotated items were in the validation split?", "", *findings(text,"95 annotated","95")), "different_condition")

@@ -4,6 +4,8 @@ from collections import defaultdict
 import re
 import unicodedata
 
+from book_index_matching import candidates, has_exclusion, natural_terms, split_terms, vocabulary, words
+
 
 _INDEX_REQUEST = re.compile(
     r"\b(?:back[- ]of[- ](?:the[- ])?book|book(?:['’]s)?|printed|subject|general|alphabetical|term|name|author)\s+index\b"
@@ -49,18 +51,12 @@ def _term_key(text):
 
 
 def _request(question):
-    # None delegates other questions. An empty term marks an explicit request
-    # whose results can only be offered as candidates for manual inspection.
     text = " ".join(unicodedata.normalize("NFKC", question).split()).strip(" ?？。!")
     if not (_INDEX_REQUEST.search(text) and _LOCATORS.search(text)) or _TOPIC.search(text):
         return None
     quoted = [next(group for group in match.groups() if group is not None) for match in _QUOTED.finditer(text)]
-    if quoted:
-        term = quoted[0] if len(quoted) == 1 else ""
-    else:
-        term = next((match[1] for pattern in _TERMS if (match := pattern.search(text))), "")
-    term = term.strip(" \t,:，：。?？'\"’‘“”")
-    return term if 0 < len(term) <= 160 else ""
+    phrase = next((match[1] for pattern in _TERMS if (match := pattern.search(text))), "")
+    return text, quoted, phrase.strip(" \t,:，：。?？'\"’‘“”")
 
 
 def _entries(text):
@@ -121,44 +117,78 @@ def _index_pages(doc):
 
 
 def answer(doc, question, anchor=None):
-    term = _request(question)
-    if term is None:
+    request = _request(question)
+    if request is None:
         return None
-    wording = _term_key(question).replace(_term_key(term), "", 1) if term else question
-    zh = bool(re.search(r"[\u3400-\u9fff]", wording))
+    text, quoted, phrase = request
+    zh = bool(re.search(r"[\u3400-\u9fff]", text))
     result = {"answer_method": "book_index", "answer": None, "gap": None, "hits": []}
     final_page_only = _LAST_PAGE.search(question)
-    pages = _index_pages(doc) if term or anchor is not None else ()
-    scope = {page: rows for page, rows in pages if not final_page_only or page == doc["pages"]}
+    scope = {page: rows for page, rows in _index_pages(doc) if not final_page_only or page == doc["pages"]}
     if anchor is not None and anchor["page"] not in scope:
         return dict(result, gap=("所选证据段落不属于本次可核对的书末索引范围。" if zh else
                                  "The selected passage is outside the book index scope for this question."))
-    if not term:
-        return dict(result, index_status="unresolved",
-                    gap=("要核对确切印刷页码，请一次指定一个完整的索引词条。" if zh else
-                         "Specify one complete index entry label to verify its printed page references."))
-    key = _term_key(term)
     labels = doc.get("page_labels", ())
-    matches = {}
+    catalog = defaultdict(dict)
     for page, records in scope.items():
         label = labels[page - 1] if 0 < page <= len(labels) else str(page)
         for chunk, source_term, refs, start, end in records:
             block, part = chunk["block"], chunk.get("part", 1)
-            if (anchor is not None and (page, block, part) != (anchor["page"], anchor["block"], anchor.get("part", 1))) or _term_key(source_term) != key:
+            if anchor is not None and (page, block, part) != (anchor["page"], anchor["block"], anchor.get("part", 1)):
                 continue
             offset = chunk.get("offset")
             source = (page, block, offset + start, offset + end) if type(offset) is int else (page, block, part, start, end)
             hit = dict(chunk, id=doc["id"], name=doc["name"], part=part, page_label=label, start=start, end=end)
-            matches.setdefault(source, (hit, source_term, refs))
-    if len(matches) != 1:
-        if matches:
-            gap = (f"索引中有多个「{term}」条目。请选中具体索引段落，或提供更完整的词条。" if zh else
-                   f"Multiple index entries match ‘{term}’. Select a specific index passage or provide its full label.")
-            return dict(result, gap=gap, hits=[match[0] for match in list(matches.values())[:5]])
-        gap = (f"在可核对的索引范围内没有找到「{term}」的完整词条和印刷页码。" if zh else
-               f"No exact entry with printed page references for ‘{term}’ was found in the available index.")
-        return dict(result, gap=gap, index_status="unresolved")
-    hit, source_term, refs = next(iter(matches.values()))
+            catalog[source_term].setdefault(source, (hit, refs))
+    vocab = vocabulary(catalog)
+    explicit = split_terms(phrase, vocab)
+    if quoted and not set(map(words, quoted)) <= set(map(words, explicit)):
+        explicit = quoted
+    natural = natural_terms(text, vocab)
+    terms = [] if has_exclusion(text) else (natural if len(natural) >= len(explicit) else explicit)
+    if not terms or len(terms) > 6 or any(len(term) > 160 for term in terms):
+        return dict(result, index_status="unresolved",
+                    gap=("请给出需要核对的完整索引词条。" if zh else
+                         "Specify the full index labels to verify their printed page references."))
+    items, answers, gaps, evidence = [], [], [], {}
+    resolved_sources = set()
+    for term in terms:
+        exact = {label for label in catalog if _term_key(label) == _term_key(term)}
+        names = exact or candidates(vocab, term, translate=True)
+        matches = [(source, label, hit, refs) for label in catalog if label in names
+                   for source, (hit, refs) in catalog[label].items()]
+        if len(matches) != 1:
+            if matches:
+                gaps.append((f"索引中有多个「{term}」条目。请指定具体索引段落。" if zh else
+                             f"Multiple index entries match ‘{term}’. Specify the exact passage."))
+                for source, _, hit, _ in matches[:5]:
+                    evidence.setdefault(source, hit)
+            else:
+                gaps.append((f"未能在原索引核对「{term}」的印刷页码。" if zh else
+                             f"No index entry verifies printed pages for ‘{term}’."))
+            continue
+        source, label, hit, refs = matches[0]
+        if source in resolved_sources:
+            continue
+        resolved_sources.add(source)
+        evidence.setdefault(source, hit)
+        summary, item = _describe(label, refs, hit, zh)
+        answers.append(summary)
+        items.append(item)
+    hits = sorted(evidence, key=lambda source: source not in resolved_sources)
+    result.update(answer="\n".join(answers) or None, gap=" ".join(gaps) or None, hits=[evidence[source] for source in hits[:12]])
+    if not items and not evidence:
+        result["index_status"] = "unresolved"
+    if items:
+        result["book_index_items"] = items
+        if len(items) == len(terms) == 1:
+            result["book_index"] = items[0]
+        if gaps:
+            result["index_status"] = "partial"
+    return result
+
+
+def _describe(source_term, refs, hit, zh):
     page, label = hit["page"], hit["page_label"]
     if zh:
         location = f"PDF 物理第 {page} 页" + (f"（PDF 页标签 {label}）" if label != str(page) else "")
@@ -167,5 +197,4 @@ def answer(doc, question, anchor=None):
         location = f"PDF physical page {page}" + (f" (page label {label})" if label != str(page) else "")
         text = f"The index entry ‘{source_term}’ lists printed page references {', '.join(refs)}. The entry is on {location}."
     source = {key: hit[key] for key in ("id", "page", "block", "part", "start", "end")}
-    return dict(result, answer=text, hits=[hit], book_index={"term": source_term, "printed_pages": refs,
-                "physical_page": page, "page_label": label, "anchor": source})
+    return text, {"term": source_term, "printed_pages": refs, "physical_page": page, "page_label": label, "anchor": source}

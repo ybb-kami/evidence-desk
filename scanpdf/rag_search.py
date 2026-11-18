@@ -1,9 +1,32 @@
 """Combine independent rankings of the same passages within one selected document."""
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from comparison_retrieval import paired_measurements
 from hybrid_retrieval import retrieve, retrieve_candidates, retrieve_phrase_candidates
 from semantic import DenseUnavailable
+
+
+def _key(hit):
+    return hit["id"], hit["page"], hit["block"], hit.get("part", 1)
+
+
+def _select(ranked, scores, limit, *, diversify):
+    keys = sorted(ranked, key=lambda key: ("paired-measurements" not in ranked[key]["retrieval_ranks"], -scores[key]))
+    if not diversify:
+        return keys[:limit]
+    pages = Counter()
+    selected = []
+    while keys and len(selected) < limit:
+        def priority(key):
+            paired = "paired-measurements" in ranked[key]["retrieval_ranks"]
+            score = scores[key] * (1 - 0.12 * min(pages[key[:2]], 2)) if not paired else scores[key]
+            return paired, score
+
+        key = max(keys, key=priority)
+        keys.remove(key)
+        selected.append(key)
+        pages[key[:2]] += 1
+    return selected
 
 
 def ranked_passages(doc, question, original, dense=None, *, limit=8, recall_bm25=True):
@@ -46,16 +69,28 @@ def ranked_passages(doc, question, original, dense=None, *, limit=8, recall_bm25
     scores = defaultdict(float)
     for method, hits in zip(methods, rankings):
         for rank, hit in enumerate(hits, start=1):
-            key = (hit["id"], hit["page"], hit["block"], hit.get("part", 1))
+            key = _key(hit)
             if key not in ranked:
                 ranked[key] = dict(hit, retrieval_ranks={})
             elif method == "paired-measurements":
                 ranked[key].update(start=hit["start"], end=hit["end"])
             ranked[key]["retrieval_ranks"][method] = rank
             scores[key] += 1 / (20 + rank)
+    hybrid = bool(semantic_hits and (sparse or expanded or original))
+    if hybrid and "keyword" not in methods:
+        # Only corroborate already-considered passages. This lexical signal
+        # cannot independently introduce a hit or replace the sparse channel.
+        method = "keyword-corroboration"
+        for rank, hit in enumerate(original[:2 * limit], start=1):
+            key = _key(hit)
+            if key in ranked:
+                ranked[key]["retrieval_ranks"][method] = rank
+                scores[key] += 0.35 / (20 + rank)
+        if any(method in hit["retrieval_ranks"] for hit in ranked.values()):
+            methods.append(method)
     hits = []
     # At most two passages containing both named subjects and the requested
     # repeated unit precede the broader topical matches.
-    for key in sorted(ranked, key=lambda k: ("paired-measurements" not in ranked[k]["retrieval_ranks"], -scores[k]))[:limit]:
+    for key in _select(ranked, scores, limit, diversify=hybrid):
         hits.append(dict(ranked[key], score=round(scores[key], 6)))
     return hits, {"methods": methods, "dense": semantic_status}

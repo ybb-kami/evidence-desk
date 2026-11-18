@@ -49,6 +49,14 @@ def models(page, state):
     return newest.locator(f'.model-receipt[data-state="{state}"]')
 
 
+def check_model_status(page, text):
+    label = page.locator('#flash-status')
+    expect(label).to_contain_text(text)
+    expect(label).not_to_contain_text('已接通')
+    expect(page.locator('#flash-consent')).to_have_attribute('aria-describedby', 'flash-status')
+    expect(page.locator('#flash-consent')).not_to_be_checked()
+
+
 def manual_draft(page, doc_id, log, outbound):
     turn = page.locator('#history > section').last
     button = turn.get_by_role('button', name=DRAFT_BUTTON)
@@ -117,6 +125,16 @@ def render_examples(page):
     expect(models(page, 'declined')).to_have_count(1)
     expect(page.locator('#history > section').last).to_contain_text('短语匹配 · 扩展词项检索')
 
+    ambiguous = {'model_available': True, 'training_scale': {'status': 'ambiguous'},
+                 'gap': '原文提供互相矛盾的训练量。', 'hits': [
+                     {'id': 'a' * 64, 'page': 1, 'block': 1, 'part': 1, 'text': 'We used 15 samples.'},
+                     {'id': 'a' * 64, 'page': 1, 'block': 2, 'part': 1, 'text': 'We used 20 samples.'}]}
+    page.route(pattern, lambda route: route.fulfill(json=ambiguous), times=1)
+    ask(page, 'How many training samples were used?', True)
+    newest = page.locator('#history > section').last
+    expect(newest).to_contain_text(ambiguous['gap'])
+    expect(newest.get_by_role('button', name=DRAFT_BUTTON)).to_have_count(0)
+
     page.route(pattern, lambda route: route.fulfill(status=503, json={'error': '本轮预算不可用。'}), times=1)
     ask(page, 'Fictional unavailable request', True, expect_http=503)
     expect(page.locator('#status')).to_contain_text('未确认模型返回')
@@ -133,9 +151,17 @@ def run(chromium):
             assert live.write_or_verify_fixture(port, data, digest)
             page = browser.new_page()
             enter_from_library(page, port, digest)
+            check_model_status(page, '服务端未配置或未启用')
+            expect(page.locator('#flash-status')).to_contain_text('型号尚未核验')
             response = ask(page, live.PAGE_QUERY, True)
             assert response['model_status'] == 'not_configured'
             expect(models(page, 'not-configured')).to_contain_text('服务端未配置或未启用')
+            page.route('**/api/model-status', lambda route: route.abort(), times=1)
+            enter_from_library(page, port, digest)
+            check_model_status(page, '暂时无法读取 DeepSeek Flash 状态，仍可查找本地原文')
+            offline = ask(page, live.PAGE_QUERY, False)
+            assert any(hit['id'] == digest and hit['page'] == live.ANSWER_PAGE for hit in offline['hits'])
+            expect(models(page, 'not-authorized')).to_contain_text('本次未授权')
             page.close()
         with TemporaryDirectory(prefix='evidence-followup-receipts-') as temp, worker(Path(temp)) as (port, _, log):
             assert live.write_or_verify_fixture(port, data, digest)
@@ -147,6 +173,10 @@ def run(chromium):
             page.on('request', lambda event: outbound.append(event) if '/api/followup' in event.url else None)
             page.on('popup', lambda opened: popups.append(opened))
             enter_from_library(page, port, local_id)
+            check_model_status(page, '服务端已配置')
+            expect(page.locator('#flash-status')).to_contain_text('型号尚未核验')
+            expect(page.locator('#flash-status')).to_contain_text(live.MODEL)
+            assert not counts(log), 'Model status must not contact the provider'
             answer = ask(page, OPTICAL_QUESTION, True)
             assert answer['answer_method'] == 'direct_measurement'
             expect(models(page, 'local')).to_contain_text('未调用模型')
@@ -171,10 +201,12 @@ def run(chromium):
             render_examples(page)
             primary = [event for event in outbound if event.url.endswith('/api/followup')]
             manual = [event for event in outbound if event.url.endswith('/api/followup/model')]
-            assert len(popups) == 2 and len(primary) == 9 and len(manual) == 1
-            assert [event.post_data_json['model_consent'] for event in primary] == [True, False, *([True] * 7)]
+            assert len(popups) == 2 and len(primary) == 10 and len(manual) == 1
+            assert [event.post_data_json['model_consent'] for event in primary] == [True, False, *([True] * 8)]
             assert counts(log) == {'model_metadata': 3, 'model_paid': 3}
     return {'passed': True, 'scope': 'local browser with transport stub and response fixtures', 'live_provider_requests': 0,
+            'status_preflight': ['unconfigured', 'configured_unverified', 'failed_with_local_query_available'],
+            'ambiguous_training_scale_has_no_draft_button': True,
             'configured_followup_submissions': len(primary), 'manual_draft_submissions': len(manual),
             'manual_draft_cancellation_sent_no_request': True, 'stub_model_calls': 3,
             'citation_popups_after_two_explicit_clicks': len(popups)}

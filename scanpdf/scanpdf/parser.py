@@ -9,6 +9,7 @@ import pymupdf
 from PIL import Image, ImageStat
 
 from .formulas import detect_formulas
+from .math_cells import review_math_cells
 from .numeric import refine_numeric_cells
 from .ocr import recognize
 from .tables import detect_tables
@@ -123,6 +124,7 @@ def _parse_page(page, number, dpi, lang, crops, digest, figure_lines):
     regions = tables + detect_formulas(image, words, dpi, tables)
     refine_numeric_cells(image, tables, dpi, lang)
     _read_missing_cells(image, tables, dpi, lang)
+    review_math_cells(tables)
     regions.sort(key=lambda reg: (reg["bbox"][1], reg["bbox"][0]))
     annotations = _figure_annotations(page, number, image, lines if figure_lines is None else figure_lines,
                                       tables, dpi, crops, digest)
