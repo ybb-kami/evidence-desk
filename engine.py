@@ -18,6 +18,11 @@ _HAN = r"\u3400-\u4dbf\u4e00-\u9fff\U00020000-\U000323af"
 _HAN_RUN = re.compile(f"[{_HAN}]+")
 _HAN_SPLIT = re.compile(f"([{_HAN}]+)")
 _WORDS = re.compile(r"[^\W_]+(?:[-'][^\W_]+)*", re.UNICODE)
+_ARXIV = re.compile(
+    r"^arXiv:\s*((?:\d{4}\.\d{4,5}|[a-z][a-z.\-]*/\d{7}))(?:v([1-9]\d{0,5}))?"
+    r"(?:\s+\[[a-zA-Z.\-]+\])?(?:\s+\d{1,2}\s+[A-Za-z]{3}\s+\d{4})?$",
+    re.IGNORECASE,
+)
 _STOPWORDS = frozenset(
     "a an and are as at be been by can could did do does for from had has have how "
     "i in is it its me of on or please show tell that the their these this those "
@@ -61,7 +66,7 @@ def _windows(text, width=1600, overlap=260):
                 end = boundary + 1
         excerpt = text[start:end].strip()
         if excerpt:
-            yield excerpt
+            yield excerpt, start + len(text[start:end]) - len(text[start:end].lstrip())
         if end == len(text):
             break
         start = end - overlap
@@ -79,6 +84,7 @@ def parse_pdf(data: bytes, name: str) -> dict:
         raise ValueError("Not a PDF file.")
     chunks, textless_pages, page_labels = [], [], []
     chars = 0
+    arxiv_markers = set()
     content = hashlib.sha256()
     try:
         with fitz.open(stream=data, filetype="pdf") as pdf:
@@ -95,6 +101,16 @@ def parse_pdf(data: bytes, name: str) -> dict:
                     if raw[6] != 0:
                         continue
                     block_text = raw[4].strip()
+                    if page_num == 1:
+                        x0, y0, x1, y1 = raw[:4]
+                        width = page.cropbox.width
+                        # arXiv stamps a narrow, rotated identifier at a first-page
+                        # side margin. Do not infer identity from a prose citation.
+                        if ((x1 < width * 0.15 or x0 > width * 0.85)
+                                and x1 - x0 <= 32 and y1 - y0 >= 70):
+                            marker = _ARXIV.fullmatch(" ".join(block_text.split()))
+                            if marker:
+                                arxiv_markers.add((marker[1].lower(), int(marker[2]) if marker[2] else None))
                     if not any(char.isalnum() for char in block_text):
                         continue
                     chars += len(block_text)
@@ -102,9 +118,9 @@ def parse_pdf(data: bytes, name: str) -> dict:
                         raise ValueError("PDF exceeds the extracted text limit (2 million characters).")
                     content.update(" ".join(_normalized(block_text).split()).encode("utf-8"))
                     content.update(b" ")
-                    for part, excerpt in enumerate(_windows(block_text), 1):
+                    for part, (excerpt, offset) in enumerate(_windows(block_text), 1):
                         chunks.append({"page": page_num, "block": raw[5] + 1,
-                                       "part": part, "text": excerpt})
+                                       "part": part, "offset": offset, "text": excerpt})
                         if len(chunks) > MAX_CHUNKS:
                             raise ValueError("PDF exceeds the extracted passage limit (12,000).")
                 if len(chunks) == original_count:
@@ -113,9 +129,13 @@ def parse_pdf(data: bytes, name: str) -> dict:
         raise
     except (RuntimeError, OSError) as exc:
         raise ValueError("Unable to extract text from this PDF.") from exc
+    arxiv = None
+    if len(arxiv_markers) == 1:
+        arxiv_id, version = next(iter(arxiv_markers))
+        arxiv = {"id": arxiv_id, "version": version}
     return {"id": hashlib.sha256(data).hexdigest(), "name": str(name), "pages": pages,
             "chunks": chunks, "size": len(data), "textless_pages": textless_pages,
-            "page_labels": page_labels, "text_hash": content.hexdigest(), "text_chars": chars}
+            "page_labels": page_labels, "arxiv": arxiv, "text_hash": content.hexdigest(), "text_chars": chars}
 
 
 def find_evidence(docs: list[dict], query: str) -> list[dict]:
@@ -168,17 +188,24 @@ def find_evidence(docs: list[dict], query: str) -> list[dict]:
 def _signature(doc, limit=30_000):
     """Use unique, sufficiently varied 5-term shingles; refuse partial signatures."""
     tokens = []
-    last_block = None
+    last_block, original = None, ""
     for chunk in doc["chunks"]:
         block = chunk["page"], chunk["block"]
-        if block == last_block:
-            # Very long PDF blocks contain overlapping windows. Comparing only the
-            # first would misclassify abbreviated versions, so skip near matching.
-            return set()
-        last_block = block
-        tokens.extend(_terms(chunk["text"]))
-        if len(tokens) > limit:
-            return set()
+        if block != last_block:
+            tokens.extend(_terms(original))
+            if len(tokens) > limit:
+                return set()
+            last_block, original = block, chunk["text"]
+        else:
+            if "offset" not in chunk:
+                return set()  # Cannot safely reconstruct old cached chunks.
+            offset = chunk["offset"]
+            if offset > len(original):
+                original += " "
+            original += chunk["text"][max(0, len(original) - offset):]
+    tokens.extend(_terms(original))
+    if len(tokens) > limit:
+        return set()
     if len(tokens) < 80:
         return set()
     shingles = {tuple(tokens[i:i + 5]) for i in range(len(tokens) - 4)}
@@ -193,19 +220,38 @@ def duplicates(newdoc: dict, docs: list[dict]) -> list[dict]:
         if newdoc["id"] == doc["id"]:
             matches.append({**match, "reason": "identical_bytes", "score": 1.0})
             continue
+        first_marker, second_marker = newdoc.get("arxiv"), doc.get("arxiv")
+        shared_id = bool(first_marker and second_marker and first_marker["id"] == second_marker["id"])
         if (doc.get("text_chars", 0) >= 500 and newdoc.get("text_chars", 0) >= 500
                 and doc.get("text_hash") and doc["text_hash"] == newdoc.get("text_hash")):
             matches.append({**match, "reason": "identical_extracted_text", "score": 1.0})
+            continue
+        if first_marker and second_marker and not shared_id:
             continue
         if signature is None:
             signature = _signature(newdoc)
         if not signature:
             continue
         other = _signature(doc)
-        if not other or min(len(signature), len(other)) / max(len(signature), len(other)) < 0.9:
+        # A matching margin stamp lowers the advisory threshold, but cannot
+        # substitute for substantial independent evidence from body text.
+        threshold = 0.55 if shared_id else 0.9
+        if not other or min(len(signature), len(other)) / max(len(signature), len(other)) < threshold:
             continue
         similarity = len(signature & other) / len(signature | other)
-        if similarity >= 0.9:
-            matches.append({**match, "reason": "possible_version", "score": round(similarity, 3)})
+        if similarity >= threshold:
+            row = {**match, "reason": "possible_version", "score": round(similarity, 3)}
+            if shared_id:
+                first, second = first_marker["version"], second_marker["version"]
+                row.update(arxiv_id=first_marker["id"], new_version=first, existing_version=second)
+                if similarity >= 0.65 and first and second and first != second:
+                    highest = max(first, second)
+                    row["advice"] = (
+                        f"两份首页边栏均标有 arXiv:{first_marker['id']}，且正文高度相似。"
+                        f"若要引用较新的版本，建议核对并使用 v{highest}；两份文件均保留。"
+                    )
+                else:
+                    row["advice"] = "首页 arXiv 编号一致且正文有较多重合；请人工确认版本，不自动替换。"
+            matches.append(row)
     order = {"identical_bytes": 0, "identical_extracted_text": 1, "possible_version": 2}
     return sorted(matches, key=lambda row: (order[row["reason"]], -row["score"], row["name"]))

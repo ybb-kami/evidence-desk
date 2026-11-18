@@ -106,5 +106,35 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(find_evidence([first], "finding198")[0]["part"], 2)
 
 
+    def test_margin_markers_rank_renamed_v7_and_v1_in_either_direction(self):
+        body = " ".join(f"finding{j:03d}" for j in range(250))
+        def stamped(name, version, passage):
+            with fitz.open() as pdf:
+                page = pdf.new_page(width=650, height=1100)
+                page.insert_text((22, 645), f"arXiv:2305.12345v{version} [math.CO] 2 May 2023",
+                                 rotate=90, fontsize=13)
+                assert page.insert_textbox(fitz.Rect(44, 47, 627, 1050), passage, fontsize=10) >= 0
+                return parse_pdf(pdf.tobytes(), name)
+
+        newer = stamped("arbitrary.pdf", 7, body)
+        older = stamped("not-a-versioned-file-name.pdf", 1,
+                        body.replace("finding217", "subsequent"))
+        self.assertEqual(newer["arxiv"], {"id": "2305.12345", "version": 7})
+        self.assertGreater(len(older["chunks"]), 2)
+        for first, second in [(newer, older), (older, newer)]:
+            match = duplicates(first, [second])[0]
+            self.assertEqual(match["reason"], "possible_version")
+            self.assertIn("v7", match["advice"])
+            self.assertIn("两份文件均保留", match["advice"])
+
+        cited = parse_pdf(make_pdf(["We used results of arXiv:2305.12345v1 in another field.",
+                                   "arXiv:2305.12345v7 [math.CO] 2 May 2023"]), "See_2305.12345v1.pdf")
+        self.assertIsNone(cited["arxiv"])
+        self.assertEqual(duplicates(newer, [cited]), [])
+        false_stamp = stamped("false-stamp.pdf", 9,
+                             " ".join(f"unrelated{j:03d}" for j in range(250)))
+        self.assertEqual(duplicates(newer, [false_stamp]), [])
+
+
 if __name__ == "__main__":
     unittest.main()
