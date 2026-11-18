@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>扫描页核对 · 证据台</title>
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#f4f4ef;color:#172d2b;font:16px/1.55 "Source Sans 3",system-ui,sans-serif}
+header,main{max-width:1250px;margin:auto;padding:1rem clamp(1rem,4vw,3rem)}header{display:flex;gap:1.5rem;align-items:center;border-bottom:1px solid #b9c4bc}
+header strong{margin-right:auto}a{color:#12685d}h1{font:600 clamp(2rem,4vw,3rem)/1.15 "Source Sans 3",sans-serif;margin:1rem 0}
+h2{font-size:1.1rem;margin:.25rem 0 .7rem}.controls{display:flex;gap:.8rem;flex-wrap:wrap;align-items:end}label{display:grid;gap:.2rem;font-weight:600}
+select,input,button{font:inherit;color:inherit;border:1px solid #8d9d93;border-radius:5px;background:white;padding:.48rem .7rem}select{max-width:min(75vw,30rem)}
+button{cursor:pointer}button:disabled{opacity:.55;cursor:default}button.primary{background:#18574d;color:#fff}#status{min-height:1.6rem}
+.layout{display:grid;grid-template-columns:minmax(16rem,1fr) minmax(0,2fr);gap:1rem;align-items:start}
+aside,article{background:#fff;border:1px solid #c9d1c9;border-radius:8px;padding:1rem}#results{max-height:48vh;overflow:auto;margin:.5rem 0}
+.result{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #e4e8e2;border-radius:0;overflow-wrap:anywhere}
+.result[aria-pressed=true]{background:#daeae3}#detail{white-space:pre-line;overflow-wrap:anywhere;max-height:24vh;overflow:auto}
+.sheet{position:relative}img{display:block;width:100%;height:auto}#mark{position:absolute;border:2px solid #d26200;background:#ffb74c42;pointer-events:none}
+@media(max-width:750px){.layout{grid-template-columns:1fr}#results{max-height:25vh}}
+</style>
+<header><strong>证据台</strong><a href="/">文库</a><a href="/translation">双语阅读</a></header>
+<main><h1>扫描页核对</h1>
+<div class="controls"><label>文献<select id="doc"></select></label><label>物理页<select id="page"></select></label>
+<button class="primary" id="scan" hidden disabled>识别本页</button><button id="batch" hidden>识别整篇待处理页</button><button id="cancel" hidden>完成当前页后暂停</button><a id="source" hidden target="_blank" rel="noopener">打开原 PDF</a></div>
+<p id="progress" hidden role="status"></p>
+<p id="status" role="status"></p>
+<div class="layout"><aside><h2>本页证据</h2><label>查找文字或区域<input type="search" id="query" placeholder="词语、表格或公式"></label>
+<div id="results"></div><div id="detail" aria-live="polite"></div></aside>
+<article><h2>原页定位</h2><div class="sheet"><img id="preview" hidden alt="扫描页原图"><span id="mark" hidden></span></div></article>
+</div></main>
+<script>
+'use strict';
+const byId = id => document.getElementById(id);
+const doc = byId('doc'), page = byId('page'), scan = byId('scan'), query = byId('query');
+const preview = byId('preview'), mark = byId('mark'), status = byId('status');
+let documents = [], evidence = null, generation = 0;
+const batch = byId('batch'), cancel = byId('cancel'), progress = byId('progress');
+let pendingPages = [], running = false, pause = false;
+const initial = new URLSearchParams(location.search);
+const statusLabels = {structure_recognized:'已识别表格结构',detected_only:'仅定位区域',transcribed:'已转录'};
+async function getJSON(url, options) {
+  const response = await fetch(url, options);
+  const body = await response.json();
+  if (!response.ok) throw Error(body.error || '请求失败');
+  return body;
+}
+function clearEvidence() {
+  evidence = null;
+  mark.hidden = true;
+  byId('results').replaceChildren();
+  byId('detail').textContent = '';
+}
+function selectItem(item, button) {
+  const [left,top,right,bottom] = item.bbox_pt;
+  const width = evidence.width_pt, height = evidence.height_pt;
+  Object.assign(mark.style,{left:100*left/width+'%',top:100*top/height+'%',
+    width:100*(right-left)/width+'%',height:100*(bottom-top)/height+'%'});
+  mark.hidden = false;
+  byId('results').querySelector('[aria-pressed=true]')?.setAttribute('aria-pressed','false');
+  button.setAttribute('aria-pressed','true');
+  byId('detail').textContent = item.description+'\n物理页 '+page.value+' · 框坐标（点） '+item.bbox_pt.map(n=>n.toFixed(1)).join(', ');
+}
+function showResults() {
+  const list = byId('results');
+  list.replaceChildren();
+  mark.hidden = true;
+  byId('detail').textContent = '';
+  if (!evidence) return;
+  const items = [];
+  for (const region of evidence.regions) {
+    const title = (region.type==='table'?'表格':'公式')+' '+region.id;
+    const cells = (region.cells || []).map(cell=>'第 '+cell.row+' 行，第 '+cell.column+' 列  '+(cell.text || '空白或未读出'));
+    const description = [title,statusLabels[region.status] || region.status,region.text,...cells].filter(Boolean).join('\n');
+    items.push({...region,title,description});
+  }
+  const needle = query.value.trim().toLocaleLowerCase();
+  for (const line of evidence.lines) {
+    if (needle) {
+      for (const word of line.words) {
+        if (word.text.toLocaleLowerCase().includes(needle))
+          items.push({...word,title:word.text,description:line.text+'\nOCR 置信度 '+word.confidence});
+      }
+      if (line.words.some(word=>word.text.toLocaleLowerCase().includes(needle))) continue;
+    }
+    items.push({...line,title:line.text,description:line.text});
+  }
+  for (const item of items) {
+    if (!(item.title+' '+item.description).toLocaleLowerCase().includes(needle)) continue;
+    const button = document.createElement('button');
+    button.className = 'result';
+    button.textContent = item.title;
+    button.setAttribute('aria-pressed','false');
+    button.onclick = ()=>selectItem(item,button);
+    list.append(button);
+  }
+  if (!list.children.length) list.textContent = '本页没有匹配结果。';
+}
+function applyResponse(body) {
+  evidence = body.page;
+  const originalScan = body.native_textless.includes(Number(page.value));
+  pendingPages = body.pending_pages;
+  scan.hidden = !originalScan || !!evidence || running;
+  scan.disabled = scan.hidden;
+  batch.hidden = running || !pendingPages.length;
+  batch.textContent = '识别整篇待处理页（'+pendingPages.length+'）';
+  status.textContent = evidence ? '已识别 · '+evidence.lines.length+' 行文字，'+evidence.regions.length+' 个区域。'
+    : originalScan ? '本页没有文字层。点击“识别本页”运行本机 OCR。' : '本页含原生文字，可在文库检索。';
+  showResults();
+}
+async function loadPage() {
+  const active = ++generation;
+  clearEvidence();
+  scan.hidden = batch.hidden = scan.disabled = true;
+  const id = doc.value, n = Number(page.value);
+  const source = byId('source');
+  source.href = '/pdf/'+id+'#page='+n;
+  source.hidden = false;
+  preview.hidden = false;
+  preview.src = '/scan-image/'+id+'?page='+n;
+  status.textContent = '正在读取本页…';
+  try {
+    const body = await getJSON('/api/scan/'+id+'?page='+n);
+    if (active===generation) applyResponse(body);
+  } catch(error) { if(active===generation) status.textContent=error.message; }
+}
+function loadDocument(firstPage) {
+  progress.hidden = true;
+  const selected = documents.find(record=>record.id===doc.value);
+  page.replaceChildren();
+  for(let i=1;i<=selected.pages;i++) page.add(new Option(String(i),String(i)));
+  if (Number.isInteger(firstPage) && firstPage>=1 && firstPage<=selected.pages) page.value=String(firstPage);
+  loadPage();
+}
+function recognizePage(id, number) {
+  return getJSON('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id,page:number})});
+}
+batch.onclick = async ()=>{
+  if (running || !pendingPages.length) return;
+  const id = doc.value, queue = [...pendingPages];
+  let done = 0;
+  running = true;
+  pause = false;
+  batch.hidden = scan.hidden = true;
+  cancel.hidden = progress.hidden = false;
+  cancel.disabled = false;
+  doc.disabled = page.disabled = true;
+  try {
+    for (const number of queue) {
+      if (pause) break;
+      progress.textContent = '正在识别物理页 '+number+' · 本轮已完成 '+done+' / '+queue.length;
+      await recognizePage(id, number);
+      done++;
+    }
+    progress.textContent = (done===queue.length?'整篇处理完成':'已暂停，可继续识别')+' · 本轮完成 '+done+' / '+queue.length+' 页。';
+  } catch(error) {
+    progress.textContent = '识别中断，本轮已完成 '+done+' 页。'+error.message;
+  } finally {
+    running = false;
+    cancel.hidden = true;
+    doc.disabled = page.disabled = false;
+    await loadPage();
+  }
+};
+cancel.onclick = ()=>{
+  pause = true;
+  cancel.disabled = true;
+  progress.textContent += ' · 当前页保存后暂停';
+};
+scan.onclick = async ()=>{
+  const active = generation;
+  scan.disabled = true;
+  batch.hidden = true;
+  status.textContent = '正在本机识别本页…';
+  try {
+    const body = await recognizePage(doc.value, Number(page.value));
+    if(active===generation) applyResponse(body);
+  } catch(error) {
+    if(active===generation){ status.textContent=error.message; scan.disabled=false; batch.hidden=!pendingPages.length; }
+  }
+};
+doc.onchange=()=>loadDocument(); page.onchange=loadPage; query.oninput=showResults;
+(async()=>{
+  try {
+    documents=(await getJSON('/api/library')).docs;
+    for(const record of documents) doc.add(new Option(record.name,record.id));
+    if(!documents.length){status.textContent='请先在文库导入 PDF。';return;}
+    if(documents.some(record=>record.id===initial.get('id'))) doc.value=initial.get('id');
+    loadDocument(Number(initial.get('page')));
+  } catch(error){status.textContent=error.message;}
+})();
+</script></html>

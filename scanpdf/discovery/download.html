@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发现与获取 PDF · 证据台</title>
+<style>
+  :root { color-scheme: light; font: 16px/1.6 system-ui, sans-serif; color: #1e2a33; background: #f4f2ee; }
+  * { box-sizing: border-box; }
+  body { max-width: 960px; margin: auto; padding: 24px clamp(18px, 5vw, 54px) 60px; }
+  nav { display: flex; gap: 24px; flex-wrap: wrap; }
+  h1, h2, p { margin: 0 0 12px; }
+  h1 { font-size: clamp(32px, 6.5vw, 58px); line-height: 1.1; margin: 38px 0 15px; letter-spacing: -.05em; }
+  h2 { font-size: 22px; }
+  section { background: #fff; border: 1px solid #d6dce0; padding: clamp(18px, 4vw, 30px); border-radius: 12px; }
+  main { display: grid; gap: 16px; }
+  a { color: #14556a; text-underline-offset: .2em; }
+  .hint, .meta { color: #495963; font-size: .93rem; }
+  .controls { display: flex; gap: 10px; align-items: start; flex-wrap: wrap; margin: 10px 0 0; }
+  .controls input { flex: 1 1 200px; min-width: 0; }
+  button, input { color: inherit; font: inherit; border-radius: 6px; }
+  input[type="text"], input[type="search"] { background: #fff; border: 1px solid #8a999f; padding: 8px 12px; }
+  button { background: #1a4c60; border: 1px solid transparent; color: #fff; font-weight: 650; padding: 8px 14px; cursor: pointer; }
+  button:disabled { opacity: .64; cursor: wait; }
+  label { display: block; }
+  .consent { margin-top: 8px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { border-top: 1px solid #e0e5e7; padding: 8px 0; overflow-wrap: anywhere; }
+  [role="status"] { margin: 10px 0 0; }
+  [role="status"]:empty, [id="recent"]:empty { display: none; }
+</style>
+<nav aria-label="工作台">
+  <a href="/">返回证据台</a>
+  <a href="/#tracking">arXiv 追踪</a>
+</nav>
+<h1>发现与获取 PDF</h1>
+<main>
+  <section aria-labelledby="search-heading">
+    <h2 id="search-heading">公开书目检索</h2>
+    <p class="hint" id="search-hint">可按题名或参考文献信息查找 Crossref 书目记录。</p>
+    <form id="search">
+      <label for="query">公开检索词</label>
+      <div class="controls">
+        <input type="search" id="query" maxlength="300" required aria-describedby="search-hint">
+        <button>查找题录</button>
+      </div>
+      <label class="consent"><input type="checkbox" id="search-consent" required> 同意将本次检索词发送给 Crossref</label>
+    </form>
+    <p id="search-status" role="status"></p>
+    <ul id="matches"></ul>
+  </section>
+  <section aria-labelledby="download-heading">
+    <h2 id="download-heading">下载 arXiv PDF 并导入</h2>
+    <p class="hint" id="id-hint">请输入公开记录中的完整编号，例如 <code>1706.03762v1</code>。带版本号可定位该版本。</p>
+    <form id="download">
+      <label for="identifier">arXiv 编号</label>
+      <div class="controls">
+        <input type="text" id="identifier" placeholder="1706.03762v1" maxlength="64" required autocomplete="off" spellcheck="false" aria-describedby="id-hint">
+        <button>下载并导入</button>
+      </div>
+      <label class="consent"><input type="checkbox" id="download-consent" required> 同意向 arXiv 请求此编号，并将返回的 PDF 导入当前文库</label>
+    </form>
+    <p id="download-status" role="status"></p>
+    <p class="hint"><a href="/">已有本地 PDF？返回证据台导入</a></p>
+  </section>
+  <section aria-labelledby="receipt-heading">
+    <h2 id="receipt-heading">本地下载记录</h2>
+    <p id="receipt-status" role="status"></p>
+    <ul id="recent"></ul>
+  </section>
+</main>
+<script>
+  "use strict";
+  const byId = id => document.getElementById(id);
+  function link(text, url, external = false) {
+    const node = document.createElement("a");
+    node.textContent = text;
+    node.href = url;
+    if (external) {
+      node.target = "_blank";
+      node.rel = "noopener noreferrer";
+    }
+    return node;
+  }
+  async function request(path, payload) {
+    const options = payload === undefined ? {} : {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    };
+    const response = await fetch(path, options);
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error?.message || data.error || "请求失败。");
+    }
+    return data;
+  }
+  function bind(formId, statusId, consentId, busyText, callback) {
+    const form = byId(formId);
+    const status = byId(statusId);
+    const checkbox = byId(consentId);
+    const button = form.querySelector("button");
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!checkbox.checked || button.disabled) return;
+      checkbox.checked = false;
+      button.disabled = true;
+      status.textContent = busyText;
+      try {
+        await callback(status);
+      } catch (error) {
+        status.textContent = error.message || "请求失败。";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+  bind("search", "search-status", "search-consent", "正在查询 Crossref…", async status => {
+    const matches = byId("matches");
+    matches.replaceChildren();
+    const data = await request("/api/discover", {query: byId("query").value.trim(), consent: true});
+    status.textContent = data.items.length ? "Crossref 找到 " + data.items.length + " 条公开题录。" : "Crossref 未找到匹配题录。";
+    for (const item of data.items) {
+      const row = document.createElement("li");
+      row.append(link(item.title, "https://doi.org/" + encodeURI(item.doi), true));
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = [...item.authors.slice(0, 4), item.year, item.venue, item.doi].filter(Boolean).join(" · ");
+      row.append(meta);
+      const candidate = /^10\.48550\/arxiv\.(.+)$/i.exec(item.doi);
+      if (candidate) {
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.textContent = "填写此编号";
+        copy.addEventListener("click", () => {
+          byId("identifier").value = candidate[1];
+          byId("identifier").focus();
+        });
+        row.append(copy);
+      }
+      matches.append(row);
+    }
+  });
+  async function loadReceipts() {
+    const recent = byId("recent");
+    const status = byId("receipt-status");
+    try {
+      const data = await request("/api/download/arxiv");
+      recent.replaceChildren();
+      status.textContent = data.receipts.length ? "" : "还没有下载记录。";
+      for (const item of data.receipts) {
+        const row = document.createElement("li");
+        row.append(link(item.arxiv_id, item.url, true), " · ",
+          link(item.archived ? "打开归档原件" : "打开本地 PDF", "/pdf/" + item.sha256));
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = new Date(item.retrieved_at).toLocaleString() + " · SHA-256 " + item.sha256;
+        row.append(meta);
+        recent.append(row);
+      }
+    } catch (error) {
+      status.textContent = error.message || "无法读取下载记录。";
+    }
+  }
+  bind("download", "download-status", "download-consent", "正在从 arXiv 下载并导入…", async status => {
+    const data = await request("/api/download/arxiv", {arxiv_id: byId("identifier").value.trim(), consent: true});
+    status.textContent = data.archived ? "相同 PDF 已在归档，可在「版本与归档」恢复。 "
+      : data.existing ? "相同 PDF 已在文库。 " : "已导入当前文库。 ";
+    status.append(link("打开本地 PDF", "/pdf/" + data.doc.id));
+    await loadReceipts();
+  });
+  loadReceipts();
+</script>
+</html>

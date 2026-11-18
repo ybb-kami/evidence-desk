@@ -1,0 +1,200 @@
+"""Loopback Evidence Desk entry point with on-demand local scan recognition."""
+import argparse
+import hashlib
+import json
+import math
+import sqlite3
+import sys
+import tempfile
+import threading
+import zlib
+from collections import defaultdict
+from contextlib import closing
+from http.server import ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+import pymupdf
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+sys.path.insert(0, str(HERE))
+from scanpdf import parse_pdf as recognize_pdf
+import app
+import engine
+from graph import _blocks
+
+
+def index_page(doc, page):
+    number = page["physical_page"]
+    paragraphs = defaultdict(list)
+    for line in page["lines"]:
+        paragraphs[line["line_id"].rsplit(".", 1)[0]].append(line["text"])
+    texts = ["\n".join(lines) for lines in paragraphs.values()]
+    for region in page["regions"]:
+        texts.extend(cell["text"] for cell in region.get("cells", [])
+                     if cell.get("text_method") == "cell_crop_tesseract")
+    doc.setdefault("native_textless", list(doc["textless_pages"]))
+    for block, text in enumerate(texts, 1):
+        if not any(c.isalnum() for c in text):
+            continue
+        doc["text_chars"] += len(text)
+        for part, (excerpt, offset) in enumerate(engine._windows(text), 1):
+            doc["chunks"].append(dict(page=number, block=block, part=part,
+                                      offset=offset, text=excerpt, source="ocr"))
+    if doc["text_chars"] > engine.MAX_CHARS or len(doc["chunks"]) > engine.MAX_CHUNKS:
+        raise ValueError("识别结果超过文献索引容量。")
+    doc["chunks"].sort(key=lambda c: (c["page"], c["block"], c["part"]))
+    if any(c["page"] == number for c in doc["chunks"]):
+        doc["textless_pages"].remove(number)
+        digest = hashlib.sha256()
+        for _, _, _, _, text in _blocks(doc):
+            digest.update(" ".join(engine._normalized(text).split()).encode() + b" ")
+        doc["text_hash"] = digest.hexdigest()
+
+
+class ScanLibrary(app.Library):
+    def __init__(self, root, lang="eng"):
+        super().__init__(root)
+        self.lang = lang
+        self.worker = threading.Lock()
+        with closing(sqlite3.connect(self.db)) as db, db:
+            db.execute("CREATE TABLE IF NOT EXISTS scan_pages "
+                       "(id TEXT, page INTEGER, result BLOB, PRIMARY KEY(id,page))")
+
+    def lookup(self, docid, number):
+        if not isinstance(docid, str) or not app.ID.fullmatch(docid) or type(number) is not int:
+            raise app.Bad(400, "文献或页码无效。")
+        docs = self.records([docid])
+        if not docs:
+            raise app.Bad(404, "找不到文献。")
+        if not 1 <= number <= docs[0]["pages"]:
+            raise app.Bad(400, "物理页码超出文献范围。")
+        return docs[0]
+
+    def page_info(self, docid, number):
+        doc = self.lookup(docid, number)
+        with closing(sqlite3.connect(self.db)) as db:
+            row = db.execute("SELECT result FROM scan_pages WHERE id=? AND page=?",
+                             (docid, number)).fetchone()
+            completed = {r[0] for r in db.execute("SELECT page FROM scan_pages WHERE id=?", (docid,))}
+        native_textless = doc.get("native_textless", doc["textless_pages"])
+        return {"doc": app.summary(doc), "native_textless": native_textless,
+                "pending_pages": [n for n in native_textless if n not in completed],
+                "page": json.loads(zlib.decompress(row[0])) if row else None}
+
+    def recognize(self, docid, number):
+        if not self.worker.acquire(blocking=False):
+            raise app.Bad(409, "正在处理其他页面，请稍后重试。")
+        try:
+            info = self.page_info(docid, number)
+            if info["page"] is not None:
+                return info
+            if number not in info["native_textless"]:
+                raise app.Bad(400, "本页已有原生文字。")
+            with tempfile.TemporaryDirectory() as folder:
+                source = Path(folder) / "source.pdf"
+                source.write_bytes(self.pdf(docid))
+                result = recognize_pdf(source, pages=str(number), lang=self.lang)
+            if result["source"]["sha256"] != docid:
+                raise ValueError("原件校验失败。")
+            page = result["pages"][0]
+            page["render"] = result["render"]
+            packed = zlib.compress(json.dumps(page, ensure_ascii=False).encode())
+            with self.lock, closing(sqlite3.connect(self.db)) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                if not db.execute("SELECT 1 FROM scan_pages WHERE id=? AND page=?", (docid, number)).fetchone():
+                    doc = self.lookup(docid, number)
+                    index_page(doc, page)
+                    record = json.dumps(doc, ensure_ascii=False)
+                    used, = db.execute("SELECT coalesce(sum(length(record)),0) FROM docs WHERE id<>?", (docid,)).fetchone()
+                    scans, = db.execute("SELECT coalesce(sum(length(result)),0) FROM scan_pages").fetchone()
+                    if used + len(record) > app.MAX_TEXT or scans + len(packed) > app.MAX_TEXT:
+                        raise ValueError("扫描结果超过本地文库容量。")
+                    db.execute("INSERT INTO scan_pages VALUES(?,?,?)", (docid, number, packed))
+                    db.execute("UPDATE docs SET record=? WHERE id=?", (record, docid))
+            return self.page_info(docid, number)
+        finally:
+            self.worker.release()
+
+
+class Handler(app.Handler):
+    def serve(self, post):
+        url = urlsplit(self.path)
+        path = url.path
+        host = self.headers.get("Host", "").lower()
+        if host not in {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}:
+            raise app.Bad(403, "仅接受本机地址。")
+        if post and (self.headers.get("Origin") not in (None, "http://" + host)
+                     or self.headers.get("Sec-Fetch-Site") == "cross-site"):
+            raise app.Bad(403, "拒绝跨站请求。")
+        if path == "/translation" or path.startswith(("/api/bilingual/", "/bilingual/")):
+            from bilingual.routes import handle
+            if handle(self, post, path):
+                return
+        if path == "/download" or path.startswith("/api/download/"):
+            from discovery.routes import handle
+            if handle(self, post, path):
+                return
+        if not post and path in ("/", "/index.html"):
+            home = (app.HERE / "index.html").read_text()
+            home = home.replace('<span class="tag">本地工作区</span>',
+                                '<nav><a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a></nav>')
+            home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
+                                "扫描件可按页识别，完成后可在这里检索 OCR 文字。")
+            home = home.replace("detail.append(archive);", """
+                if (doc.textless_pages?.length) {
+                  const scan = el('a', '', '识别扫描页');
+                  scan.href = '/scan?id=' + doc.id + '&page=' + doc.textless_pages[0];
+                  detail.append(scan);
+                }
+                detail.append(archive);""")
+            home = home.replace("actions.append(source(hit.id,", """
+                if (hit.source === 'ocr') {
+                  const scan = el('a', '', '核对 OCR 定位');
+                  scan.href = '/scan?id=' + hit.id + '&page=' + hit.page;
+                  actions.append(scan);
+                }
+                actions.append(source(hit.id,""")
+            return self.payload(200, home.encode(), "text/html; charset=utf-8")
+        if not post and path == "/scan":
+            return self.payload(200, (HERE / "scan.html").read_bytes(), "text/html; charset=utf-8")
+        store = self.server.library
+        if post and path == "/api/scan":
+            req = self.json_request()
+            return self.payload(200, store.recognize(req.get("id"), req.get("page")))
+        if not post and path.startswith(("/api/scan/", "/scan-image/")):
+            docid = path.rsplit("/", 1)[1]
+            number = int(parse_qs(url.query).get("page", ["1"])[0])
+            if path.startswith("/api/scan/"):
+                return self.payload(200, store.page_info(docid, number))
+            store.lookup(docid, number)
+            with pymupdf.open(stream=store.pdf(docid), filetype="pdf") as pdf:
+                page = pdf[number - 1]
+                scale = min(1.8, 1600 / max(page.rect.width, page.rect.height))
+                if not math.isfinite(scale) or scale <= 0:
+                    raise ValueError("无效页面尺寸。")
+                pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
+                return self.payload(200, pix.tobytes("png"), "image/png")
+        return super().serve(post)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--data", type=Path, default=app.HERE / "data")
+    parser.add_argument("--lang", default="eng")
+    parser.add_argument("--enable-deepseek", action="store_true")
+    args = parser.parse_args()
+    with ThreadingHTTPServer(("127.0.0.1", args.port), Handler) as server:
+        server.library = ScanLibrary(args.data, args.lang)
+        server.enable_model = args.enable_deepseek
+        print(f"http://127.0.0.1:{server.server_port}", flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+
+
+if __name__ == "__main__":
+    main()

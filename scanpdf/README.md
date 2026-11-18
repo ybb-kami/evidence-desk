@@ -42,7 +42,15 @@ for page in result["pages"]:
 
 ## 与 evidence-desk 的接入点
 
-主项目的 `engine.parse_pdf(data, name)` 返回 `id`（原文件 SHA-256）以及 `textless_pages`（缺少可索引文字的物理页序号）。宿主可在导入任务中将这些页号用逗号连接，传给扫描模块的 `--pages`。列表为空时即可跳过 OCR。扫描输入应为同一份原始 PDF；保存侧车 JSON 时校验 `source.sha256 == doc["id"]`，再按 `physical_page` 关联到阅读器。原有 `ocr_local.py` 仍可用于生成带文字层的 PDF。此分支交付独立 CLI 和 Python 调用入口，网页自动调用需另行接线。
+主项目的 `engine.parse_pdf(data, name)` 返回 `id`（原文件 SHA-256）以及 `textless_pages`（缺少可索引文字的物理页序号）。宿主可在导入任务中将这些页号用逗号连接，传给扫描模块的 `--pages`。列表为空时即可跳过 OCR。扫描输入应为同一份原始 PDF；保存侧车 JSON 时校验 `source.sha256 == doc["id"]`，再按 `physical_page` 关联到阅读器。原有 `ocr_local.py` 仍可用于生成带文字层的 PDF。本分支提供以下本地网页入口，支持按需识别、检索和回到原图核对。
+
+安装上文依赖后，在**主仓库根目录**运行：
+
+```sh
+python scanpdf/workbench.py --data ./data --port 8765
+```
+
+在浏览器打开 `http://127.0.0.1:8765`，导入 PDF，点击文献旁的「识别扫描页」，选择物理页并点击「识别本页」。扫描页展示 OCR 词框和置信度、公式候选、表格单元格和原页位置。返回文库后，可在原有检索框中搜索已识别的文字，通过命中卡片打开原 PDF 或回到 OCR 定位。原生文字页沿用原有阅读器。可用 `--lang chi_sim+eng` 选择已安装的中文和英文语言包。页面解析采用 240 DPI，可选择单页，也可点击「识别整篇待处理页」连续识别。整篇模式逐页保存，跳过原生文字页和已处理页。可在当前页完成后暂停，重新打开仍可继续剩余页。扫描坐标及置信度压缩后与索引一起写入本地数据库；单个文库的扫描页数据上限为 12 MiB，原件和索引继续使用宿主原有限额。
 
 下列对照可在 `scanpdf/` 下复现。主项目解析器将对照件的两页都列入 `textless_pages`。以 240 DPI 实测，扫描模块在物理第 1 页读到标题 “From question to passage”，第 2 页读到 “A test you can reproduce”，两行均返回原页位置。
 
