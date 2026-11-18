@@ -1,6 +1,29 @@
-# 证据台 v0.2 · Evidence Desk
+# 证据台 · Evidence Desk
 
-> 最新验收与功能请先读 [v0.4 状态](STATUS.md)；下文包括旧版本的入门与历史边界。
+## 竞赛工作台
+
+在本分支使用 Python 3.12 和带英文语言包的 Tesseract 5。从仓库根目录启动扫描与双语阅读入口：
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r scanpdf/requirements.txt
+.venv/bin/python scanpdf/workbench.py --data ./data
+```
+
+浏览器打开终端显示的本机地址。文献与索引写入 SQLite；原 PDF 用 SHA-256 标识，引用保留物理页码。扫描页按需运行 Tesseract，并提供表格单元格和公式区域。可选本机双向翻译另需 CTranslate2 和两个对应语言的模型。安装、复测与交付状态见[扫描工作台](scanpdf/README.md)、[批量验收](scanpdf/acceptance/README.md)及[当前竞赛状态](scanpdf/CONTEST_STATUS.md)。
+
+### 环境配置示例
+
+```sh
+# 可选，指向已安装的 en-zh 和 zh-en 模型所在目录
+export EVIDENCE_TRANSLATION_MODELS="/path/to/models"
+# 可选，DeepSeek 核选需要通过私密环境设置绑定 DEEPSEEK_API_KEY，
+# 并以 --enable-deepseek 启动，在每次请求前由操作者确认。
+```
+
+参赛团队署名与分工待参赛者确认。下文介绍原有轻量入口。
+
+> 原有轻量入口的验收记录见 [v0.4 状态](STATUS.md)。
 把“这句话到底写在哪一页？”变成一次可核对的操作。面向单人本机的 PDF 文献检索工作台：导入材料、搜索关键词、并排比较两条原文、点页码回看 PDF。默认不出网，无需账号或模型密钥。新增按篇证据对照、本地引用关系与可选 Crossref 公开题录发现。[三分钟演示脚本及可复核样例](DEMO.md)。它是竞赛原型，不是已完成全部赛题功能的科研 Agent。
 
 ## 三分钟试用
@@ -23,7 +46,7 @@ python3 -m venv .venv
 1. 浏览器访问 **http://127.0.0.1:8765**。这是本机入口，不是在线演示网址。若端口冲突，运行时加 `--port 8766`，并打开相应地址。
 2. 在界面下载示例并导入，或直接导入包内 `sample.pdf`。选择“填入示例关键词”，检索 `verify page numbering`，打开 **第 2 页**核对内容。这是原创操作说明，不是研究成果。
 3. 尝试 `zzzxqz`，应提示没有检索到证据；把同一 PDF 改名再导入，不会产生第二份记录。不同版不会被自动删除。可对两条结果使用“加入对照”。
-4. 自有授权公开文献：用原文里的术语查询，例如在 *Attention Is All You Need* 中搜索 `P100 GPUs`。中文输入不会自动翻译为英文。
+4. 自有授权公开文献：用原文里的术语查询，例如在 *Attention Is All You Need* 中搜索 `P100 GPUs`。检索支持部分中英科研术语及符号等价写法。
 5. 终端按 Ctrl+C 停止。本地文库在 `data/library.sqlite`。下次用同一数据目录即可恢复；`--data <另一个目录>` 建立独立的新文库。请自行保管含原 PDF 的数据库。
 
 **可选 DeepSeek**：只在你通过自己的私密环境变量配置 `DEEPSEEK_API_KEY` 后，以 `app.py --enable-deepseek` 启动，且每次在界面同意发送查询和证据摘录，才会请求官方 DeepSeek 服务（可能计费）。未确认时不会调用；没有匹配时也不会发送。线上核选只返回本地能逐字对照的引用，不生成未经核查的事实。详见 [服务与隐私](DEEPSEEK.md)。本交付没有使用真实 key 联调；合约测试不代表线上服务可用。不要把 key 粘到聊天、源码或仓库里。

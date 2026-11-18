@@ -5,14 +5,14 @@ import hashlib
 import http.client
 import json
 from pathlib import Path
-import re
 import subprocess
 import sys
 import tempfile
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 V7, V1 = "1706.03762v7.pdf", "1706.03762v1.pdf"
+SCAN = "1706.03762v1_img.pdf"
 BOOK = "UnderstandingDeepLearning_02_09_26_C.pdf"
 
 
@@ -20,12 +20,14 @@ BOOK = "UnderstandingDeepLearning_02_09_26_C.pdf"
 def workbench():
     with tempfile.TemporaryDirectory(prefix="evidence-corpus-") as data:
         proc = subprocess.Popen(
-            [sys.executable, str(ROOT / "app.py"), "--port", "0", "--data", data],
+            [sys.executable, str(ROOT / "scanpdf" / "workbench.py"), "--port", "0", "--data", data],
             stdout=subprocess.PIPE, text=True,
         )
         try:
             banner = proc.stdout.readline()
-            port = int(re.search(r"http://127\.0\.0\.1:(\d+)", banner)[1])
+            port = urlsplit(banner.strip()).port
+            if not port:
+                raise RuntimeError("Workbench did not report a local HTTP port")
             yield port
         finally:
             proc.terminate()
@@ -49,7 +51,24 @@ def call(port, path, body=None, mime="application/json"):
         connection.close()
 
 
-def run(folder):
+def recognize_scan(port, source):
+    identity = source["sha256"]
+    info = call(port, f"/api/scan/{identity}?page=1")
+    assert info["pending_pages"] == list(range(1, source["pages"] + 1))
+    pages = []
+    for page in info["pending_pages"]:
+        recognized = call(port, "/api/scan", {"id": identity, "page": page})
+        evidence = recognized["page"]
+        assert evidence["physical_page"] == page and evidence["lines"], page
+        pages.append({"physical_page": page, "regions": len(evidence["regions"])})
+    assert not recognized["pending_pages"]
+    hits = call(port, "/api/search", {"ids": [identity], "query": "NVIDIA P100 GPUs"})["hits"]
+    assert any(h["page"] == 7 and h.get("source") == "ocr" for h in hits)
+    return {"pages": pages, "indexed_blocks": recognized["doc"]["indexed_blocks"],
+            "gpu_evidence_page": 7}
+
+
+def run(folder, with_ocr=False):
     import pymupdf
     paths = {p.name: p for p in folder.glob("*.pdf")}
     if not all(name in paths for name in (V7, V1, BOOK)):
@@ -92,9 +111,10 @@ def run(folder):
             assert " ".join(edge["text"].split()) in " ".join(block.split()), edge
             checked.append({"from": sources[edge["source_document"]].name, "to": edge["target"],
                             "page": edge["page"], "block": edge["block"], "method": edge["method"]})
+        ocr = recognize_scan(port, imports[SCAN]) if with_ocr else None
         assert review["edges"] and all(e["source_document"] in sources for e in review["edges"])
     return {"files_seen": len(paths), "imported": imports, "import_failures": failures,
-            "version_check": version_test, "graph": {"nodes": len(nodes), "edges": len(edges),
+            "version_check": version_test, "ocr": ocr, "graph": {"nodes": len(nodes), "edges": len(edges),
             "unresolved_references": graph["unresolved"], "missing_bibliographies": len(graph["no_bibliography_detected"]),
             "rank_sum": sum(n["pagerank"] for n in nodes), "anchors_checked": checked},
             "review_edge_excerpts": len(review["edges"]), "future_mentions": len(review["future_mentions"])}
@@ -103,8 +123,9 @@ def run(folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf_dir", type=Path)
+    parser.add_argument("--ocr", action="store_true", help="OCR the full scan after importing the corpus")
     args = parser.parse_args()
-    observed = run(args.pdf_dir)
+    observed = run(args.pdf_dir, args.ocr)
     print(json.dumps(observed, ensure_ascii=False, indent=2))
     if observed["import_failures"]:
         raise SystemExit(1)

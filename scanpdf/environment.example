@@ -1,0 +1,6 @@
+# Source this file in the shell of the workbench if using a custom model location.
+# The local installer defaults to ~/.local/share/evidence-desk/models.
+# export EVIDENCE_TRANSLATION_MODELS="/absolute/path/to/models"
+
+# Optional: set DEEPSEEK_API_KEY using the runtime's private credential settings.
+# Then launch the workbench with --enable-deepseek for per-request quote selection.
