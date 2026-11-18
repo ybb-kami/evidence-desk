@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>引文原页 · Evidence Desk</title>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: #f4f4ef; color: #172d2b; font: 16px/1.55 system-ui, sans-serif; }
+    header { background: #173a34; color: #fff; padding: .7rem max(1rem, calc((100% - 1200px) / 2)); }
+    header nav, .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.1rem; }
+    header strong { margin-right: auto; }
+    header a { color: #e4f2e8; }
+    main { max-width: 1240px; padding: 1.2rem clamp(.8rem, 3vw, 1.65rem) 2.4rem; margin: auto; }
+    h1 { font-size: clamp(1.55rem, 4vw, 2.3rem); line-height: 1.2; margin: 0 0 .6rem; overflow-wrap: anywhere; }
+    h2 { font-size: 1.12rem; margin: 0 0 .55rem; }
+    #anchor, #precision { color: #4b635b; margin: .3rem 0; }
+    .actions { margin: .85rem 0 1rem; }
+    button, .actions a { font: inherit; color: #16594d; background: #fff; border: 1px solid #8baca0; border-radius: .35rem; padding: .38rem .7rem; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid #126c60; outline-offset: 3px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 1fr); gap: 1rem; align-items: start; }
+    .viewport { max-height: min(74vh, 68rem); overflow: auto; border: 1px solid #c2cec7; border-radius: .45rem; padding: .6rem; background: #e3e9e2; }
+    .page { position: relative; background: #fff; margin: auto; }
+    img { display: block; width: 100%; height: auto; }
+    #overlay { position: absolute; inset: 0; pointer-events: none; }
+    .region { position: absolute; background: #ffd2573d; outline: 1px solid #b27612; border-radius: 2px; }
+    .region.selected { background: #36b89657; outline: 1.5px solid #097253; }
+    aside { padding: .95rem 1rem; background: #fff; border: 1px solid #c9d5cc; border-radius: .45rem; }
+    #excerpt { white-space: pre-wrap; overflow-wrap: anywhere; margin: .6rem 0 .8rem; }
+    mark { background: #bfeadb; color: #123b32; }
+    #identity { color: #4b635b; font: .75rem/1.5 ui-monospace, monospace; overflow-wrap: anywhere; }
+    #status { color: #693c16; }
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .viewport { max-height: 62vh; }
+    }
+  </style>
+  <script src="/source.js" defer></script>
+</head>
+<body>
+  <header><nav aria-label="工作台"><strong>Evidence Desk</strong><a href="/">本地文库</a><a href="/followup">证据追问</a></nav></header>
+  <main>
+    <h1 id="name">引文原页</h1>
+    <p id="status" role="status">正在读取本地原件…</p>
+    <div id="evidence" hidden>
+      <p id="anchor"></p>
+      <div class="actions">
+        <button type="button" id="jump" hidden>转到高亮位置</button>
+        <a id="pdf" target="_blank" rel="noopener noreferrer">打开原始 PDF</a>
+      </div>
+      <div class="layout">
+        <div class="viewport" aria-label="原始 PDF 物理页" role="region" tabindex="0">
+          <div class="page">
+            <img id="image" alt="原始 PDF 物理页">
+            <div id="overlay" aria-hidden="true"></div>
+          </div>
+        </div>
+        <aside aria-labelledby="excerpt-title">
+          <h2 id="excerpt-title">所引原文</h2>
+          <p id="precision"></p>
+          <p id="excerpt"></p>
+          <div id="identity" title="原始 PDF 的 SHA-256"></div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

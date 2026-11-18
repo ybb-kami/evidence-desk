@@ -56,16 +56,40 @@ function formulaLink(region) {
   if (region) params.set('region',region);
   byId('formula-review-link').href = '/formula-review?'+params;
 }
-function selectItem(item, button) {
-  const [left,top,right,bottom] = item.bbox_pt;
+function highlight(box) {
+  const [left,top,right,bottom] = box;
   const width = evidence.width_pt, height = evidence.height_pt;
   Object.assign(mark.style,{left:100*left/width+'%',top:100*top/height+'%',
     width:100*(right-left)/width+'%',height:100*(bottom-top)/height+'%'});
   mark.hidden = false;
+}
+function selectItem(item, button, cell) {
+  highlight(cell?.bbox_pt || item.bbox_pt);
   byId('results').querySelector('[aria-pressed=true]')?.setAttribute('aria-pressed','false');
   button.setAttribute('aria-pressed','true');
   formulaLink(item.type==='formula' ? item.id : null);
-  byId('detail').textContent = item.description+'\n物理页 '+page.value+' · 框坐标（点） '+item.bbox_pt.map(n=>n.toFixed(1)).join(', ');
+  const detail = byId('detail');
+  const box = cell?.bbox_pt || item.bbox_pt;
+  detail.textContent = (cell ? cell.text || '空白或未读出' : item.description) +
+    '\n物理页 '+page.value+' · 框坐标（点） '+box.map(n=>n.toFixed(1)).join(', ');
+  if (!item.cells?.length) return;
+  const label = document.createElement('label');
+  label.textContent = '在原页定位表格单元格';
+  const cells = document.createElement('select');
+  cells.id = 'table-cell';
+  cells.add(new Option('整张表',''));
+  for (const c of item.cells) {
+    const opt = new Option('第 '+c.row+' 行，第 '+c.column+' 列 · '+(c.text || '空白或未读出'), c.row+','+c.column);
+    cells.add(opt);
+  }
+  if (cell) cells.value = cell.row+','+cell.column;
+  cells.onchange = () => {
+    const selected = item.cells.find(c => c.row+','+c.column===cells.value);
+    selectItem(item,button,selected);
+    byId('table-cell').focus();
+  };
+  label.append(cells);
+  detail.append(label);
 }
 function showResults() {
   const list = byId('results');
@@ -100,6 +124,12 @@ function showResults() {
     button.setAttribute('aria-pressed','false');
     button.onclick = ()=>selectItem(item,button);
     list.append(button);
+    if (!needle && item.id && item.id === initial.get('region') &&
+        doc.value === initial.get('id') && page.value === initial.get('page')) {
+      const cell = item.cells?.find(c => String(c.row) === initial.get('row') &&
+        String(c.column) === initial.get('column'));
+      selectItem(item,button,cell);
+    }
   }
   if (!list.children.length) list.textContent = '本页没有匹配结果。';
 }

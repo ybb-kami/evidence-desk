@@ -54,7 +54,7 @@ def adam_evidence(doc):
             "gap": "所选范围未读出两个带明确标记的 Adam β 参数值，请核对原页。"}
 
 
-def lookup(store, request):
+def lookup(store, request, *, dense=None):
     docid, question, anchor = (request.get(key) for key in ("id", "question", "anchor"))
     if (set(request) != {"id", "question", "anchor"} or not isinstance(docid, str)
             or not ID.fullmatch(docid) or not isinstance(question, str) or not 1 <= len(question.strip()) <= 500):
@@ -65,11 +65,6 @@ def lookup(store, request):
     doc = docs[0]
     if "author_blocks" not in doc and author_number(question) is not None:
         doc = engine.with_author_blocks(doc, store.pdf(docid))
-    if anchor is None:
-        from metric_qa import answer_metric
-        metric = answer_metric(store, doc, question)
-        if metric is not None:
-            return metric
     chunk = None
     if anchor is not None:
         if (not isinstance(anchor, list) or len(anchor) != 3
@@ -78,9 +73,61 @@ def lookup(store, request):
         chunk = next((c for c in doc["chunks"] if [c["page"], c["block"], c["part"]] == anchor), None)
         if chunk is None:
             raise Bad(404, "未找到所选证据段落。")
+    from scan_table_qa import answer_native_table, answer_scan_table
+    metric = None
+    if anchor is None:
+        from metric_qa import answer_metric
+        metric = answer_metric(store, doc, question)
+        if metric and metric.get("answer"):
+            return dict(metric, answer_method="table_calculation")
+    table = answer_scan_table(store, doc, question, chunk)
+    if table and table.get("answer"):
+        return dict(table, answer_method="scan_table")
+    native_table = answer_native_table(store, doc, question, chunk)
+    if native_table and native_table.get("answer"):
+        return dict(native_table, answer_method="native_table")
+    if anchor is not None:
         doc = dict(doc, chunks=[chunk])
     query = re.sub(r"^(?:其中|这段(?:话)?中|该段中)\s*", "", question.strip())
     if adam_pair_question(query, chunk):
-        return adam_evidence(doc)
+        return dict(adam_evidence(doc), answer_method="source_fields")
     hits = engine.find_evidence([doc], query)
-    return extract_facts(doc, query, hits) or {"hits": hits, "answer": None}
+    fact = extract_facts(doc, query, hits)
+    if fact is not None:
+        return dict(fact, answer_method="source_fields")
+    from rag_search import ranked_passages
+    ranked, retrieval = ranked_passages(doc, query, hits, dense)
+    limited = table or native_table or metric
+    if limited:
+        results = {**limited, "retrieval": retrieval}
+        known = {(h["page"], h["block"], h.get("part", 1)) for h in results["hits"]}
+        results["hits"] = (results["hits"] + [h for h in ranked
+            if (h["page"], h["block"], h.get("part", 1)) not in known])[:8]
+        return results
+    fact = extract_facts(doc, query, ranked)
+    if fact is not None:
+        return dict(fact, answer_method="source_fields", retrieval=retrieval)
+    return {"hits": ranked, "answer": None, "retrieval": retrieval,
+            "gap": ("已找到相关段落，请核对其中的条件和数值。" if ranked else
+                    "所选范围未找到足以回答这个问题的原文。")}
+
+def answer_question(store, request):
+    """Local retrieval runs first; optional local models receive only the selected evidence."""
+    result = lookup(store, request, dense=store.dense)
+    if result.get("answer") or not result["hits"] or "table_cells" in result or result.get("answer_method"):
+        return result
+    from passage_answer import assess_spans
+    question = request["question"]
+    candidates, status, english = store.passage_reader.candidates(question, result["hits"])
+    checked, direct = assess_spans(question, english, candidates, result["hits"]) if candidates else ([], None)
+    result["reader"] = {"status": status, "candidates": checked}
+    draft = store.local_generator.answer(question, result["hits"], checked)
+    result["generation"] = draft
+    if draft["status"] == "cited_draft":
+        claim = draft["claims"][0]
+        result.update(answer=claim["text"], answer_method="local_cited_draft", gap=None)
+    elif direct and draft["status"] in {"disabled", "busy", "unavailable", "misconfigured"}:
+        result.update(answer=direct["answer"].strip(), answer_method="local_extractive", gap=None)
+    elif draft["status"] == "insufficient_evidence":
+        result["gap"] = "在已检索的原文中，本机模型没有找到问题所需的直接依据。"
+    return result

@@ -2,13 +2,11 @@
 import argparse
 import hashlib
 import json
-import math
 import sqlite3
 import sys
 import tempfile
 import threading
 import zlib
-from collections import defaultdict
 from contextlib import closing
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -27,10 +25,8 @@ from graph import _blocks
 
 def index_page(doc, page):
     number = page["physical_page"]
-    paragraphs = defaultdict(list)
-    for line in page["lines"]:
-        paragraphs[line["line_id"].rsplit(".", 1)[0]].append(line["text"])
-    texts = ["\n".join(lines) for lines in paragraphs.values()]
+    from source_locator import ocr_paragraphs
+    texts = ["\n".join(line["text"] for line in lines) for lines in ocr_paragraphs(page)]
     for region in page["regions"]:
         texts.extend(cell["text"] for cell in region.get("cells", [])
                      if cell.get("text_method") == "cell_crop_tesseract")
@@ -60,6 +56,12 @@ class ScanLibrary(app.Library):
     def __init__(self, root, lang="eng"):
         super().__init__(root)
         self.lang = lang
+        from semantic import DenseIndex
+        from passage_answer import PassageReader
+        from local_generation import LocalGenerator
+        self.dense = DenseIndex(cache_dir=Path(root) / "semantic-vectors")
+        self.passage_reader = PassageReader()
+        self.local_generator = LocalGenerator()
         self.worker = threading.Lock()
         with closing(sqlite3.connect(self.db)) as db, db:
             db.execute("CREATE TABLE IF NOT EXISTS scan_pages "
@@ -171,6 +173,9 @@ class Handler(app.Handler):
         if post and (self.headers.get("Origin") not in (None, "http://" + host)
                      or self.headers.get("Sec-Fetch-Site") == "cross-site"):
             raise app.Bad(403, "拒绝跨站请求。")
+        from source_locator import ROUTES as source_routes, handle as handle_source
+        if path in source_routes:
+            return handle_source(self, post, url)
         if path in {"/formula-review", "/formula-review/image", "/api/formula-review"}:
             from formula_review import handle
             return handle(self, post, url)
@@ -195,6 +200,9 @@ class Handler(app.Handler):
             home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
                                 "扫描件可按页识别，完成后可在这里检索 OCR 文字。")
             home = home.replace("detail.append(archive);", """
+                const ask = el('a', '', '问这篇论文');
+                ask.href = '/followup?id=' + doc.id;
+                detail.append(ask);
                 if (doc.textless_pages?.length) {
                   const scan = el('a', '', '识别扫描页');
                   scan.href = '/scan?id=' + doc.id + '&page=' + doc.textless_pages[0];
@@ -216,9 +224,14 @@ class Handler(app.Handler):
             return route(self)
         if not post and path == "/followup":
             return self.payload(200, (HERE / "followup.html").read_bytes(), "text/html; charset=utf-8")
+        if post and path == "/api/followup/model":
+            from grounded_draft import route
+            return route(self)
         if post and path == "/api/followup":
-            from followup import lookup
-            return self.payload(200, lookup(self.server.library, self.json_request()))
+            from followup import answer_question
+            result = answer_question(self.server.library, self.json_request())
+            result["model_available"] = bool(self.server.enable_model and app.provider.configured())
+            return self.payload(200, result)
         if not post and path == "/scan":
             return self.payload(200, (HERE / "scan.html").read_bytes(), "text/html; charset=utf-8")
         store = self.server.library
@@ -238,11 +251,8 @@ class Handler(app.Handler):
             store.lookup(docid, number)
             with pymupdf.open(stream=store.pdf(docid), filetype="pdf") as pdf:
                 page = pdf[number - 1]
-                scale = min(1.8, 1600 / max(page.rect.width, page.rect.height))
-                if not math.isfinite(scale) or scale <= 0:
-                    raise ValueError("无效页面尺寸。")
-                pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
-                return self.payload(200, pix.tobytes("png"), "image/png")
+                from source_locator import render_image
+                return self.payload(200, render_image(page), "image/png")
         return super().serve(post)
 
 

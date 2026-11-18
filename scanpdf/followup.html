@@ -35,11 +35,19 @@ function clearSession(){
   field.value='';
   byId('status').textContent='';
 }
+function locator(hit,start,end){
+  const params=new URLSearchParams({id:hit.id,page:hit.page,block:hit.block,part:hit.part||1});
+  if(Number.isInteger(start)&&Number.isInteger(end)&&end>start){
+    params.set('start',start); params.set('end',end);
+  }
+  const link=node('a','定位原文'); link.href='/source?'+params;
+  link.target='_blank'; link.rel='noopener'; return link;
+}
 function cite(hit){
   const block=document.createElement('article'), position=[hit.page,hit.block,hit.part||1];
   const source=node('a',locationText(position)+' · 打开原 PDF');
   source.href='/pdf/'+hit.id+'#page='+hit.page; source.target='_blank'; source.rel='noopener';
-  block.append(source);
+  block.append(source,locator(hit));
   if(hit.source==='ocr'){
     const scan=node('a','核对 OCR 图像'); scan.href='/scan?id='+hit.id+'&page='+hit.page; block.append(scan);
   }
@@ -47,6 +55,39 @@ function cite(hit){
   focus.onclick=()=>{selectAnchor(position); field.focus();};
   block.append(node('blockquote',hit.text),focus);
   return block;
+}
+function modelDraft(turn, question, id, current) {
+  const button=node('button','根据摘录生成有引文的回答');
+  button.type='button';
+  const output=node('div','');
+  output.setAttribute('role','status');
+  button.onclick=async()=>{
+    if(!window.confirm('本次将问题和最多六条原文摘录发送至 DeepSeek，以生成带引文的回答。继续吗？'))return;
+    button.disabled=true;
+    output.replaceChildren(node('p','正在核对模型回答中的引文…'));
+    try{
+      const r=await fetch('/api/followup/model',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,question,anchor:current,consent:true})});
+      const data=await r.json();
+      if(!r.ok)throw Error(data.error||'模型请求未完成。');
+      output.replaceChildren();
+      if(data.status==='cited_draft'){
+        output.append(node('p','模型 '+data.model+' · 已核对引文与数值，请对照原句判断结论。'));
+        for(const claim of data.claims){
+          const article=node('article','');
+          const link=node('a','物理页 '+claim.page+' · 文本块 '+claim.block);
+          link.href='/pdf/'+claim.id+'#page='+claim.page; link.target='_blank'; link.rel='noopener';
+          article.append(node('p',claim.text),link,node('blockquote',claim.quote));
+          output.append(article);
+        }
+      }else{
+        const reason={not_configured:'当前服务未启用模型。',validation_failed:'模型引文或数值未通过核对。'};
+        output.append(node('p',reason[data.status]||'当前摘录不足以生成有据回答。'));
+      }
+    }catch(e){output.replaceChildren(node('p',e.message));}
+    finally{button.disabled=false;}
+  };
+  turn.append(button,output);
 }
 picker.onchange=clearSession;
 byId('clear').onclick=clearSession;
@@ -64,9 +105,50 @@ byId('ask').onsubmit=async event=>{
     if(!response.ok)throw Error(data.error||'检索失败。');
     const turn=document.createElement('section');
     turn.append(node('h2',question),node('p',picker.selectedOptions[0].text+' · '+(current?locationText(current):'全文')));
-    if(data.answer) turn.append(node('strong',data.answer));
+    if(data.answer) {
+      turn.append(node('strong',data.answer));
+      const method={local_extractive:'本机 MobileBERT 原文抽取',local_cited_draft:'本机模型生成 · 引文已匹配',
+        source_fields:'原文字段核对',table_calculation:'原表计算',scan_table:'扫描单元格',native_table:'原生 PDF 单元格'};
+      if(method[data.answer_method])turn.append(node('p',method[data.answer_method]));
+    }
+    for(const claim of data.generation?.claims||[]){
+      const cited=node('p','引文 · '+claim.span+' ');
+      cited.append(locator(claim,claim.answer_start,claim.answer_end));
+      turn.append(cited);
+    }
+    if(data.reader?.candidates?.length){
+      const details=node('details',''); details.append(node('summary','查看本机抽取候选及原句'));
+      for(const candidate of data.reader.candidates){
+        const row=node('p',candidate.answer+' · '+candidate.context+' ');
+        row.append(locator(candidate,candidate.answer_start,candidate.answer_end)); details.append(row);
+      }
+      turn.append(details);
+    }
+    if(data.table_cells?.length){
+      const cells=node('ul','');
+      for(const cell of data.table_cells){
+        const item=node('li','');
+        const label=(cell.row_label||'第 '+cell.row+' 行')+' · '+(cell.column_label||'第 '+cell.column+' 列');
+        const source=node('a',label+' · 打开物理页 '+cell.page+' 的单元格');
+        source.href=(cell.source==='native'?'/source?':'/scan?')+new URLSearchParams({id,page:cell.page,region:cell.region,row:cell.row,column:cell.column});
+        source.target='_blank'; source.rel='noopener';
+        item.append(source);
+        if(cell.method==='crop_ocr')item.append(node('small',' · 单元格裁切重读'));
+        cells.append(item);
+      }
+      turn.append(cells);
+    }
+    if(data.retrieval){
+      const labels={bm25:'全文检索',keyword:'关键词', 'multilingual-e5-small':'本机多语向量'};
+      const methods=data.retrieval.methods.map(m=>labels[m]||m);
+      const states={index_preparing:'语义索引正在后台建立',busy:'语义索引正忙'};
+      if(states[data.retrieval.dense])methods.push(states[data.retrieval.dense]);
+      if(methods.length)turn.append(node('small',methods.join(' · ')));
+    }
     if(data.gap || !data.hits.length) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
     for(const hit of data.hits)turn.append(cite(hit));
+    if(data.model_available && data.hits.length && (!data.table_cells || data.answer))
+      modelDraft(turn,question,id,current);
     historyBox.append(turn); field.value=''; byId('status').textContent='';
     field.focus();
   }catch(error){if(active===version)byId('status').textContent=error.message;}
@@ -77,6 +159,8 @@ byId('ask').onsubmit=async event=>{
     const response=await fetch('/api/library');
     if(!response.ok)throw Error('无法读取文库。');
     for(const doc of (await response.json()).docs)picker.add(new Option(doc.name,doc.id));
+    const requested=new URLSearchParams(location.search).get('id');
+    if(requested && Array.from(picker.options).some(option=>option.value===requested))picker.value=requested;
     clearSession();
     if(!picker.value)byId('status').textContent='请先在文库中导入 PDF。';
   }catch(error){byId('status').textContent=error.message;}
