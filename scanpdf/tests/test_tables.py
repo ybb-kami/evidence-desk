@@ -60,6 +60,72 @@ class TableDetectionTests(unittest.TestCase):
         ])
         self.assertEqual(table["cells"][0]["bbox"][3], 148)
 
+    def test_sparse_table_keeps_multiline_heading_and_overlapping_word_boxes(self):
+        for y in [90, 158, 245]:
+            self.draw.line((80, y, 560, y), fill=60, width=2)
+        ocr = [
+            word("Sample", 95, 105), word("Mean", 273, 105), word("Standard", 433, 105),
+            word("deviation", 433, 131),
+            word("Control", 95, 169), word("12.4", 273, 171), word("0.2", 433, 172),
+            word("Treatment", 95, 184), word("14.6", 273, 182), word("0.3", 433, 185),
+        ]
+
+        (table,) = detect_tables(self.page, ocr, dpi=144)
+
+        self.assertEqual(table["status"], "structure_recognized")
+        self.assertEqual([c["text"] for c in table["cells"]], [
+            "Sample", "Mean", "Standard\ndeviation",
+            "Control", "12.4", "0.2",
+            "Treatment", "14.6", "0.3",
+        ])
+
+    def test_open_sides_use_continuous_vertical_dividers_and_ocr_rows(self):
+        for x in [230, 415]:
+            self.draw.line((x, 90, x, 220), fill=0, width=2)
+        for y in [90, 135, 220]:
+            self.draw.line((80, y, 560, y), fill=0, width=2)
+        ocr = [
+            word("Sample", 95, 105), word("Protocol", 290, 105), word("Score", 460, 105),
+            word("Control", 95, 145), word("Method A", 290, 145), word("15", 460, 145),
+            word("Treatment", 95, 180), word("Method B", 290, 180), word("29", 460, 180),
+            word("|", 224, 145, 12),
+        ]
+
+        (table,) = detect_tables(self.page, ocr, dpi=144)
+
+        self.assertEqual(table["method"], "vertical_rules_ocr_alignment")
+        self.assertEqual([c["text"] for c in table["cells"]], [
+            "Sample", "Protocol", "Score", "Control", "Method A", "15", "Treatment", "Method B", "29",
+        ])
+
+    def test_grouped_header_and_long_body_gap_keeps_full_extent(self):
+        for y in [80, 300, 430]:
+            self.draw.line((80, y, 640, y), fill=0, width=2)
+        self.draw.line((230, 125, 404, 125), fill=0, width=2)
+        self.draw.line((450, 125, 625, 125), fill=0, width=2)
+        ocr = [
+            word("Measure", 96, 104), word("First group", 264, 104), word("Second group", 477, 104),
+            *[
+                word(value, x, y)
+                for y in [167, 211, 255, 329, 385]
+                for x, value in [(96, "Sample"), (243, "12"), (353, "17"), (463, "13"), (563, "21")]
+            ],
+        ]
+
+        (table,) = detect_tables(self.page, ocr, dpi=144)
+
+        self.assertEqual(table["status"], "detected_only")
+        self.assertEqual(table["bbox"], [80, 81, 641, 432])
+
+    def test_stacked_single_column_diagram_nodes_are_not_tables(self):
+        ocr = []
+        for y, name in [(90, "Input"), (145, "Transform"), (200, "Output")]:
+            self.draw.rectangle((235, y, 357, y + 31), outline=0, width=2)
+            self.draw.line((295, y + 31, 295, y + 55), fill=0, width=2)
+            ocr.append(word(name, 260, y + 8, 70))
+
+        self.assertEqual(detect_tables(self.page, ocr, dpi=144), [])
+
     def test_spanning_text_can_leave_sparse_structure_unresolved(self):
         for y in [90, 145, 260]:
             self.draw.line((80, y, 560, y), fill=55, width=2)

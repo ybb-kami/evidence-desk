@@ -63,7 +63,7 @@ def _connected_borders(ink, first, second, dpi):
     return True
 
 
-def _grid_columns(ink, rules, left, right, dpi):
+def _grid_columns(ink, rules, left, right, dpi, *, allow_open=False):
     """Return continuous vertical boundaries and whether a grid is visible."""
     top, bottom = rules[0].y, rules[-1].y
     if bottom <= top:
@@ -81,7 +81,9 @@ def _grid_columns(ink, rules, left, right, dpi):
         for a, b in zip(rules, rules[1:])
     ])
     visible = np.any(row_coverage >= 0.88, axis=0)
-    if not visible.any():
+    margin = 2 * tolerance
+    inner_visible = visible[left - start + margin : right - start - margin]
+    if not inner_visible.any():
         return [], False
     continuous = np.all(row_coverage >= 0.88, axis=0)
     edges = np.flatnonzero(np.diff(np.r_[False, continuous, False]))
@@ -90,13 +92,14 @@ def _grid_columns(ink, rules, left, right, dpi):
     # cannot be extended across the whole table without inventing boundaries.
     if np.any(visible & ~ndimage.maximum_filter1d(continuous, 2 * tolerance + 1)):
         return [], True
-    if (
-        len(columns) < 3
-        or abs(columns[0] - left) > tolerance
-        or abs(columns[-1] - right) > tolerance + 1
-    ):
-        return [], True
-    return columns, True
+    left_edge = abs(columns[0] - left) <= tolerance
+    right_edge = abs(columns[-1] - right) <= tolerance + 1
+    if len(columns) >= 3 and left_edge and right_edge:
+        return columns, True
+    if allow_open and len(columns) >= 2 and not left_edge and not right_edge:
+        return [left, *columns, right], True
+    return [], True
+
 
 
 def _text_rows(words, dpi):
@@ -114,6 +117,16 @@ def _text_rows(words, dpi):
             rows.append([word])
             centers.append(y)
     return rows, height
+
+
+def _has_separated_rows(rows, height, dpi):
+    minimum_gap = max(dpi * 0.15, height * 1.75)
+    separated = 0
+    for row in rows:
+        ordered = sorted(row, key=lambda word: word["bbox"][0])
+        if any(b["bbox"][0] - a["bbox"][2] >= minimum_gap for a, b in zip(ordered, ordered[1:])):
+            separated += 1
+    return separated >= 2
 
 
 def _text_columns(rows, left, right, height, dpi):
@@ -140,7 +153,12 @@ def _text_columns(rows, left, right, height, dpi):
         return []
     eligible = supported & ~occupied
     edges = np.flatnonzero(np.diff(np.r_[False, eligible, False]))
-    return [left, *(left + (a + b) // 2 for a, b in zip(edges[::2], edges[1::2])), right]
+    minimum_clear_width = max(3, round(height * 0.5))
+    gutters = [
+        left + (a + b) // 2 for a, b in zip(edges[::2], edges[1::2])
+        if b - a >= minimum_clear_width
+    ]
+    return [left, *gutters, right]
 
 
 def _cells(words, columns, rows):
@@ -173,6 +191,44 @@ def _cells(words, columns, rows):
     return cells
 
 
+def _sparse_row_boundaries(text_rows, columns, rules, partial_rules, height, dpi):
+    # Side-by-side header rules often delimit grouped columns. A single
+    # rectangular header cannot reliably represent these groupings.
+    unique_partial_y = {rule.y for rule in partial_rules}
+    if len(unique_partial_y) < len(partial_rules):
+        return []
+    if rules[1:-1] and len(text_rows) >= 3:
+        header_limit = rules[1].y
+        if max(_word_center(word)[1] for word in text_rows[1]) < header_limit < min(
+            _word_center(word)[1] for word in text_rows[2]
+        ):
+            primary, continuation = (
+                {bisect_right(columns, _word_center(word)[0]) for word in row}
+                for row in text_rows[:2]
+            )
+            if len(primary) >= 2 and continuation < primary and len(continuation) == 1:
+                text_rows = [text_rows[0] + text_rows[1], *text_rows[2:]]
+
+    boundaries = [rules[0].y]
+    for first, second in zip(text_rows, text_rows[1:]):
+        upper_center = np.median([_word_center(word)[1] for word in first])
+        lower_center = np.median([_word_center(word)[1] for word in second])
+        upper_edge = max(_word_center(word)[1] for word in first)
+        lower_edge = min(_word_center(word)[1] for word in second)
+        separators = [
+            rule.y for rule in [*rules[1:-1], *partial_rules]
+            if upper_edge < rule.y < lower_edge
+        ]
+        if len(separators) == 1:
+            boundaries.append(separators[0])
+        elif lower_center - upper_center >= max(dpi * 0.045, height * 0.72):
+            boundaries.append(int(np.ceil((upper_edge + lower_edge) / 2)))
+        else:
+            return []
+    boundaries.append(rules[-1].y)
+    return boundaries
+
+
 def _region(ink, rules, partial_rules, words, dpi):
     top, bottom = rules[0].y, rules[-1].y
     left = min(rule.left for rule in rules)
@@ -181,37 +237,50 @@ def _region(ink, rules, partial_rules, words, dpi):
         return None
     bounds = [left, top, right, bottom + 1]
     local_words = _table_words(words, bounds)
-    columns, vertical_evidence = _grid_columns(ink, rules, left, right, dpi)
-    if columns and not partial_rules:
+    columns, vertical_evidence = _grid_columns(ink, rules, left, right, dpi, allow_open=True)
+    closed = _connected_borders(ink, rules[0], rules[-1], dpi)
+    if columns and closed and not partial_rules:
         rows = [rule.y for rule in rules]
         return {
             "type": "table", "bbox": bounds, "status": "structure_recognized",
             "method": "raster_grid", "cells": _cells(local_words, columns, rows),
         }
 
+    if columns and not closed:
+        # In open-sided grids the vertical rules determine columns. OCR can
+        # separate rows when a horizontal rule is shared by several rows.
+        tolerance = max(2, round(dpi * 0.02))
+        local_words = [
+            word for word in local_words
+            if word["text"] not in {"|", "│"}
+            or all(abs(_word_center(word)[0] - x) > tolerance for x in columns[1:-1])
+        ]
+        text_rows, height = _text_rows(local_words, dpi)
+        if _has_separated_rows(text_rows, height, dpi):
+            row_bands = _sparse_row_boundaries(text_rows, columns, rules, [], height, dpi)
+            if row_bands:
+                return {
+                    "type": "table", "bbox": bounds, "status": "structure_recognized",
+                    "method": "vertical_rules_ocr_alignment",
+                    "cells": _cells(local_words, columns, row_bands),
+                }
+
     text_rows, height = _text_rows(local_words, dpi)
     columns = _text_columns(text_rows, left, right, height, dpi)
+    separated = _has_separated_rows(text_rows, height, dpi)
     if len(columns) < 3:
-        # Rule pairs alone also occur around text boxes and as decoration.
-        # A partial divider or repeated long dividers provide additional evidence
-        # when OCR cannot resolve the column layout.
-        if not vertical_evidence and len(rules) < 3 and not partial_rules:
-            return None
+        broad = right - left >= ink.shape[1] * 0.20
+        if not ((vertical_evidence and closed) or (broad and separated)):
+            boxed = any(_connected_borders(ink, a, b, dpi) for a, b in zip(rules, rules[1:]))
+            if not (broad and not boxed and not vertical_evidence and len(rules) >= 3):
+                return None
     elif not vertical_evidence:
-        spans = [
-            (min(word["bbox"][1] for word in row), max(word["bbox"][3] for word in row))
-            for row in text_rows
-        ]
-        if all(a[1] < b[0] for a, b in zip(spans, spans[1:])):
-            boundaries = [top]
-            for a, b in zip(spans, spans[1:]):
-                separators = [rule.y for rule in [*rules[1:-1], *partial_rules] if a[1] <= rule.y <= b[0]]
-                boundaries.append(separators[0] if len(separators) == 1 else (a[1] + b[0]) // 2)
-            boundaries.append(bottom)
+        row_bands = _sparse_row_boundaries(text_rows, columns, rules, partial_rules, height, dpi)
+        if row_bands:
             return {
                 "type": "table", "bbox": bounds, "status": "structure_recognized",
                 "method": "horizontal_rules_ocr_alignment",
-                "cells": _cells(local_words, columns, boundaries),
+                "cells": _cells(local_words, columns, row_bands),
             }
 
     return {
@@ -257,7 +326,7 @@ def detect_tables(gray: Image.Image, words: list[dict], dpi: int) -> list[dict]:
                 between = _table_words(words, [first.left, previous.y, first.right, rule.y])
                 rows, height = _text_rows(between, dpi)
                 vertical = _grid_columns(ink, [previous, rule], first.left, first.right, dpi)[1]
-                if not vertical and len(_text_columns(rows, first.left, first.right, height, dpi)) < 3:
+                if not vertical and not _has_separated_rows(rows, height, dpi):
                     break
             if first_border is None:
                 first_border = connected

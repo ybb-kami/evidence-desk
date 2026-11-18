@@ -14,6 +14,7 @@ _NUMBER = r"(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)"
 _TOKEN = re.compile(rf"{_NUMBER}|{_LETTER}|[=+\-−×÷*/()]")
 _LABEL = re.compile(r"\(\s*(\d+(?:\s*\.\s*\d+)*[a-z]?)\s*\)", re.I)
 _RELATION = re.compile(r"[=≈≠≤≥<>∝≡]")
+_STRONG_RELATION = re.compile(r"\w.*[=≈≠≤≥∝≡].*\w")
 _OPERATOR = re.compile(r"[-+−×÷*/^±]")
 _MATH_GLYPH = re.compile(r"[∑∫√∏∞∂∇]")
 
@@ -146,6 +147,73 @@ def _isolated(box, other_boxes, height):
     return True
 
 
+def _numbered_regions(lines, boxes, ink, height, page_left, page_right, tables):
+    """Pair a right-margin label with the equation fragments on its baseline."""
+    span = page_right - page_left
+    for key, line in lines.items():
+        expression, label = _split_label(line, height)
+        if not label:
+            match = _LABEL.fullmatch(" ".join(word["text"] for word in line))
+            if not match or min(word.get("confidence", 0) for word in line) < 65:
+                continue
+            label = re.sub(r"\s+", "", match.group(1))
+            expression = []
+        label_box = _bounds([word["bbox"] for word in line[len(expression):]])
+        if label_box[0] < page_left + 0.65 * span:
+            continue
+        anchor = _bounds([word["bbox"] for word in expression]) if expression else label_box
+        center = (anchor[1] + anchor[3]) / 2
+        left = anchor[0]
+        consumed = {key}
+        # OCR may give separate lines to left-hand and right-hand sides of a display.
+        neighboring = sorted(
+            ((candidate, b) for candidate, b in boxes.items() if candidate != key),
+            key=lambda item: (abs(center - (item[1][1] + item[1][3]) / 2), -item[1][2]),
+        )
+        for candidate, b in neighboring:
+            gap = left - b[2]
+            if not -0.25 * height <= gap <= (2.5 * height if expression else span):
+                continue
+            if abs(center - (b[1] + b[3]) / 2) > 0.5 * height:
+                continue
+            if b[3] - b[1] > 2.2 * height:
+                continue
+            expression = lines[candidate] + expression
+            left = b[0]
+            consumed.add(candidate)
+        text = " ".join(word["text"] for word in expression)
+        # A label and a relation provide corroboration when complex OCR has extra names.
+        # Exclude prose assignment examples with several ordinary connecting words.
+        names = re.findall(r"[A-Za-z]{2,}", text.lower())
+        if not _STRONG_RELATION.search(text) and not _math_evidence(text):
+            continue
+        if (names and names[0] in _PROSE) or sum(name in _PROSE for name in names) >= 2:
+            continue
+        expression_box = _bounds([word["bbox"] for word in expression])
+        if expression_box[0] < page_left + 0.06 * span:
+            continue
+        decorations = [
+            b for candidate, b in boxes.items() if candidate not in consumed
+            and expression_box[0] - 0.4 * height <= b[0]
+            and b[2] <= expression_box[2] + 0.4 * height
+            and b[2] - b[0] <= min(0.42 * span, 0.48 * (expression_box[2] - expression_box[0]))
+            and min(b[3], expression_box[3]) + 0.8 * height >= max(b[1], expression_box[1])
+        ]
+        box = _bounds([expression_box, label_box, *decorations])
+        if _in_table(box, tables) or _in_table(expression_box, tables):
+            continue
+        if not _isolated(box, (b for candidate, b in boxes.items()
+                              if candidate not in consumed and b not in decorations), height):
+            continue
+        transcribed = not decorations and _arithmetic(text) and _baseline_supported(expression, ink, height)
+        yield ({
+            "type": "formula", "bbox": box, "equation_number": label,
+            "status": "transcribed" if transcribed else "detected_only",
+            "method": "ocr_baseline_arithmetic" if transcribed else "ocr_layout",
+            "text": text if transcribed else None,
+        }, consumed)
+
+
 def _fraction_regions(ink, height, page_left, page_right):
     """Find math-like stacked ink around an isolated horizontal bar."""
     min_bar = max(7, round(1.20 * height))
@@ -203,44 +271,32 @@ def detect_formulas(gray: Image.Image, words: list[dict], dpi: int,
         page_left, page_right = 0, pixels.shape[1]
 
     span = page_right - page_left
-    label_lines = {}
-    for key, line in lines.items():
-        match = _LABEL.fullmatch(" ".join(word["text"] for word in line))
-        if match and min(word.get("confidence", 0) for word in line) >= 65:
-            label_box = boxes[key]
-            if label_box[0] > page_left + span * 0.65:
-                label_lines[key] = re.sub(r"\s+", "", match.group(1))
-
-    matched_labels = set()
     found = []
+    numbered_lines = set()
+    for result, consumed in _numbered_regions(
+        lines, boxes, ink, typical, page_left, page_right, tables
+    ):
+        if not numbered_lines.intersection(consumed):
+            found.append(result)
+            numbered_lines.update(consumed)
     for key in sorted(lines, key=lambda key: (boxes[key][1], boxes[key][0])):
+        if key in numbered_lines:
+            continue
         line = lines[key]
         expression, label = _split_label(line, typical)
         box = boxes[key]
+        if box[2] - box[0] < 0.65 * (box[3] - box[1]):
+            continue
         expression_box = _bounds([w["bbox"] for w in expression])
         text = " ".join(word["text"] for word in expression)
         if not _math_evidence(text):
             continue
-        label_key = None
-        if label is None:
-            yc = (box[1] + box[3]) / 2
-            candidates = []
-            for candidate in label_lines.keys() - matched_labels:
-                label_box = boxes[candidate]
-                vertical_delta = abs(yc - (label_box[1] + label_box[3]) / 2)
-                gap = label_box[0] - box[2]
-                if vertical_delta <= 0.45 * typical and gap >= 1.6 * typical:
-                    candidates.append((vertical_delta, gap, candidate))
-            if candidates:
-                _, _, label_key = min(candidates)
-                label = label_lines[label_key]
-                box = _bounds([box, boxes[label_key]])
         if _in_table(box, tables):
             continue
         if not label and (expression_box[0] < page_left + span * 0.11 or
                           expression_box[2] > page_right - span * 0.11):
             continue
-        if not _isolated(box, (b for k, b in boxes.items() if k not in (key, label_key)), typical):
+        if not _isolated(box, (b for k, b in boxes.items() if k != key), typical):
             continue
 
         transcribed = _arithmetic(text) and _baseline_supported(expression, ink, typical)
@@ -253,8 +309,6 @@ def detect_formulas(gray: Image.Image, words: list[dict], dpi: int,
         }
         if label:
             result["equation_number"] = label
-        if label_key is not None:
-            matched_labels.add(label_key)
         found.append(result)
 
     # OCR may miss the contents of a stacked numerator or denominator altogether.
@@ -267,12 +321,22 @@ def detect_formulas(gray: Image.Image, words: list[dict], dpi: int,
             continue
         if not _isolated(box, (region["bbox"] for region in found), typical):
             continue
-        nearby = [b for b in boxes.values()
-                  if b[0] < right and left < b[2] and b[1] < bottom and top < b[3]]
-        if any(b[2] - b[0] > (right - left) + 5 * typical for b in nearby):
+        nearby = [key for key, b in boxes.items()
+                  if b[0] < right + typical and left - typical < b[2]
+                  and b[1] < bottom and top < b[3]]
+        baseline = [key for key in nearby if abs((boxes[key][1] + boxes[key][3]) / 2
+                    - (top + bottom) / 2) <= 0.55 * typical]
+        has_math_anchor = any(
+            _STRONG_RELATION.search(" ".join(word["text"] for word in lines[key]))
+            for key in baseline
+        )
+        if lines and not has_math_anchor:
+            continue
+        box = _bounds([box, *(boxes[key] for key in nearby)])
+        if any(boxes[key][2] - boxes[key][0] > 0.6 * span for key in nearby):
             continue
         found.append({
-            "type": "formula", "bbox": _bounds([box, *nearby]),
+            "type": "formula", "bbox": box,
             "status": "detected_only", "method": "stacked_fraction_layout", "text": None,
         })
 

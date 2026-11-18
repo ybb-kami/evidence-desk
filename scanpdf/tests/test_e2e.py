@@ -14,6 +14,8 @@ import unittest
 import fitz
 from PIL import Image
 
+from tools.review_1706_scan import EXPECTED_SHA, review
+
 from .fixture import create_fixture
 
 
@@ -163,7 +165,7 @@ class ScanPDFTests(unittest.TestCase):
 
     @unittest.skipUnless(SUPPLIED_SAMPLE or DEFAULT_SAMPLE.is_file(), "Official sample path not supplied")
     def test_supplied_official_sample_produces_locatable_ocr(self) -> None:
-        # This run verifies the supplied file and locators. It has no transcription ground truth.
+        self.dpi = 240
         source = Path(SUPPLIED_SAMPLE or DEFAULT_SAMPLE).expanduser().resolve()
         with tempfile.TemporaryDirectory() as temporary, fitz.open(source) as document:
             result, crops = self.run_cli(source, Path(temporary))
@@ -178,6 +180,20 @@ class ScanPDFTests(unittest.TestCase):
             self.assertTrue({"table", "formula"}.issubset({r["type"] for r in regions}))
             for region in regions:
                 self.assert_evidence_image(region, crops)
+            if result["source"]["sha256"] == EXPECTED_SHA:
+                reviewed = review(result)
+                self.assertEqual(reviewed["pages_with_ocr_lines"], 15)
+                for anchor in reviewed["anchors"]:
+                    with self.subTest(anchor=anchor["anchor"]):
+                        self.assertTrue(anchor["localized_at_0.5"], anchor)
+                # A numeric lookup must have a row and column in the actual table.
+                table = next(r for r in result["pages"][8]["regions"]
+                             if r["type"] == "table" and r["bbox_pt"][1] > 400)
+                self.assertEqual(table["status"], "structure_recognized")
+                cells = {(cell["row"], cell["column"]): cell["text"] for cell in table["cells"]}
+                self.assertIn("Dyer", cells[12, 1])
+                self.assertIn("generative", cells[12, 2])
+                self.assertEqual(cells[12, 3], "93.3")
             for evidence, pdf_page in zip(result["pages"], document):
                 self.assert_page_evidence(evidence, pdf_page.rect.width, pdf_page.rect.height)
 

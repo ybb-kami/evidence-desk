@@ -44,6 +44,21 @@ class FormulaDetectionTests(unittest.TestCase):
         self.assertEqual(result["equation_number"], "7")
         self.assertEqual(result["bbox"], [195, 69, 449, 82])
 
+    def test_numbered_complex_expression_split_by_ocr(self):
+        words = [
+            word("forecast", 117, 70, 48, line="left"),
+            word("=", 173, 74, 7, 5, line="left"),
+            word("minimum(a,", 187, 70, 57, line="left"),
+            word("prior_value)", 255, 69, 75, line="right"),
+            word("(9)", 435, 69, 22, line="right"),
+            word("noise", 128, 65, 95, 7, line="duplicate"),
+        ]
+        result, = detect_formulas(raster(words), words, 240, [])
+        self.assertEqual(result["equation_number"], "9")
+        self.assertEqual(result["bbox"], [117, 65, 457, 82])
+        self.assertEqual(result["status"], "detected_only")
+        self.assertIsNone(result["text"])
+
     def test_ink_missing_from_ocr_prevents_transcription(self):
         image = raster(self.words)
         ImageDraw.Draw(image).rectangle([208, 68, 214, 73], fill=0)
@@ -72,6 +87,13 @@ class FormulaDetectionTests(unittest.TestCase):
         self.assertEqual(result["status"], "detected_only")
         self.assertIsNone(result["text"])
         self.assertEqual(result["bbox"], [226, 56, 259, 87])
+
+        words = [word("Process", 189, 57, 35, line="diagram")]
+        self.assertEqual(detect_formulas(image, words, 240, []), [])
+
+    def test_rotated_ocr_line_is_excluded(self):
+        words = [word("x - y", 238, 61, 8, 108)]
+        self.assertEqual(detect_formulas(raster(words), words, 240, []), [])
 
     def test_explicit_exponent_is_detected_without_transcription(self):
         self.words[0]["text"] = "x^2"
