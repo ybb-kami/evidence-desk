@@ -19,4 +19,4 @@ python scanpdf/acceptance/deepseek_live.py --out /tmp/evidence-deepseek-live.jso
 python scanpdf/acceptance/deepseek_stub_http.py
 ```
 
-脚本以实际工作台 HTTP 入口运行，并替换供应商传输、阻断进程对外连接。Search-only 路径实际只向 stub 传递明确输入的公开检索词，合成私料标记未传递。Flash 工具规划、单篇问答的页 2 原件字形定位和缺字段均通过。账本满 0.71 USD 后，额外付费调用为 0，追问返回 HTTP 503。当前实测另记录一次额度核验前的免费模型元数据请求。此项用于验证本地请求行为，线上供应商请求为 0。[本地事务测试记录](results/deepseek-flash-stub-http.json)
+脚本以实际工作台 HTTP 入口运行，并替换供应商传输、阻断进程对外连接。Search-only 路径实际只向 stub 传递明确输入的公开检索词，合成私料标记未传递。Flash 工具规划、单篇问答的页 2 原件字形定位和缺字段均通过。账本满 0.71 USD 后，额外付费调用为 0，追问返回 HTTP 503。最终复测中，账本满额后额外模型目录查询也为 0。此项用于验证本地请求行为，线上供应商请求为 0。[本地事务测试记录](results/deepseek-flash-stub-http.json)

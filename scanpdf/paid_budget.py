@@ -36,6 +36,13 @@ class Round:
         """Commit a maximum charge before making one call. Reservations are final."""
         self._budget._reserve(self._id, kind, cost_nusd)
 
+    def check_model_capacity(self):
+        totals = self._budget.status()
+        if totals["remaining_nusd"] <= 0:
+            raise BudgetExceeded("money_limit")
+        if totals["model_calls"] >= MAX_MODEL_CALLS:
+            raise BudgetExceeded("model_limit")
+
 
 class Budget:
     def __init__(self, path):

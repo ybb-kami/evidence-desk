@@ -38,7 +38,8 @@
     "search_refused": true,
     "model_http_status": 503,
     "additional_paid_calls": 0,
-    "additional_metadata_calls": 1,
-    "additional_transport_calls": 1
+    "additional_metadata_calls": 0,
+    "additional_transport_calls": 0,
+    "all_outgoing_transport_blocked": true
   }
 }

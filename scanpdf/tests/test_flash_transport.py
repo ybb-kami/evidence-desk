@@ -73,7 +73,8 @@ class HTTPSStub:
 
 class FlashTransportTest(TestCase):
     def setUp(self):
-        self.ticket = object()
+        from unittest.mock import Mock
+        self.ticket = Mock(spec=["check_model_capacity"])
         self.generator = FlashGenerator(self.ticket)
         self.events = []
         self.enterContext(patch.dict(os.environ, {"DEEPSEEK_API_KEY": KEY,

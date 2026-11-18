@@ -196,6 +196,7 @@ class FlashGenerator(LocalGenerator):
             body = json.dumps(outgoing, ensure_ascii=False, allow_nan=False).encode("utf-8")
         except (ValueError, TypeError, RecursionError):
             raise FlashError("invalid_payload") from None
+        self.ticket.check_model_capacity()
         _verify_model(key, min(timeout, METADATA_TIMEOUT))
         _authorize(self.ticket, outgoing)
         accept = "text/event-stream" if outgoing["stream"] else "application/json"
