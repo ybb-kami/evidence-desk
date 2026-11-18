@@ -1,7 +1,7 @@
 """Combine independent rankings of the same passages within one selected document."""
 from collections import defaultdict
 
-from hybrid_retrieval import retrieve, retrieve_candidates
+from hybrid_retrieval import retrieve, retrieve_candidates, retrieve_phrase_candidates
 from semantic import DenseUnavailable
 
 
@@ -18,16 +18,17 @@ def ranked_passages(doc, question, original, dense=None, *, limit=8, recall_bm25
     rankings = []
     methods = []
     expanded = []
-    # Preserve an existing lexical ranking. Expand only an otherwise empty
-    # channel when E5 can independently contribute candidates.
-    if recall_bm25 and semantic_hits and not sparse and not original:
-        expanded = retrieve_candidates(doc, question, limit=2 * limit)
+    # When E5 cannot corroborate broader matches, require a contiguous query
+    # phrase in the original passage. The returned passage is still a candidate.
+    if recall_bm25 and not sparse and not original:
+        recall = retrieve_candidates if semantic_hits else retrieve_phrase_candidates
+        expanded = recall(doc, question, limit=2 * limit)
     if sparse:
         rankings.append(sparse)
         methods.append("bm25")
     elif expanded:
         rankings.append(expanded)
-        methods.append("bm25-recall")
+        methods.append("bm25-recall" if semantic_hits else "bm25-phrase")
     elif original:
         rankings.append(original)
         methods.append("keyword")

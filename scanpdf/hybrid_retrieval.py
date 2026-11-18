@@ -258,8 +258,24 @@ def retrieve(doc, query, limit=8):
 
 
 def retrieve_candidates(doc, query, limit=8):
-    """Return broader lexical candidates for fusion with an operational dense index."""
+    """Return lexical candidates for fusion, without treating them as answers."""
     return [dict(hit, retrieval_candidate=True) for hit in _retrieve(doc, query, limit, recall=True)]
+
+
+def retrieve_phrase_candidates(doc, query, limit=8):
+    """Keep only broad lexical hits with a three-term phrase when dense search is unavailable."""
+    if not isinstance(query, str) or len(query) > engine.MAX_QUERY:
+        return []
+    terms = tuple(_terms(_EXCLUDED.split(query, maxsplit=1)[0], query=True))
+    phrases = {triple for triple in zip(terms, terms[1:], terms[2:]) if len(set(triple)) == 3}
+    if not phrases:
+        return []
+    matches = []
+    for hit in retrieve_candidates(doc, query, limit=limit):
+        tokens = tuple(_terms(hit["text"]))
+        if not phrases.isdisjoint(zip(tokens, tokens[1:], tokens[2:])):
+            matches.append(hit)
+    return matches
 
 
 def _retrieve(doc, query, limit, *, recall):

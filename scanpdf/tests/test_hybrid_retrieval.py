@@ -95,6 +95,17 @@ class HybridRetrievalTests(unittest.TestCase):
             hits = hybrid_retrieval.retrieve_candidates(doc, "532 nm 测量结晶度？")
         self.assertEqual([hit["block"] for hit in hits], [2])
 
+    def test_unavailable_dense_recovers_a_named_subject_without_loosening_numeric_scope(self):
+        doc = document(passage(2, 4, "The ceramic pressure sleeve rested in foam."))
+        query = "What serial number and batch code identify the ceramic pressure sleeve?"
+        self.assertEqual(hybrid_retrieval.retrieve(doc, query), [])
+        hits, meta = ranked_passages(doc, query, [], None)
+        self.assertEqual(meta["methods"], ["bm25-phrase"])
+        self.assertEqual([(h["page"], h["block"], h["retrieval_candidate"]) for h in hits], [(2, 4, True)])
+        self.assertEqual(ranked_passages(doc, query + " at 950 K", [], None)[0], [])
+        scattered = document(passage(1, 2, "The ceramic dish rested on foam. Pressure was applied to each sleeve."))
+        self.assertEqual(ranked_passages(scattered, query, [], None)[0], [])
+
     def test_candidate_channel_runs_with_ready_e5_and_falls_back_on_failure(self):
         doc = document(passage(1, 1, "Raman spectroscopy measured crystallinity at 532 nm."))
         q = "Raman spectroscopy in pseudodictionary token phlogiston and xylophone"
