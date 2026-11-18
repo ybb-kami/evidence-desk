@@ -28,7 +28,7 @@
 <ul class="doc-list" id="docs" aria-label="文献检索范围"></ul>
 </aside>
 <main class="panel" id="main" tabindex="-1"><div class="eyebrow">02 / 原文检索</div><h2>查找证据</h2>
-<form id="search-form"><label for="query">关键词或短语</label><div class="search-row"><input type="search" id="query" maxlength="160" placeholder="输入术语、作者或原文片段" autocomplete="off" aria-describedby="search-help"><button class="primary" id="submit" type="submit">检索</button><button id="clear" type="button">清空</button></div><div class="subtle" id="search-help">仅搜索勾选文献的文本层，不生成答案。以 PDF 原件为准。</div></form>
+<form id="search-form"><label for="query">关键词或短语</label><div class="search-row"><input type="search" id="query" maxlength="160" placeholder="输入术语、作者或原文片段" autocomplete="off" aria-describedby="search-help"><button class="primary" id="submit" type="submit">检索</button><button id="clear" type="button">清空</button></div><div class="subtle" id="search-help">仅搜索勾选文献的文本层，不生成答案。以 PDF 原件为准。</div><p class="subtle">已导入示例？<button id="fill-sample" class="compact" type="button">填入示例关键词</button>，命中位于第 2 页。</p></form>
 <hr class="rule"><div class="result-head"><h2>检索结果</h2><span class="counter" id="hit-count" hidden></span></div>
 <div id="status" role="status" aria-live="polite" class="empty"><strong>准备就绪</strong>导入 PDF 后输入关键词。每条命中都可打开对应的原文页。</div>
 <ul class="card-list" id="hits" aria-label="证据命中"></ul>
@@ -163,7 +163,9 @@ $('files').onchange = async () => {
       notices.push(result.existing ? file.name + '：已存在，未重复导入。' : file.name + '：已导入。');
       for (const match of result.duplicates || []) {
         const detail = Object.hasOwn(duplicateLabels, match.reason) ? duplicateLabels[match.reason] : '请复核是否为同一文献';
-        notices.push('可能重复：' + match.name + '（' + detail + '）');
+        const prefix = match.reason === 'identical_bytes' ? '重复文件：' : '可能重复：';
+        notices.push(prefix + match.name + '（' + detail + '）');
+        if (typeof match.advice === 'string' && match.advice) notices.push('版本提示：' + match.advice);
       }
     } catch(error) { notices.push(file.name + '：' + error.message); }
   }
@@ -176,7 +178,8 @@ $('files').onchange = async () => {
 function hitKey(hit) { return JSON.stringify([hit.id, hit.page, hit.block]); }
 function drawCard(hit, pinned = false, verifiable = false) {
   const card = el(pinned ? 'article' : 'li', 'evidence');
-  card.append(el('div','metadata','PDF 第 ' + hit.page + ' 页 · 文本块 ' + hit.block), el('h3','',hit.name), el('blockquote','',hit.text));
+  const printedLabel = hit.page_label && String(hit.page_label) !== String(hit.page) ? ' · 页面标签 ' + hit.page_label : '';
+  card.append(el('div','metadata','PDF 第 ' + hit.page + ' 页' + printedLabel + ' · 文本块 ' + hit.block), el('h3','',hit.name), el('blockquote','',hit.text));
   const actions = el('div','actions');
   const key = hitKey(hit);
   const button = el('button','compact', pinned ? '移出对照' : '加入对照');
@@ -213,6 +216,11 @@ function renderComparison() {
   }
 }
 $('clear-compare').onclick = () => { compared.clear(); $('compare-title').focus(); renderComparison(); };
+$('fill-sample').onclick = () => {
+  $('query').value = 'verify page numbering';
+  $('query').dispatchEvent(new Event('input'));
+  $('query').focus();
+};
 $('clear').onclick = () => {
   $('query').value = '';
   resetResults();
