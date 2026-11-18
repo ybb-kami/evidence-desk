@@ -33,9 +33,28 @@ class ProviderTests(unittest.TestCase):
             self.assertNotIn(self.hit["id"], body.decode())
             return answer([{"id": "e1", "text": self.hit["text"]}])
         result = provider.summarize("For which integers?", [self.hit], transport=mock)
-        self.assertEqual(result["status"], "supported")
-        self.assertEqual(result["quotes"], [self.hit])
+        self.assertEqual(result["status"], "verified_excerpt")
+        self.assertEqual(result["claim_support"],"not_assessed")
+        self.assertEqual({k:result["quotes"][0][k] for k in self.hit},self.hit)
+        self.assertEqual(result["quotes"][0]["context"],self.hit["text"])
         self.assertNotIn(self.hit["text"], result["answer"])
+
+    def test_phrase_cannot_drop_negation_or_condition(self):
+        for whole,partial in [
+            ("We did not observe a meaningful improvement in the lantern measurement.","a meaningful improvement"),
+            ("The method works only in this limited sample.","The method works"),
+            ("在本次小样本中，没有观察到明显的统计改善。","观察到明显的统计改善"),
+        ]:
+            hit={**self.hit,"text":whole}
+            r=provider.summarize("Q?",[hit],transport=lambda *_:answer([{"id":"e1","text":partial}]))
+            self.assertEqual(r['status'],'insufficient_evidence')
+            self.assertFalse(r['quotes'])
+        whole='No improvement was found. The lamp remained amber. More data are needed.'
+        q='The lamp remained amber.'
+        r=provider.summarize("Q?",[{**self.hit,'part':2,'offset':50,'text':whole}],transport=lambda *_:answer([{'id':'e1','text':q}]))
+        row=r['quotes'][0]
+        self.assertEqual((row['part'],row['offset'],row['context']),(2,50,whole))
+        self.assertEqual(whole[row['quote_start']:row['quote_end']],q)
 
     def test_fails_closed_on_out_of_range_or_injected_output(self):
         valid = {"id": "e1", "text": self.hit["text"]}

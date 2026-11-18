@@ -26,3 +26,5 @@ An exact quote may still be irrelevant or missing important surrounding context,
 so check the referenced passage before relying on it. Unsupported or malformed
 suggestions result in abstention. No live API call was used in testing: run
 `python -m unittest -v test_provider` for the injected-transport tests.
+
+Verified excerpt policy: the app rejects sentence fragments even when they occur in the source. A returned verified_excerpt includes full local excerpt context and offsets; claim_support is not_assessed. An exact sentence is not evidence that the model interpreted it correctly.

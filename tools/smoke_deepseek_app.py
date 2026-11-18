@@ -18,7 +18,7 @@ def run(*,live=False):
     if hashlib.sha256(raw).hexdigest()!='b5b2e136ca4a8405cb9783032885374e90a2683edb5592c34bb2517491618dbe':raise Failed('fixture_integrity_failed')
     transport=build_opener(ProxyHandler({}))
     with tempfile.TemporaryDirectory(prefix='ed-live-smoke-') as tmp:
-        p=subprocess.Popen([sys.executable,str(ROOT/'app.py'),'--data',tmp,'--port','0','--enable-deepseek'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,encoding='utf8',cwd=ROOT)
+        p=subprocess.Popen([sys.executable,str(ROOT/'app.py'),'--data',tmp,'--port','0','--enable-deepseek'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,encoding='utf8',env={**os.environ,'PYTHONIOENCODING':'utf-8'},cwd=ROOT)
         try:
             line=p.stdout.readline();m=re.search(r'http://127\.0\.0\.1:\d+',line)
             if not m:raise Failed('local_server_start_failed')
@@ -38,7 +38,7 @@ def run(*,live=False):
                 code=e.code;e.close();raise Failed('local_verify_http_'+str(code)) from None
             if r.get('status')=='insufficient_evidence':return {'result':'provider_returned_no_usable_extract','model':'deepseek-flash','verified_quotes':0}
             quotes=r.get('quotes',[])
-            if r.get('status')!='supported' or not quotes or any(x.get('id')!=d['id'] or x.get('page')!=1 or x.get('block')!=hits[0]['block'] or not x.get('text') or x['text'] not in SOURCE for x in quotes):raise Failed('quote_validation_failed')
+            if r.get('status') not in ('supported','verified_excerpt') or not quotes or any(x.get('id')!=d['id'] or x.get('page')!=1 or x.get('block')!=hits[0]['block'] or not x.get('text') or x['text'] not in SOURCE for x in quotes):raise Failed('quote_validation_failed')
             return {'result':'app_provider_roundtrip_with_verified_excerpt','model':'deepseek-flash','verified_quotes':len(quotes),'physical_page':1,'fixture_sha256':d['id'],'seconds':round(time.monotonic()-start,2),'public_deployment_verified':False}
         finally:
             if p.poll() is None:p.terminate()

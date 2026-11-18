@@ -26,11 +26,11 @@ limitations, and negation. Do not present speculation as findings or omit
 qualifiers that change a quote's meaning. If no extract directly addresses the
 question or a faithful short quote is impossible, abstain. Reply only in JSON:
 {"quotes":[{"id":"e1","text":"exact contiguous substring"}]} or {"quotes":[]}.
-Up to three quotes, each 12 to 320 characters. No extra keys or commentary.
+Select whole sentences only, including qualifications and negations. If an entire sentence cannot fit, abstain. Up to three quotes, each 12 to 320 characters. No extra keys or commentary.
 Do not add ellipses, rephrase, or join separate passages."""
 
 _FRAMING = {
-    "supported": "Selected verbatim excerpts. Exact text was verified; relevance and sufficiency still require review.",
+    "verified_excerpt": "仅核对了整句原文和位置，未判定主张是否成立。请阅读随附上下文并打开原页。",
     "insufficient_evidence": "No usable verbatim evidence was selected. The indexed sources may still contain relevant material.",
     "not_configured": "DeepSeek is not configured.",
 }
@@ -64,7 +64,7 @@ def configured() -> bool:
 
 
 def _result(status: str, quotes: list | None = None) -> dict:
-    return {"status": status, "quotes": quotes or [], "answer": _FRAMING[status]}
+    return {"status": status, "claim_support":"not_assessed", "quotes": quotes or [], "answer": _FRAMING[status]}
 
 
 def _unique(pairs):
@@ -163,8 +163,23 @@ def summarize(query: str, hits: list[dict], *,
                 or quote != quote.strip() or (label, quote) in seen):
             return _result("insufficient_evidence")
         hit, excerpt = evidence[label]
-        if quote not in excerpt:
+        start=excerpt.find(quote)
+        if start<0 or excerpt.find(quote,start+1)>=0:
+            return _result("insufficient_evidence")
+        end=start+len(quote)
+        before=excerpt[:start].rstrip()
+        after=excerpt[end:]
+        # Fail closed on partial sentences, including dropped negations,
+        # conditions and qualifiers. No sentence rule proves claim support.
+        if before and before[-1] not in ".!?。！？":return _result("insufficient_evidence")
+        if before and before.endswith('.') and start>0 and not excerpt[start-1].isspace():return _result("insufficient_evidence")
+        if after and quote[-1] not in ".!?。！？":
+            if not re.fullmatch(r'[.!?。！？](?:\s[\s\S]*)?',after):return _result("insufficient_evidence")
+        if end==len(excerpt) and len(excerpt)<len(hit["text"]) and quote[-1] not in ".!?。！？":
             return _result("insufficient_evidence")
         seen.add((label, quote))
-        verified.append({**{k: hit[k] for k in ("id", "name", "page", "block")}, "text": quote})
-    return _result("supported", verified) if verified else _result("insufficient_evidence")
+        verified.append({**{k: hit[k] for k in ("id", "name", "page", "block")},
+                         "part":hit.get("part",1),"offset":hit.get("offset",0),
+                         "quote_start":start,"quote_end":end,"text":quote,"context":excerpt,
+                         "prefix_limited":len(hit["text"])>len(excerpt)})
+    return _result("verified_excerpt", verified) if verified else _result("insufficient_evidence")

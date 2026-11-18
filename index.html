@@ -15,6 +15,7 @@
 .workbench-tools{display:grid;gap:12px}#csv-workbench label[for=csv-file]{min-width:0}#csv-file{max-width:100%}.csv-scroll{max-width:100%;max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:8px}.csv-scroll table{border-collapse:collapse;width:100%;font-size:13px}.csv-scroll th,.csv-scroll td{white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;min-width:90px;max-width:230px;padding:6px 10px;border-bottom:1px solid var(--line)}.csv-scroll th{background:var(--pale);position:sticky;top:0}#csv-figure{margin:12px 0}#csv-chart img{display:block;width:100%;min-width:460px;height:auto;background:white}.csv-options input{display:block;width:100%;margin:4px 0 10px;padding:8px;border:1px solid var(--line);border-radius:8px}.wrapping{overflow-wrap:anywhere}#version-results blockquote{max-height:16em;overflow:auto}#version-results{margin-top:10px}#versions-list{max-height:280px;overflow:auto}
 #writing-preview{display:block;resize:vertical;width:100%;font:13px/1.5 ui-monospace,monospace;padding:10px;border:1px solid var(--line);margin:6px 0 12px;background:#fff;overflow:auto}#writing-form label{font-weight:650}
 .matrix-overflow{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:8px}.evidence-matrix{border-collapse:collapse;width:100%}.evidence-matrix td,.evidence-matrix th{min-width:180px;max-width:245px;padding:8px 10px;text-align:left;vertical-align:top;border:1px solid var(--line);overflow-wrap:anywhere}.evidence-matrix th{background:var(--pale)}.evidence-matrix details blockquote{max-height:14em;overflow:auto}.evidence-matrix details>div{margin-top:10px}
+ .hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-top:1.1rem}.hero-actions a{color:#f6f7e9;font-weight:650}.hero-actions .hero-start{background:#e5f0cc;color:#163d32;padding:.55rem 1rem;border-radius:.5rem;text-decoration:none}.module-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:14px 0 8px}.module-nav a{display:grid;gap:2px;padding:12px;border:1px solid var(--line);border-radius:9px;background:white;color:var(--ink);text-decoration:none;min-width:0}.module-nav a:hover,.module-nav a:focus-visible{border-color:#265e47;background:#f4f8ee}.module-nav small{color:#496c55;letter-spacing:.06em}.module-nav span{font-size:.8rem;color:#52635b}.all-tools{padding:4px 2px 12px}.all-tools summary{cursor:pointer;color:#335a42;font-size:.9rem}@media(max-width:860px){.module-nav{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:520px){.module-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.module-nav a{padding:9px}.hero-actions{gap:.75rem}}
 </style>
 <link rel="stylesheet" href="/reader.css">
 </head>
@@ -22,11 +23,23 @@
 <a class="skip" href="#main">跳转到检索区</a>
 <header><div class="shell mast"><div class="brand"><span class="glyph" aria-hidden="true">◫</span><span>证据台</span><small>EVIDENCE DESK</small></div><span class="tag">本地工作区</span></div></header>
 <div class="shell">
-<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#evidence-questions">自然语言找证据</a><a href="#paper-compare">分篇检索</a><a href="#compare-matrix">多文证据矩阵</a><a href="#citation-graph">本地引文图</a><a href="#local-review">本地综述</a><a href="#public-discovery">公开文献发现</a><a href="#version-management">版本与归档</a><a href="#csv-workbench">CSV 图表</a><a href="#writing-workbench">论文框架</a><a href="#reader">文献阅读</a><a href="#tracking">arXiv 追踪</a></nav></section>
+<section class="hero" aria-labelledby="hero-title">
+<div class="eyebrow">证据台 · 本机科研助手</div><h1 id="hero-title">从一个问题，回到那一页。</h1>
+<p>选择文献，把检索到的段落与 PDF 原件再核对。没有找到的证据，不拿别篇来补。</p>
+<div class="hero-actions"><a class="hero-start" href="#judge-demo">开始 3 分钟样例</a><a href="#evidence-workflow">用自己的文献查证 →</a></div></section>
+<nav class="module-nav" aria-label="六个工作区">
+<a href="#library-title"><small>01 / 文献</small><strong>导入与解析</strong><span>版本、扫描与原页</span></a>
+<a href="#evidence-workflow"><small>02 / 查证</small><strong>问答与对照</strong><span>按篇检索，逐段回核</span></a>
+<a href="#reader"><small>03 / 阅读</small><strong>目录与双语</strong><span>引用往返，核对译段</span></a>
+<a href="#public-discovery"><small>04 / 发现</small><strong>公开文献</strong><span>题录、分类与订阅</span></a>
+<a href="#citation-graph"><small>05 / 综述</small><strong>本地引用图</strong><span>检查连线与来源</span></a>
+<a href="#writing-workbench"><small>06 / 写作</small><strong>写作与图表</strong><span>研究设计、CSV、图注</span></a>
+</nav>
+<details class="all-tools"><summary>直接打开具体工具</summary><nav class="jump-links subtle" aria-label="具体工具"><a href="#main">查找证据</a><a href="#evidence-questions">中文问题定位</a><a href="#compare-matrix">跨文矩阵</a><a href="#version-management">版本与归档</a><a href="#local-ocr-panel">扫描 OCR</a><a href="#page-objects">页级图表</a><a href="#frontmatter">作者与摘要</a><a href="/translation">双语精读</a><a href="#local-review">综述提要</a><a href="#tracking">arXiv 追踪</a><a href="#arxiv-import-panel">全文预览入库</a><a href="#csv-workbench">CSV 图表</a><a href="#radar-panel">雷达图</a><a href="#research-plan">研究设计</a><a href="#local-bibliography">来源导出</a></nav></details>
 <div class="workbench">
 <aside class="panel" aria-labelledby="library-title"><div class="library-head"><div><div class="eyebrow">01 / 文献库</div><h2 id="library-title">本地文献</h2></div><span class="counter" id="library-count">—</span></div>
 <input id="files" type="file" accept=".pdf,application/pdf" multiple hidden><button class="primary full" type="button" id="choose">＋ 导入 PDF</button>
-<div class="subtle" id="library-note">可多选。扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。</div>
+<div class="subtle" id="library-note">可多选。没有文本层的扫描件可在「扫描 OCR」生成独立副本；原件保留。</div>
 <p class="subtle"><a href="/sample.pdf" download="证据台示例.pdf">下载示例 PDF</a>，再导入试用。</p>
 <div class="subtle" id="import-log" role="status" aria-live="polite"></div>
 <div class="library-head" style="margin-top:12px"><span class="subtle" id="selected-count"></span><button class="compact" id="toggle-all" type="button" disabled>取消全选</button></div>
@@ -284,6 +297,9 @@ function drawCard(hit, pinned = false, verifiable = false) {
   const card = el(pinned ? 'article' : 'li', 'evidence');
   const printedLabel = hit.page_label && String(hit.page_label) !== String(hit.page) ? ' · 页面标签 ' + hit.page_label : '';
   card.append(el('div','metadata','PDF 第 ' + hit.page + ' 页' + printedLabel + ' · 文本块 ' + hit.block), el('h3','',hit.name), el('blockquote','',hit.text));
+  if(verifiable && typeof hit.context==='string') {
+    card.append(el('p','subtle','以下为送核的完整上下文；仅核对原句，不代表主张成立。'+(hit.prefix_limited?' 该摘录受长度上限限制，请核对原页。':'')),el('blockquote','',hit.context));
+  }
   const actions = el('div','actions');
   const key = hitKey(hit);
   const button = el('button','compact', pinned ? '移出对照' : '加入对照');
@@ -406,7 +422,7 @@ $('verify-form').onsubmit = async event => {
     });
     if (run !== verifyVersion) return;
     $('verify-status').textContent = result.answer;
-    if (result.status === 'supported') {
+    if (result.status === 'verified_excerpt') {
       $('verify-quotes').replaceChildren(...result.quotes.map(hit => drawCard(hit, false, true)));
     }
   } catch (error) {
