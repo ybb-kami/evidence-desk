@@ -40,6 +40,18 @@ for page in result["pages"]:
 | 公式 `transcribed` | 高置信 OCR 文本通过简单单行算式语法与基线几何检查，输出纯文本 | 限于简单线性算式，仍可能有字符错误 |
 | 公式 `detected_only` | OCR 布局、独立公式编号或分式几何辅助定位 | `text` 为 null。原页的 OCR 行可能仍有误读；请展示区域图。复杂公式、上下标、矩阵与通用 LaTeX 重建需要另行识别 |
 
+## 与 evidence-desk 的接入点
+
+主项目的 `engine.parse_pdf(data, name)` 返回 `id`（原文件 SHA-256）以及 `textless_pages`（缺少可索引文字的物理页序号）。宿主可在导入任务中将这些页号用逗号连接，传给扫描模块的 `--pages`。列表为空时即可跳过 OCR。扫描输入应为同一份原始 PDF；保存侧车 JSON 时校验 `source.sha256 == doc["id"]`，再按 `physical_page` 关联到阅读器。原有 `ocr_local.py` 仍可用于生成带文字层的 PDF。此分支交付独立 CLI 和 Python 调用入口，网页自动调用需另行接线。
+
+下列对照可在 `scanpdf/` 下复现。主项目解析器将对照件的两页都列入 `textless_pages`。以 240 DPI 实测，扫描模块在物理第 1 页读到标题 “From question to passage”，第 2 页读到 “A test you can reproduce”，两行均返回原页位置。
+
+```sh
+trial=$(mktemp -d)
+python tools/rasterize_proxy.py ../sample.pdf "$trial/sample-img.pdf" --dpi 150
+python -m scanpdf "$trial/sample-img.pdf" --output "$trial/evidence.json" --dpi 240
+```
+
 ## 复现与官方样本验收
 
 ```sh
