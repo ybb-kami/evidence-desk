@@ -6,12 +6,13 @@ from contextlib import closing
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 import fitz
 
 from app import Bad, UPLOAD_LIMIT
 from arxiv_tracking import CATEGORIES
-from . import fetch
+from . import fetch, references
 from .schedule import CADENCES
 
 ASSETS = Path(__file__).parent
@@ -135,6 +136,15 @@ def handle(handler, post, path):
         return True
     if path == "/api/download/subscription":
         handler.payload(200, _subscription(handler, post))
+        return True
+    if path == "/api/download/references":
+        library = handler.server.library
+        if post:
+            result = references.import_candidate(library, handler.json_request(), _acquire)
+        else:
+            docid = parse_qs(urlsplit(handler.path).query).get("doc_id", [""])[0]
+            result = references.candidates(library, docid)
+        handler.payload(200, result)
         return True
     provider = path.removeprefix("/api/download/")
     if not path.startswith("/api/download/") or provider not in PROVIDERS:

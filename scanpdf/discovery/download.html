@@ -68,6 +68,26 @@
     <p id="download-status" role="status"></p>
     <p class="hint"><a href="/">已有本地 PDF？返回证据台导入</a></p>
   </section>
+  <section aria-labelledby="references-heading">
+    <h2 id="references-heading">获取论文所引用的文献</h2>
+    <form id="reference-source">
+      <label for="reference-doc">文库论文</label>
+      <div class="controls">
+        <select id="reference-doc" required></select>
+        <button disabled>查看参考文献</button>
+      </div>
+    </form>
+    <p id="references-status" role="status"></p>
+    <form id="reference-import" hidden>
+      <p class="hint">核对引文和原页后勾选。批次按列表顺序执行，可在当前篇完成后停止。</p>
+      <ul id="references-list"></ul>
+      <label class="consent"><input id="references-consent" type="checkbox" required> 同意此次逐篇向 arXiv 或 ACL Anthology 发送勾选的公开编号，并将返回的 PDF 导入当前文库</label>
+      <div class="controls">
+        <button id="references-start">获取或重试勾选项</button>
+        <button type="button" id="references-stop" hidden>当前篇完成后停止</button>
+      </div>
+    </form>
+  </section>
   <section aria-labelledby="receipt-heading">
     <h2 id="receipt-heading">本地下载记录</h2>
     <p id="receipt-status" role="status"></p>
@@ -231,6 +251,140 @@
     showImported(status, data);
     await loadReceipts();
   });
+  const referencesPath = "/api/download/references";
+  const referenceSource = byId("reference-source"), referenceDoc = byId("reference-doc");
+  const referenceImport = byId("reference-import"), referencesList = byId("references-list");
+  const referencesStatus = byId("references-status"), referencesConsent = byId("references-consent");
+  const referencesStop = byId("references-stop"), referencesStart = byId("references-start");
+  const referencesLabel = {
+    pending: "待获取", success: "成功", not_found: "未找到",
+    unresolved: "未能解析", failed: "失败"
+  };
+  let referenceItems = [], referenceDocId = "", stopReferences = false;
+  const referenceRows = new Map();
+  async function loadReferenceDocuments() {
+    const data = await request("/api/library");
+    const selected = referenceDoc.value;
+    referenceDoc.replaceChildren();
+    for (const doc of data.docs) referenceDoc.add(new Option(doc.name, doc.id));
+    if (data.docs.some(doc => doc.id === selected)) referenceDoc.value = selected;
+    referenceSource.querySelector("button").disabled = !data.docs.length;
+    if (!data.docs.length) referencesStatus.textContent = "请先在文库导入来源论文。";
+  }
+  function showReference(item) {
+    const {checkbox, outcome} = referenceRows.get(item.candidate_id);
+    if (checkbox && item.status === "success") {
+      checkbox.checked = false;
+      checkbox.disabled = true;
+    }
+    outcome.textContent = [referencesLabel[item.status], item.message].filter(Boolean).join(" · ");
+    if (item.imported_id) outcome.append(" · ", link("本地 PDF", "/pdf/" + item.imported_id, true));
+  }
+  referenceDoc.addEventListener("change", () => {
+    referenceImport.hidden = true;
+    referencesStatus.textContent = "";
+  });
+  referenceSource.addEventListener("submit", async event => {
+    event.preventDefault();
+    const button = referenceSource.querySelector("button");
+    button.disabled = referenceDoc.disabled = true;
+    referenceImport.hidden = true;
+    referencesConsent.checked = false;
+    referencesStatus.textContent = "正在从本地索引读取参考文献…";
+    referencesList.replaceChildren();
+    referenceRows.clear();
+    try {
+      referenceDocId = referenceDoc.value;
+      const result = await request(referencesPath + "?doc_id=" + encodeURIComponent(referenceDocId));
+      referenceItems = result.items;
+      referencesStatus.textContent = result.items.length
+        ? "读取到 " + result.items.length + " 条引文。"
+        : result.detected ? "找到了参考文献标题，未能在本地索引中分出条目。" : "本地索引中未找到参考文献。";
+      for (const item of referenceItems) {
+        const row = document.createElement("li");
+        const selectable = Boolean(item.identifier);
+        const title = document.createElement(selectable ? "label" : "p");
+        let checkbox;
+        if (selectable) {
+          checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          title.append(checkbox, " ");
+        }
+        title.append(document.createTextNode(item.text));
+        const outcome = document.createElement("span");
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.append(link("引文原页 " + item.page, "/pdf/" + referenceDocId + "#page=" + item.page, true),
+          item.identifier ? " · " + item.identifier + " · " : " · ", outcome);
+        row.append(title, meta);
+        referencesList.append(row);
+        referenceRows.set(item.candidate_id, {checkbox, outcome});
+        showReference(item);
+      }
+      referenceImport.hidden = !referenceItems.length;
+      referencesStart.disabled = !referenceItems.some(item => item.identifier && item.status !== "success");
+      referencesConsent.disabled = referencesStart.disabled;
+    } catch (error) {
+      referencesStatus.textContent = error.message;
+    } finally {
+      button.disabled = referenceDoc.disabled = false;
+    }
+  });
+  referencesStop.addEventListener("click", () => {
+    stopReferences = true;
+    referencesStop.disabled = true;
+    referencesStatus.textContent = "当前篇完成后停止批次。";
+  });
+  referenceImport.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!referencesConsent.checked || referencesStart.disabled) return;
+    const queue = referenceItems.filter(item => referenceRows.get(item.candidate_id).checkbox?.checked);
+    if (!queue.length) {
+      referencesStatus.textContent = "请至少勾选一条可获取的引文。";
+      return;
+    }
+    const sourceButton = referenceSource.querySelector("button");
+    const boxes = [...referenceRows.values()].map(row => row.checkbox).filter(Boolean);
+    stopReferences = false;
+    referencesConsent.checked = false;
+    sourceButton.disabled = referenceDoc.disabled = referencesStart.disabled = referencesConsent.disabled = true;
+    referencesStop.hidden = referencesStop.disabled = false;
+    for (const box of boxes) box.disabled = true;
+    let completed = 0;
+    try {
+      for (const item of queue) {
+        if (stopReferences) break;
+        referencesStatus.textContent = "正在处理 " + (completed + 1) + " / " + queue.length + " · " + item.identifier;
+        try {
+          const result = await request(referencesPath, {
+            doc_id: referenceDocId, candidate_id: item.candidate_id, consent: true
+          });
+          Object.assign(item, result);
+        } catch (error) {
+          item.status = "failed";
+          item.message = error.message;
+        }
+        showReference(item);
+        completed++;
+      }
+      referencesStatus.textContent = (completed === queue.length ? "本轮结束" : "已停止") +
+        " · 已处理 " + completed + " / " + queue.length + " 条，请查看逐项结果。";
+      await loadReceipts();
+      await loadReferenceDocuments();
+    } catch (error) {
+      referencesStatus.textContent += " " + error.message;
+    } finally {
+      referencesStop.hidden = true;
+      sourceButton.disabled = referenceDoc.disabled = false;
+      for (const item of referenceItems) {
+        const box = referenceRows.get(item.candidate_id).checkbox;
+        if (box) box.disabled = item.status === "success";
+      }
+      referencesConsent.disabled = referencesStart.disabled =
+        !referenceItems.some(item => item.identifier && item.status !== "success");
+    }
+  });
+  loadReferenceDocuments().catch(error => { referencesStatus.textContent = error.message; });
   const subscriptionPath = "/api/download/subscription";
   const formatDate = value => new Date(value).toLocaleString();
   function showSubscription(data) {
