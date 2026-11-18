@@ -34,3 +34,25 @@ python scanpdf/acceptance/deepseek_stub_http.py
 ```
 
 脚本以实际工作台 HTTP 入口运行，并替换供应商传输、阻断进程对外连接。Search-only 路径实际只向 stub 传递明确输入的公开检索词，合成私料标记未传递。Flash 工具规划、单篇问答的页 2 原件字形定位和缺字段均通过。账本满 0.71 USD 后，额外付费调用为 0，追问返回 HTTP 503。最终复测中，账本满额后额外模型目录查询也为 0。此项用于验证本地请求行为，线上供应商请求为 0。[本地事务测试记录](results/deepseek-flash-stub-http.json)
+
+## 在当前评委服务上走一遍浏览器
+
+在运行该服务的机器上，从源码目录执行。把 `8765` 改成已经运行的工作台端口。脚本连接该回环服务，沿用服务当前的文库和预算账本，通过首页导入一份公开虚构 PDF。它从「问这篇论文」进入，逐次勾选模型授权，检查第 2 页回答及其原件定位，再检查缺字段回执。缺配置或浏览器时会在提交模型请求之前返回 `blocked`。
+
+```bash
+python scanpdf/acceptance/judging_browser_live.py --url http://127.0.0.1:8765
+```
+
+若本轮也需要验证 DeepSeek Search，首次运行命令时追加 `--with-search`。它只提交一次原论文的公开检索词。文献选择、模型编排和读取首条网页均取消勾选，脚本也不打开检索结果中的网络链接。核心验收最多提交两次追问，含搜索时另提交一次搜索。每个测试问题只发送一次。
+
+`--chromium` 可以指向 Chrome 或 Chromium。省略时优先查找系统浏览器，再尝试 Playwright 已安装的 Chromium。在 Windows 上可以按以下方式传入路径。
+
+```powershell
+python scanpdf/acceptance/judging_browser_live.py --url http://127.0.0.1:8765 --chromium "C:\Program Files\Google\Chrome\Application\chrome.exe"
+```
+
+机器缺少 Playwright 或可启动的浏览器时，可以用自己的浏览器打开同一回环地址手工核验。用随测试脚本生成的两页 `judging-fictional-harmonics.pdf` 上传并进入「问这篇论文」。先授权并询问 `What type of box held the silver eddy-current paddle during the harmonics check?`，核对模型回执与第 2 页原件。再单独授权并询问 `What is the manufacturer’s serial number on the silver eddy-current paddle?`，核对是否明确报告证据不足及未给出序列号。依赖已安装时可从源码目录生成同一演练文件。
+
+```bash
+python -c "import sys; from pathlib import Path; sys.path.insert(0, 'scanpdf/acceptance'); import deepseek_live; Path('judging-fictional-harmonics.pdf').write_bytes(deepseek_live.fixture())"
+```
