@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urlsplit
 SAFE_POST=set('/api/import /api/archive /api/restore /api/revisions /api/supersede /api/demo-import /api/workflow /api/compare-evidence /api/questions /api/search /api/compare /api/bibliography /api/ocr'.split())
 LOGIN=b'<meta charset=utf-8><title>Judge login</title><p>Supervised demo. Public sample PDFs only.</p><form method=post action=/session><input type=password name=code required autocomplete=off><button>Enter</button></form>'
 class Pool(ThreadingHTTPServer):
+    request_queue_size=48
     daemon_threads=True
     def process_request(self,req,addr):
         if not self.pool.acquire(False):
@@ -18,13 +19,26 @@ class Pool(ThreadingHTTPServer):
         try:super().process_request_thread(*args)
         finally:self.pool.release()
 
-def serve(slots,port,origin,local_test=False,anonymous=False,rotate_slot=None,ttl=3600,model_bridge=None,synthesis_bridge=None):
+def serve(slots,port,origin,local_test=False,anonymous=False,rotate_slot=None,ttl=3600,model_bridge=None,synthesis_bridge=None,asset_root=None):
     if not 1<=len(slots)<=4 or len(set(slots.values()))!=len(slots) or any(len(k)<20 for k in slots):raise ValueError('invalid slots')
     u=urlsplit(origin)
     if u.path or u.query or u.fragment or u.username or u.password or not u.hostname or (u.scheme!='https' and not(local_test and u.scheme=='http' and u.hostname=='127.0.0.1')):raise ValueError('invalid origin')
     if not 1<=ttl<=3600:raise ValueError('invalid ttl')
     lock=threading.Lock();sessions={};attempts=collections.deque(maxlen=40)
     issued=set()
+    # Only immutable release JS/CSS; never cache HTML, APIs or a session PDF.
+    frozen_assets={}
+    allowed="csv-stats.js writing.js reader.js reader.css tracking.js review-panel.js questions.js page-objects.js ocr-panel.js scan-sidecar.js compare-matrix.js workflow-panel.js subscriptions-ui.js research_plan.js research-plan-ui.js bibliography-ui.js walkthrough-ui.js arxiv-import-ui.js frontmatter-ui.js radar.js radar-ui.js".split()
+    if asset_root:
+        root=Path(asset_root).resolve()
+        for name in allowed:
+            asset=root/name
+            if asset.is_file() and not asset.is_symlink() and asset.stat().st_size<=512*1024:
+                frozen_assets["/"+name]=(asset.read_bytes(),"text/css" if name.endswith(".css") else "application/javascript")
+    if synthesis_bridge is not None:
+        frozen_assets["/synthesis-panel.js"]=(Path(__file__).with_name("synthesis-panel.js").read_bytes(),"application/javascript")
+    asset_rate={}
+
     limits={p:[threading.BoundedSemaphore(2),collections.deque(maxlen=120),0,0] for p in slots.values()}
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*a):pass
@@ -74,13 +88,26 @@ def serve(slots,port,origin,local_test=False,anonymous=False,rotate_slot=None,tt
             if (post and path not in SAFE_POST and not ((path=="/api/verify" and model_bridge is not None or path in ("/api/synthesis/preview","/api/synthesis/confirm") and synthesis_bridge is not None))) or (not post and path.startswith(('/api/arxiv','/api/subscriptions','/api/bilingual','/translation'))):return self.out(403)
             with lock:
                 if p not in sessions or p not in limits or sessions[p][1]<=time.monotonic() or not hmac.compare_digest(digest,sessions[p][0]):return self.out(401)
+                if not post and path in frozen_assets:
+                    aq=asset_rate.setdefault(p,collections.deque(maxlen=360))
+                    if len(aq)==360 and now-aq[0]<60:return self.out(429)
+                    aq.append(now)
+                    static_reply=frozen_assets[path]
+                else: static_reply=None
+            if static_reply is not None:
+                return self.out(200,static_reply[0],static_reply[1]+"; charset=utf-8")
+            with lock:
+                if p not in limits:return self.out(401)
                 sem,q,_,_=limits[p]
                 if len(q)==120 and now-q[0]<60:return self.out(429)
                 q.append(now)
                 if path=='/api/import' and post:
                     if limits[p][2]+n>96*1024**2 or limits[p][3]>=16:return self.out(429)
                     limits[p][2]+=n;limits[p][3]+=1
-                if not sem.acquire(False):return self.out(429)
+            if not sem.acquire(timeout=2 if not post else 0):return self.out(429)
+            with lock:
+                if p not in sessions or sessions[p][1]<=time.monotonic() or not hmac.compare_digest(digest,sessions[p][0]):
+                    sem.release();return self.out(401)
             c=http.client.HTTPConnection('127.0.0.1',p,timeout=100)
             try:
                 body=self.rfile.read(n) if n else None
@@ -116,7 +143,7 @@ def serve(slots,port,origin,local_test=False,anonymous=False,rotate_slot=None,tt
             try:self.handle_one()
             except (OSError,http.client.HTTPException):return
         do_POST=do_GET
-    s=Pool(('127.0.0.1',port),Handler);s.pool=threading.BoundedSemaphore(12)
+    s=Pool(('127.0.0.1',port),Handler);s.pool=threading.BoundedSemaphore(32)
     stop=threading.Event()
     def reap():
         while not stop.wait(min(2,ttl/2)):
@@ -128,7 +155,7 @@ def serve(slots,port,origin,local_test=False,anonymous=False,rotate_slot=None,tt
                     if not oldsem.acquire(False):continue
                     if not oldsem.acquire(False):
                         oldsem.release();continue
-                    del sessions[p];del limits[p]
+                    del sessions[p];del limits[p];asset_rate.pop(p,None)
                     try:
                         new=rotate_slot(p)
                         if type(new) is not int or not 0<new<65536 or new in limits:continue

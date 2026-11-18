@@ -250,7 +250,7 @@ def run(app, private_dir, judges, port, *, gateway_serve=None, anonymous=True, t
         gateway_serve=partial(serve,synthesis_bridge=SynthesisBridge())
     with demo_slots(app,private_dir,judges,origin) as slots:
         print(f"本机演示：{origin}（仅回环；结束后移除临时文库）。",flush=True)
-        gateway_serve(slots,port,public_origin or origin,public_origin is None,anonymous=anonymous,rotate_slot=slots.rotate_slot,ttl=ttl)
+        gateway_serve(slots,port,public_origin or origin,public_origin is None,anonymous=anonymous,rotate_slot=slots.rotate_slot,ttl=ttl,asset_root=Path(app).resolve().parent)
 
 
 def main():
