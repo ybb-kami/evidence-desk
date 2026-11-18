@@ -11,8 +11,13 @@ from group_budget import GroupBudget,ENDPOINT
 from audit_group_ledger import audit
 class AllThree(unittest.TestCase):
  def test_verified_pdf_and_all_tools_share_single_group(self):
-    app=HERE.parent/'evidence-desk'/'app.py'
-    pdfs=[Path('/tmp/edesk-eval-'+x+'.pdf') for x in ['1706.03762v1','1810.04805']]
+    self.run_scope(2)
+ def test_one_pdf_all_tools(self):
+    self.run_scope(1)
+ def run_scope(self,n):
+    app=HERE.parents[1]/"app.py"
+    if not app.exists():app=HERE.parent/"evidence-desk"/"app.py"
+    pdfs=[Path('/tmp/edesk-eval-'+x+'.pdf') for x in ['1706.03762v1','1810.04805']][:n]
     self.assertTrue(all(p.is_file() for p in pdfs))
     with socket.socket() as s:s.bind(('127.0.0.1',0));port=s.getsockname()[1]
     origin='http://127.0.0.1:'+str(port)
@@ -43,7 +48,8 @@ class AllThree(unittest.TestCase):
             base='/api/'+scope+'/';st,_,pre=req(base+'preview',a,payload);self.assertEqual(st,200);self.assertTrue(pre['online']);token=pre['token'];cons={'token':token,'consent':True}
             self.assertEqual(req(base+'confirm',b,cons)[0],409)
             st,_,out=req(base+'confirm',a,cons);self.assertEqual(st,200,out)
-            if action=='model':self.assertEqual(out['status'],'draft_for_review')
+            if action=='model':
+                self.assertEqual(out['status'],'draft_for_review'); self.assertEqual({e['doc_id'] for c in out['claims'] for e in c['citations']},set(payload['ids']));self.assertTrue(all(e['page']>=1 and e['block']>=1 for c in out['claims'] for e in c['citations']))
             self.assertEqual(req(base+'confirm',a,cons)[0],409)
         self.assertEqual(seen,['search','fetch','model'])
         result=audit(db);self.assertEqual(result['groups_with_reservations'],1);self.assertEqual(result['reserved_nano_usd'],316687200);print(result)

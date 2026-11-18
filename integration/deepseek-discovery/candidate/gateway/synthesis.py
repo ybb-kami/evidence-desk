@@ -36,7 +36,7 @@ def prepare(query,ids,workflow):
     papers=workflow.get('papers',[])
     refused={'status':'insufficient_evidence'}
     if (workflow.get('schema')!='evidence-desk-workflow-v1' or workflow.get('query')!=query.strip()
-        or [p.get('id') for p in papers]!=ids or not 2<=len(set(ids))==len(ids)<=6):
+        or [p.get('id') for p in papers]!=ids or not 1<=len(set(ids))==len(ids)<=6):
         return refused
     sources={}; outbound=[]
     for p in papers:

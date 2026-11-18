@@ -15,7 +15,7 @@ class SynthesisBridge:
     def _anchor_digest(item):
         return hashlib.sha256(json.dumps(item["sources"],sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
     def _prepare(self,query,ids,backend):
-        if not isinstance(query,str) or not 1<=len(query.strip())<=500 or not isinstance(ids,list) or not 2<=len(ids)<=6 or not all(isinstance(i,str) and re.fullmatch(r'[a-f0-9]{64}',i) for i in ids) or len(set(ids))!=len(ids):raise ValueError('Invalid scope')
+        if not isinstance(query,str) or not 1<=len(query.strip())<=500 or not isinstance(ids,list) or not 1<=len(ids)<=6 or not all(isinstance(i,str) and re.fullmatch(r'[a-f0-9]{64}',i) for i in ids) or len(set(ids))!=len(ids):raise ValueError('Invalid scope')
         if not set(ids)<=set(d['id'] for d in backend('/api/library')['docs']):raise ValueError('Inactive or absent selections')
         wf=backend('/api/workflow',{'query':query,'ids':ids})
         readers={i:backend('/api/reader/'+i) for i in ids}

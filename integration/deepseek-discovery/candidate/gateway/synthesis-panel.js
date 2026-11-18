@@ -3,9 +3,9 @@
 const el=(t,v='')=>{const e=document.createElement(t);e.textContent=v;return e};
 const root=el('section');root.className='panel compare';root.id='grounded-synthesis';
 (document.querySelector('#evidence-workflow')||document.body.lastElementChild).after(root);
-const title=el('h2','跨文献综述草稿 · 逐句核对'),help=el('p','选择本席位的 2–6 篇文献。先在本地重新核对原件，预览确切的出站请求，再决定是否发送。引用真实不等于判断成立。');
+const title=el('h2','论文问答与跨文献综述 · 逐句核对'),help=el('p','选择本席位的 1–6 篇文献：单篇问答，多篇对照。先在本地重新核对原件，预览确切的出站请求，再决定是否发送。引用真实不等于判断成立。');
 const scopeSources=el('div'); const docs=el('fieldset'),q=el('input'),preview=el('button','核对所选文献并预览'),consent=el('input'),label=el('label','仅同意将下列本次问题和摘录发给 DeepSeek，可能计费。'),send=el('button','发送并生成待审草稿'),pre=el('pre'),status=el('p'),claims=el('div'),refresh=el('button','刷新文献');
-q.placeholder='例如：两篇文献分别如何描述编码器？';q.maxLength=500;consent.type='checkbox';label.prepend(consent);pre.style.whiteSpace='pre-wrap';send.disabled=true;label.hidden=true;const style=el('style');style.textContent=`
+q.placeholder='例如：所选论文如何描述编码器？';q.maxLength=500;consent.type='checkbox';label.prepend(consent);pre.style.whiteSpace='pre-wrap';send.disabled=true;label.hidden=true;const style=el('style');style.textContent=`
 #grounded-synthesis{--ink:#152c36;--accent:#176457;--rule:#cddbd5;background:#fbfcf9;border:1px solid var(--rule);border-top:4px solid var(--accent);padding:clamp(16px,3vw,36px);color:var(--ink)}
 #grounded-synthesis header{border-bottom:1px solid var(--rule);padding-bottom:12px;margin-bottom:18px}#grounded-synthesis h2{font-size:clamp(22px,2.3vw,34px);line-height:1.28;margin:4px 0 8px}#grounded-synthesis .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.09em}
 #grounded-synthesis .s-grid{display:grid;grid-template-columns:minmax(240px,0.85fr) minmax(0,1.35fr);gap:20px;align-items:start}#grounded-synthesis .s-card{min-width:0;background:white;border:1px solid var(--rule);border-radius:9px;padding:16px}#grounded-synthesis .s-card h3{margin:0 0 12px}#grounded-synthesis fieldset{max-height:260px;overflow:auto;border:0;padding:4px 0 10px}
