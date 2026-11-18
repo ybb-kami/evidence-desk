@@ -34,6 +34,22 @@ DASHES = str.maketrans("‐‑–—−", "-----")
 UNIT = (r"%|flops|ms|msec|s|sec(?:onds?)?|us|μs|ns|milliseconds?|microseconds?|seconds?|minutes?|"
         r"mins?|hours?|hrs?|days?|h|kb|mb|gb|tb|[kmbt]|thousand|million|billion|trillion|"
         r"mhz|ghz|w|kw|v|tokens?|examples?|samples?")
+CLAIM_NUMBER = (rf"(?P<value>{DECIMAL}(?:\s*(?:[·×x*]\s*10\s*\^\s*|e\s*)[+-]?[0-9]{{1,3}})?"
+                rf"(?:\s*(?:{UNIT})(?![a-z]))?)(?![0-9a-z]|[.,][0-9])")
+ASSIGNED_VALUE = re.compile(
+    r"(?:\b(?:is|was|were|read[s]?|report(?:s|ed)?|list(?:s|ed)?|show(?:s|ed)?|score(?:s|d)?|got|equal(?:s|led)?)\s+"
+    r"|(?:读|看|写|识别)(?:成|作|为|错成)|写的是|显示|报告|达到|是|为|[:=])"
+    r"\s*(?:exactly\s+)?" + CLAIM_NUMBER, re.I
+)
+FINAL_VALUE = re.compile(
+    r"\b(?:why|was|is|were|could|did|does)\b[^?!;。？！；\n]{1,120}?\s" + CLAIM_NUMBER
+    + r"(?=\s*(?:bleu|[a-z][a-z0-9-]{1,12}\s+(?:points?|score)|points?)?\s*[?？;；.!。！]*\s*$)", re.I
+)
+NON_VALUE_LEAD = re.compile(
+    r"\b(?:above|over|below|under|than|least|most|between|from|to|of|about|table|page|row|col(?:umn)?|"
+    r"group|dataset|variant|model|version|stage|step|batch)\s*$|(?:高于|低于|超过|至少|最多|不及|约)\s*$", re.I
+)
+VALUE_ALTERNATIVE = re.compile(r"^\s*(?:or\b|还是|或者|或)\s*" + CLAIM_NUMBER, re.I)
 NATIVE_CANDIDATE_LIMIT = 6
 NATIVE_GRID_LOCK = Lock()
 QUERY_TERMS = {"a", "an", "and", "are", "did", "for", "from", "how", "in", "is", "many", "much", "of", "on",
@@ -438,6 +454,52 @@ def _numeric(text):
     return None
 
 
+def _value_premise(question):
+    """Read a single asserted number independently of potential table cells."""
+    if COMPARE.search(question) or DIFFERENCE.search(question):
+        return None
+    scopes = [match.span() for pattern in (TABLE, PAGE, ROW, COLUMN) for match in pattern.finditer(question)]
+    candidates = {}
+    for binding in (ASSIGNED_VALUE, FINAL_VALUE):
+        for match in binding.finditer(question):
+            start, end = match.span("value")
+            if (any(start < hi and lo < end for lo, hi in scopes)
+                    or NON_VALUE_LEAD.search(question[:start])):
+                continue
+            if value := _numeric(match["value"]):
+                candidates[start, end] = value
+        if candidates:
+            break
+    if len(candidates) != 1:
+        return None
+    (start, end), value = next(iter(candidates.items()))
+    if VALUE_ALTERNATIVE.search(question[end:]):
+        return None
+    # A unit such as FLOPs can also identify the intended column.
+    return value, question[:start] + " " + (value[2] or "") + " " + question[end:]
+
+
+def _check_premise(result, premise, explanation):
+    if not result or not result.get("answer"):
+        return result
+    cells = result["table_cells"]
+    if len(cells) != 1:
+        return _gap("请指定一个表格行和列，才能核对该数值。", result["hits"])
+    cell = cells[0]
+    observed = _numeric(cell["value"]) if cell["value_kind"] == "number" else None
+    if not observed or not cell.get("bbox_pt"):
+        return _gap("未能确认可用于核对的单元格读数。", result["hits"], cells)
+    claimed, display, unit = premise
+    actual, _, actual_unit = observed
+    if unit and unit != actual_unit:
+        return _gap("问题中的单位与原表单元格的单位无法对应，不能直接核对。", result["hits"], cells)
+    if claimed == actual:
+        # The number is compatible with the question. Reasons still need prose evidence.
+        return None if explanation else result
+    return dict(result, answer=result["answer"] + f"题中所述的 {display} 与原表读数不符。",
+                premise_check={"status": "contradicted", "stated": display, "reported": cell["value"]})
+
+
 def _ink_runs(image):
     import numpy as np
 
@@ -754,11 +816,15 @@ def _table_answers(store, doc, anchor, shape, pages):
 
 def answer_scan_table(store, doc, question, anchor=None):
     """Look up numeric cells from cached OCR. None lets evidence lookup continue."""
-    if not part_can_use_table(question):
-        return None
     if anchor is not None and anchor.get("source") != "ocr":
         return None
-    shape = _query_shape(question)
+    question = _normal(question)
+    original_shape = _query_shape(question)
+    premise = _value_premise(question) if (original_shape[-1] or _concepts(_words(original_shape[0]))) else None
+    explanation = not part_can_use_table(question)
+    if explanation and premise is None:
+        return None
+    shape = _query_shape(premise[1]) if premise else original_shape
     query, table_numbers, page_numbers, _, _, explicit = shape
     if not (explicit or ASK.search(query) or _concepts(_words(query)) or len(_words(query).split()) > 1):
         return None
@@ -779,7 +845,8 @@ def answer_scan_table(store, doc, question, anchor=None):
         matched = set().union(*(caption_pages.get(number, set()) for number in table_numbers))
         if matched:
             scope &= matched
-    return _table_answers(store, doc, anchor, shape, (info(doc["id"], number)["page"] for number in sorted(scope)))
+    result = _table_answers(store, doc, anchor, shape, (info(doc["id"], number)["page"] for number in sorted(scope)))
+    return _check_premise(result, premise[0], explanation) if premise else result
 
 
 def _caption_pages(chunks):
