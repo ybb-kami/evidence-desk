@@ -17,7 +17,7 @@
   .hint, .meta { color: #495963; font-size: .93rem; }
   .controls { display: flex; gap: 10px; align-items: start; flex-wrap: wrap; margin: 10px 0 0; }
   .controls input { flex: 1 1 200px; min-width: 0; }
-  button, input { color: inherit; font: inherit; border-radius: 6px; }
+  button, input, select { color: inherit; font: inherit; border-radius: 6px; }
   input[type="text"], input[type="search"] { background: #fff; border: 1px solid #8a999f; padding: 8px 12px; }
   button { background: #1a4c60; border: 1px solid transparent; color: #fff; font-weight: 650; padding: 8px 14px; cursor: pointer; }
   button:disabled { opacity: .64; cursor: wait; }
@@ -36,7 +36,7 @@
 <main>
   <section aria-labelledby="search-heading">
     <h2 id="search-heading">公开书目检索</h2>
-    <p class="hint" id="search-hint">可按题名或参考文献信息查找 Crossref 书目记录。</p>
+    <p class="hint" id="search-hint">可按题名或参考文献信息查找 Crossref 书目记录。匹配 ACL Anthology 论文后，可从出版方下载开放 PDF。</p>
     <form id="search">
       <label for="query">公开检索词</label>
       <div class="controls">
@@ -47,6 +47,12 @@
     </form>
     <p id="search-status" role="status"></p>
     <ul id="matches"></ul>
+    <form id="acl-download" hidden>
+      <p id="acl-selection"></p>
+      <label class="consent"><input type="checkbox" id="acl-consent" required> 同意向 ACL Anthology 请求所选论文的公开 PDF，并导入当前文库</label>
+      <button>下载所选 PDF 并导入</button>
+    </form>
+    <p id="acl-status" role="status"></p>
   </section>
   <section aria-labelledby="download-heading">
     <h2 id="download-heading">下载 arXiv PDF 并导入</h2>
@@ -67,10 +73,36 @@
     <p id="receipt-status" role="status"></p>
     <ul id="recent"></ul>
   </section>
+  <section aria-labelledby="subscription-heading">
+    <h2 id="subscription-heading">定期追踪 arXiv</h2>
+    <p class="hint">订阅后立即尝试刷新，之后按所选频率运行。关闭工作台后暂停，重新启动时会检查到期时间。相关推荐在本机计算。</p>
+    <form id="subscription">
+      <div class="controls">
+        <label>公开分类 <select id="tracking-category" required></select></label>
+        <label>刷新频率
+          <select id="tracking-cadence">
+            <option value="daily">每天</option>
+            <option value="weekly">每周</option>
+          </select>
+        </label>
+      </div>
+      <label class="consent"><input type="checkbox" id="tracking-consent" required> 同意订阅期间定期向 arXiv 发送所选公开分类</label>
+      <button id="subscribe-button" disabled>保存订阅</button>
+    </form>
+    <div class="controls">
+      <button type="button" id="subscription-stop" disabled>停止定期刷新</button>
+      <button type="button" id="subscription-status-button">查看本地刷新状态</button>
+    </div>
+    <p id="subscription-action" role="status"></p>
+    <p id="subscription-status" role="status"></p>
+    <ul id="subscription-results"></ul>
+  </section>
 </main>
 <script>
   "use strict";
   const byId = id => document.getElementById(id);
+  const aclDoiPattern = /^10\.18653\/v1\/(?:[a-z][0-9]{2}-[0-9]{4,6}|[0-9]{4}\.[a-z0-9]+(?:-[a-z0-9]+)*\.[0-9]{1,6})$/i;
+  let aclDoi = "";
   function link(text, url, external = false) {
     const node = document.createElement("a");
     node.textContent = text;
@@ -117,6 +149,10 @@
   bind("search", "search-status", "search-consent", "正在查询 Crossref…", async status => {
     const matches = byId("matches");
     matches.replaceChildren();
+    byId("acl-download").hidden = true;
+    byId("acl-consent").checked = false;
+    byId("acl-status").textContent = "";
+    aclDoi = "";
     const data = await request("/api/discover", {query: byId("query").value.trim(), consent: true});
     status.textContent = data.items.length ? "Crossref 找到 " + data.items.length + " 条公开题录。" : "Crossref 未找到匹配题录。";
     for (const item of data.items) {
@@ -137,6 +173,21 @@
         });
         row.append(copy);
       }
+      if (item.doi.length <= 100 && aclDoiPattern.test(item.doi)) {
+        const select = document.createElement("button");
+        select.type = "button";
+        select.textContent = "选择开放 PDF";
+        select.addEventListener("click", () => {
+          if (byId("acl-download").querySelector("button").disabled) return;
+          aclDoi = item.doi;
+          byId("acl-selection").textContent = item.title + " · " + item.doi;
+          byId("acl-download").hidden = false;
+          byId("acl-status").textContent = "";
+          byId("acl-consent").checked = false;
+          byId("acl-consent").focus();
+        });
+        row.append(select);
+      }
       matches.append(row);
     }
   });
@@ -144,16 +195,20 @@
     const recent = byId("recent");
     const status = byId("receipt-status");
     try {
-      const data = await request("/api/download/arxiv");
+      const sources = await Promise.all([
+        request("/api/download/arxiv"), request("/api/download/acl")
+      ]);
+      const receipts = sources.flatMap(source => source.receipts)
+        .sort((a, b) => b.retrieved_at.localeCompare(a.retrieved_at)).slice(0, 25);
       recent.replaceChildren();
-      status.textContent = data.receipts.length ? "" : "还没有下载记录。";
-      for (const item of data.receipts) {
+      status.textContent = receipts.length ? "" : "还没有下载记录。";
+      for (const item of receipts) {
         const row = document.createElement("li");
-        row.append(link(item.arxiv_id, item.url, true), " · ",
+        row.append(link(item.arxiv_id || item.doi, item.url, true), " · ",
           link(item.archived ? "打开归档原件" : "打开本地 PDF", "/pdf/" + item.sha256));
         const meta = document.createElement("div");
         meta.className = "meta";
-        meta.textContent = new Date(item.retrieved_at).toLocaleString() + " · SHA-256 " + item.sha256;
+        meta.textContent = item.provider + " · " + new Date(item.retrieved_at).toLocaleString() + " · SHA-256 " + item.sha256;
         row.append(meta);
         recent.append(row);
       }
@@ -161,13 +216,88 @@
       status.textContent = error.message || "无法读取下载记录。";
     }
   }
-  bind("download", "download-status", "download-consent", "正在从 arXiv 下载并导入…", async status => {
-    const data = await request("/api/download/arxiv", {arxiv_id: byId("identifier").value.trim(), consent: true});
+  function showImported(status, data) {
     status.textContent = data.archived ? "相同 PDF 已在归档，可在「版本与归档」恢复。 "
       : data.existing ? "相同 PDF 已在文库。 " : "已导入当前文库。 ";
     status.append(link("打开本地 PDF", "/pdf/" + data.doc.id));
+  }
+  bind("download", "download-status", "download-consent", "正在从 arXiv 下载并导入…", async status => {
+    const data = await request("/api/download/arxiv", {arxiv_id: byId("identifier").value.trim(), consent: true});
+    showImported(status, data);
     await loadReceipts();
   });
+  bind("acl-download", "acl-status", "acl-consent", "正在从 ACL Anthology 下载并导入…", async status => {
+    const data = await request("/api/download/acl", {doi: aclDoi, consent: true});
+    showImported(status, data);
+    await loadReceipts();
+  });
+  const subscriptionPath = "/api/download/subscription";
+  const formatDate = value => new Date(value).toLocaleString();
+  function showSubscription(data) {
+    const summaries = [data.enabled
+      ? data.category + " · " + (data.cadence === "daily" ? "每天" : "每周")
+      : "定期刷新已关闭"];
+    if (data.last_refresh) summaries.push("上次成功 " + formatDate(data.last_refresh));
+    if (data.last_attempt) summaries.push("上次尝试 " + formatDate(data.last_attempt));
+    if (data.next_due) summaries.push("下次到期 " + formatDate(data.next_due));
+    if (data.result?.error) summaries.push("上次刷新失败");
+    byId("subscription-status").textContent = summaries.join(" · ");
+    byId("subscription-stop").disabled = !data.enabled;
+    const results = byId("subscription-results");
+    results.replaceChildren();
+    for (const item of data.result?.items || []) {
+      const row = document.createElement("li");
+      row.append(link(item.title, item.url, true));
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = [item.published.slice(0, 10), ...item.recommendation.reasons].join(" · ");
+      row.append(meta);
+      if (item.repository_url) row.append(link("关联代码仓库", item.repository_url, true));
+      results.append(row);
+    }
+  }
+  async function loadSubscription() {
+    const button = byId("subscription-status-button");
+    const category = byId("tracking-category");
+    button.disabled = true;
+    try {
+      const data = await request(subscriptionPath);
+      if (!category.options.length) {
+        for (const value of data.categories) category.add(new Option(value, value));
+        if (data.category) category.value = data.category;
+        if (data.cadence) byId("tracking-cadence").value = data.cadence;
+        byId("subscribe-button").disabled = false;
+      }
+      showSubscription(data);
+    } catch (error) {
+      byId("subscription-status").textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  }
+  bind("subscription", "subscription-action", "tracking-consent", "正在保存订阅…", async status => {
+    const data = await request(subscriptionPath, {
+      action: "subscribe", category: byId("tracking-category").value,
+      cadence: byId("tracking-cadence").value, consent: true
+    });
+    showSubscription(data);
+    status.textContent = "订阅已保存。";
+  });
+  byId("subscription-stop").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    const status = byId("subscription-action");
+    button.disabled = true;
+    status.textContent = "正在停止定期刷新…";
+    try {
+      showSubscription(await request(subscriptionPath, {action: "stop"}));
+      status.textContent = "定期刷新已停止。";
+    } catch (error) {
+      status.textContent = error.message;
+      button.disabled = false;
+    }
+  });
+  byId("subscription-status-button").addEventListener("click", loadSubscription);
+  loadSubscription();
   loadReceipts();
 </script>
 </html>

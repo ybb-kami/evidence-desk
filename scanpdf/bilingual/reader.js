@@ -5,9 +5,10 @@ function preservedRanges(text, pdfRanges, terms = []) {
   for (const char of text) offsets.push(offsets.at(-1) + char.length);
   const ranges = pdfRanges.map(([a,b]) => [offsets[a], offsets[b]]);
   const syntax = /```[^]*?(?:```|$)|`[^`\n]+`|\$\$[^]*?\$\$|\$[^$\n]+\$|\\\([^]*?\\\)|\\\[[^]*?\\\]|^\s*(?:def |class |import |from \S+ import |function |const |let |return |#include|for\s*\(|if\s*\().*$/gm;
+  const specialTokens = /<(?:pad|unk|bos|eos|s|\/s)>/gi;
   const functionAssignment = /^\s*[A-Za-z][\w]*\([^\n()]*\)\s*=\s*[^\n]+$/gm;
   const equations = /(?:[\p{L}\d_]+(?:\([^()\n]*\))?\s*[=≈≤≥≠]\s*[\p{L}\d_().^{}]+(?:\s*[-+*/×÷]\s*[\p{L}\d_().^{}]+)*)/gu;
-  for (const pattern of [syntax,functionAssignment,equations]) {
+  for (const pattern of [syntax,functionAssignment,equations,specialTokens]) {
     for (const match of text.matchAll(pattern)) ranges.push([match.index, match.index + match[0].length]);
   }
   for (const term of terms) {
@@ -22,6 +23,12 @@ function preservedRanges(text, pdfRanges, terms = []) {
     else merged.push([start,end]);
   }
   return merged;
+}
+
+function denseNumericTable(text) {
+  const lines = text.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+  const numeric = lines.filter(line => /^[+−-]?(?=[\d.])[\d.,+/%×·−–—eE^\s-]+[KMGT]?$/u.test(line));
+  return numeric.length >= 3 && numeric.length*2 >= lines.length;
 }
 
 function parts(segment, start, end, terms = []) {
@@ -58,7 +65,7 @@ function parts(segment, start, end, terms = []) {
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = {parts, preservedRanges};
+if (typeof module !== "undefined") module.exports = {parts, preservedRanges, denseNumericTable};
 if (typeof document !== "undefined") startReader();
 
 async function startReader() {
@@ -120,7 +127,7 @@ async function startReader() {
     for (const segment of data.segments) {
       const card = document.createElement("article"), head = document.createElement("header");
       const title = document.createElement("span"), button = document.createElement("button");
-      title.textContent = (data.source === "ocr" ? "OCR · " : "") + "第 " + data.page + " 页 · 块 " + segment.block;
+      title.textContent = (data.source === "ocr" ? "OCR · " : "") + "第 " + data.page + " 页 · 块 " + segment.block + (segment.reference ? " · 编号参考文献" : "");
       button.textContent = "翻译此段或选区"; button.disabled = running;
       const source = document.createElement("p"), target = document.createElement("p");
       source.className = "source"; target.className = "translated"; source.textContent = segment.text;
@@ -166,7 +173,15 @@ async function startReader() {
     setRunning(true);
     const token = ++generation; let completed = 0;
     try {
-      const translate = await getEngine();
+      const engine = await getEngine();
+      const memo = new Map();
+      async function translate(text) {
+        if (memo.has(text)) return memo.get(text);
+        const result = await engine(text);
+        if (!result.trim()) throw Error("模型返回空译文，请核对当前段后重试。");
+        if (memo.size < 3000) memo.set(text,result);
+        return result;
+      }
       while (token === generation) {
         const page = current.page;
         for (const [index,segment] of current.segments.entries()) {
@@ -175,7 +190,9 @@ async function startReader() {
           status.textContent = "正在翻译第 " + page + " 页 · 块 " + segment.block;
           let result = "";
           const keepKey = [docs.value,page,segment.block].join("/");
-          const fragments = keep.has(keepKey) ? [{text:segment.text.slice(start,end),translate:false}] : parts(segment,start,end,glossaries.get(pairKey()));
+          const reference = mode !== "one" && segment.reference;
+          const table = !selection && denseNumericTable(segment.text);
+          const fragments = reference || table || keep.has(keepKey) ? [{text:segment.text.slice(start,end),translate:false}] : parts(segment,start,end,glossaries.get(pairKey()));
           for (const part of fragments) {
             if (token !== generation) return;
             if (part.translate) {
@@ -188,6 +205,7 @@ async function startReader() {
             start,end,startChar:Array.from(segment.text.slice(0,start)).length,
             endChar:Array.from(segment.text.slice(0,end)).length,selected:Boolean(selection),
             original:segment.text.slice(start,end),translation:result,
+            treatment:reference ? "reference" : table ? "table" : fragments.some(p=>p.translate) ? "machine" : "preserved",
             signature:sourceSignature(segment,current.source),ocr:current.source==="ocr"};
           saved.save(record);
           rows.children[index].querySelector(".translated").textContent = rendered(record);
@@ -198,7 +216,7 @@ async function startReader() {
         if (!running || !current) return;
 
       }
-      if (token === generation) status.textContent = "本次已翻译 " + completed + " 段。";
+      if (token === generation) status.textContent = "本次已处理 " + completed + " 段。";
     } catch (e) { if (token === generation) status.textContent = e.message; }
     finally { setRunning(false); }
   }

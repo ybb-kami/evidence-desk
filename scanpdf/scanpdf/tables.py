@@ -2,6 +2,7 @@
 
 from bisect import bisect_right
 from dataclasses import dataclass
+import re
 
 import numpy as np
 from PIL import Image
@@ -344,6 +345,96 @@ def _grouped_cells(words, rules, partial, bounds, dpi):
     return cells
 
 
+def _grouped_rail_cells(words, rules, rails, dpi):
+    """Recover sparse subrows anchored by repeated result columns and group rules."""
+    if len(rails) != 4 or len(rules) < 5:
+        return []
+    left, stub_end, result_start, right = rails
+    top, header_end, first_end = [rule.y for rule in rules[:3]]
+
+    # A dense first data row supplies leaf centers inside the ruled sections.
+    reference = _table_words(words, [stub_end, header_end, right, first_end])
+    rows, height = _text_rows(reference, dpi)
+    if len(rows) != 1:
+        return []
+    minimum_pitch = max(height * 2, dpi * .14)
+    left_centers = sorted(_word_center(word)[0] for word in reference if _word_center(word)[0] < result_start)
+    right_centers = sorted(_word_center(word)[0] for word in reference if _word_center(word)[0] >= result_start)
+    if len(left_centers) < 3 or len(right_centers) < 2:
+        return []
+    for centers in (left_centers, right_centers):
+        if any(b - a < minimum_pitch for a, b in zip(centers, centers[1:])):
+            return []
+
+    def gutters(centers):
+        return [round((a + b) / 2) for a, b in zip(centers, centers[1:])]
+
+    columns = [left, stub_end, *gutters(left_centers), result_start, *gutters(right_centers), right]
+    right_first = len(left_centers) + 2
+    body_groups = []
+    for upper, lower in zip(rules[1:], rules[2:]):
+        bounds = [left, upper.y, right, lower.y]
+        local = _table_words(words, bounds)
+        outcomes, _ = _text_rows(_table_words(local, [result_start, upper.y, right, lower.y]), dpi)
+        if not outcomes:
+            return []
+        # Genuine subrows each carry an independently aligned result in every
+        # outcome column. Do not splice a centered group label into this order.
+        for row in outcomes:
+            occupied = {bisect_right(columns, _word_center(word)[0]) for word in row}
+            if occupied != set(range(right_first, len(columns))):
+                return []
+        row_bands = _sparse_row_boundaries(
+            outcomes, columns, [upper, lower], [], height, dpi, wrapped_header=False,
+        )
+        if not row_bands:
+            return []
+        stub = _table_words(local, [left, upper.y, stub_end, lower.y])
+        if len(_text_rows(stub, dpi)[0]) > 1:
+            return []
+        body_groups.append((bounds, local, row_bands, stub))
+    if sum(len(bands) > 2 and bool(stub) for _, _, bands, stub in body_groups) < 2:
+        return []
+
+    body_rows = []
+    stubs = []
+    index = 2
+    for (_, upper, _, lower), local, bands, words_in_stub in body_groups:
+        group_size = len(bands) - 1
+        spans = {"row_span": group_size} if group_size > 1 else {}
+        label = [word for word in words_in_stub if any(char.isalnum() for char in word["text"])]
+        stubs.append(_make_cell(index, 1, [left, upper, stub_end, lower], label, **spans))
+        for y0, y1 in zip(bands, bands[1:]):
+            body_rows.extend(
+                (index, col, [x0, y0, x1, y1], _table_words(local, [x0, y0, x1, y1]))
+                for col, (x0, x1) in enumerate(zip(columns[1:], columns[2:]), 2)
+            )
+            index += 1
+
+    header = [left, top, right, header_end]
+    cells = _cells(_table_words(words, header), columns, [top, header_end]) + stubs
+    # Re-read missing punctuation and fused spans from evidence crops through
+    # the existing cell OCR retry. No text is carried from the reference row.
+    numeric = re.compile(r"[-+]?\d+(?:\.\d+)?[kKmM%]?")
+    fraction = re.compile(r"[-+]?\d+\.\d+")
+    fractional_columns = {
+        col for col in range(2, len(columns))
+        if sum(
+            any(fraction.fullmatch(word["text"]) for word in members)
+            for _, column, _, members in body_rows if column == col
+        ) >= 2
+    }
+    for row, col, box, members in body_rows:
+        clean = [
+            word for word in members if numeric.fullmatch(word["text"])
+            and word.get("confidence", 100) >= 35
+            and word["bbox"][0] >= box[0] - dpi * .02 and word["bbox"][2] <= box[2] + dpi * .02
+            and (col not in fractional_columns or fraction.fullmatch(word["text"]))
+        ]
+        cells.append(_make_cell(row, col, box, clean if len(clean) == len(members) == 1 else []))
+    return sorted(cells, key=lambda cell: (cell["row"], cell["column"]))
+
+
 def _region(ink, rules, partial_rules, words, dpi):
     top, bottom = rules[0].y, rules[-1].y
     left = min(rule.left for rule in rules)
@@ -370,6 +461,12 @@ def _region(ink, rules, partial_rules, words, dpi):
             if word["text"] not in {"|", "│"}
             or all(abs(_word_center(word)[0] - x) > tolerance for x in columns[1:-1])
         ]
+        grouped = _grouped_rail_cells(local_words, rules, columns, dpi)
+        if grouped:
+            return {
+                "type": "table", "bbox": bounds, "status": "partial_structure",
+                "method": "vertical_rules_grouped_ocr_alignment", "cells": grouped,
+            }
         text_rows, height = _text_rows(local_words, dpi)
         if _has_separated_rows(text_rows, height, dpi):
             row_bands = _sparse_row_boundaries(text_rows, columns, rules, [], height, dpi)

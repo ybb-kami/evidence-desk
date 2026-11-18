@@ -3,7 +3,9 @@ from pathlib import Path
 
 import fitz
 
-from .routes import read_page, scan_segments
+from engine import parse_pdf
+
+from .routes import bibliography, read_page, scan_segments
 
 
 class SourceTests(unittest.TestCase):
@@ -41,6 +43,23 @@ class SourceTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_only_confirmed_numbered_references_are_protected(self):
+        with fitz.open() as pdf:
+            page = pdf.new_page()
+            lines = [
+                "[3] This is prose before the bibliography.",
+                "References",
+                "[1] A. Author. An example article, 2020.",
+                "[2] B. Author. A second article, 2021.",
+                "Appendix",
+                "[4] Supplementary example outside the bibliography.",
+            ]
+            for n, line in enumerate(lines, 1):
+                page.insert_text((30, 40 * n), line)
+            source = pdf.tobytes()
+        refs = bibliography(parse_pdf(source, "fixture.pdf"))
+        self.assertEqual(refs, {(1, 3): lines[2], (1, 4): lines[3]})
 
     def test_repository_sample(self):
         sample = Path(__file__).resolve().parents[2] / "sample.pdf"

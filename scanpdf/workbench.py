@@ -54,6 +54,9 @@ def index_page(doc, page):
 
 
 class ScanLibrary(app.Library):
+    # Bump when older table or formula regions need an explicit refresh.
+    REGION_REVISION = 1
+
     def __init__(self, root, lang="eng"):
         super().__init__(root)
         self.lang = lang
@@ -78,32 +81,60 @@ class ScanLibrary(app.Library):
             row = db.execute("SELECT result FROM scan_pages WHERE id=? AND page=?",
                              (docid, number)).fetchone()
             completed = {r[0] for r in db.execute("SELECT page FROM scan_pages WHERE id=?", (docid,))}
+        page = json.loads(zlib.decompress(row[0])) if row else None
+        revision = page.get("region_revision", 0) if page is not None else None
         native_textless = doc.get("native_textless", doc["textless_pages"])
         return {"doc": app.summary(doc), "native_textless": native_textless,
                 "pending_pages": [n for n in native_textless if n not in completed],
-                "page": json.loads(zlib.decompress(row[0])) if row else None}
+                "region_revision": revision,
+                "region_update_available": revision is not None and revision < self.REGION_REVISION,
+                "page": page}
 
-    def recognize(self, docid, number):
+    def recognize(self, docid, number, *, region_revision=None):
         if not self.worker.acquire(blocking=False):
             raise app.Bad(409, "正在处理其他页面，请稍后重试。")
         try:
             info = self.page_info(docid, number)
-            if info["page"] is not None:
+            cached = info["page"]
+            if region_revision is not None:
+                if type(region_revision) is not int or region_revision < 0:
+                    raise app.Bad(400, "区域修订号无效。")
+                if cached is None:
+                    raise app.Bad(400, "请先识别本页。")
+                if not info["region_update_available"]:
+                    return info
+                if region_revision != info["region_revision"]:
+                    raise app.Bad(409, "区域修订号已变化，请重新读取本页。")
+            elif cached is not None:
                 return info
-            if number not in info["native_textless"]:
+            elif number not in info["native_textless"]:
                 raise app.Bad(400, "本页已有原生文字。")
             with tempfile.TemporaryDirectory() as folder:
                 source = Path(folder) / "source.pdf"
                 source.write_bytes(self.pdf(docid))
-                result = recognize_pdf(source, pages=str(number), lang=self.lang)
+                if cached is None:
+                    result = recognize_pdf(source, pages=str(number), lang=self.lang)
+                else:
+                    render = cached["render"]
+                    result = recognize_pdf(source, pages=str(number), lang=render["lang"], dpi=render["dpi"])
             if result["source"]["sha256"] != docid:
                 raise ValueError("原件校验失败。")
             page = result["pages"][0]
-            page["render"] = result["render"]
+            if cached is None:
+                page["render"] = result["render"]
+            else:
+                geometry = ("physical_page", "width_px", "height_px", "width_pt", "height_pt", "rotation", "cropbox")
+                if (result["render"] != cached["render"]
+                        or any(page[key] != cached[key] for key in geometry)):
+                    raise ValueError("更新后的区域坐标与原页不一致。")
+                # Keep line, word, and indexed block anchors from the original OCR.
+                page = cached | {"regions": page["regions"]}
+            page["region_revision"] = self.REGION_REVISION
             packed = zlib.compress(json.dumps(page, ensure_ascii=False).encode())
             with self.lock, closing(sqlite3.connect(self.db)) as db, db:
                 db.execute("BEGIN IMMEDIATE")
-                if not db.execute("SELECT 1 FROM scan_pages WHERE id=? AND page=?", (docid, number)).fetchone():
+                row = db.execute("SELECT result FROM scan_pages WHERE id=? AND page=?", (docid, number)).fetchone()
+                if cached is None and row is None:
                     doc = self.lookup(docid, number)
                     index_page(doc, page)
                     record = json.dumps(doc, ensure_ascii=False)
@@ -113,6 +144,18 @@ class ScanLibrary(app.Library):
                         raise ValueError("扫描结果超过本地文库容量。")
                     db.execute("INSERT INTO scan_pages VALUES(?,?,?)", (docid, number, packed))
                     db.execute("UPDATE docs SET record=? WHERE id=?", (record, docid))
+                elif cached is not None:
+                    self.lookup(docid, number)
+                    if row is None:
+                        raise app.Bad(409, "本页识别记录已变化，请重新读取本页。")
+                    latest = json.loads(zlib.decompress(row[0]))
+                    if latest.get("region_revision", 0) < self.REGION_REVISION:
+                        if latest != cached:
+                            raise app.Bad(409, "本页识别记录已变化，请重新读取本页。")
+                        scans, = db.execute("SELECT coalesce(sum(length(result)),0) FROM scan_pages").fetchone()
+                        if scans - len(row[0]) + len(packed) > app.MAX_TEXT:
+                            raise ValueError("扫描结果超过本地文库容量。")
+                        db.execute("UPDATE scan_pages SET result=? WHERE id=? AND page=?", (packed, docid, number))
             return self.page_info(docid, number)
         finally:
             self.worker.release()
@@ -128,6 +171,14 @@ class Handler(app.Handler):
         if post and (self.headers.get("Origin") not in (None, "http://" + host)
                      or self.headers.get("Sec-Fetch-Site") == "cross-site"):
             raise app.Bad(403, "拒绝跨站请求。")
+        if path in {"/formula-review", "/formula-review/image", "/api/formula-review"}:
+            from formula_review import handle
+            return handle(self, post, url)
+        if not post and path == "/synthesis":
+            return self.payload(200, (HERE / "synthesis.html").read_bytes(), "text/html; charset=utf-8")
+        if post and path == "/api/synthesis":
+            from synthesis import handle
+            return handle(self)
         if path == "/translation" or path.startswith(("/api/bilingual/", "/bilingual/")):
             from bilingual.routes import handle
             if handle(self, post, path):
@@ -139,7 +190,8 @@ class Handler(app.Handler):
         if not post and path in ("/", "/index.html"):
             home = (app.HERE / "index.html").read_text()
             home = home.replace('<span class="tag">本地工作区</span>',
-                                '<nav><a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a> · <a href="/followup">证据追问</a></nav>')
+                                '<nav><a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a> · <a href="/followup">证据追问</a> · <a href="/architecture">跨篇问答</a></nav>')
+            home = home.replace('id="local-review"></section>', 'id="local-review"><a href="/synthesis">选择文献生成综述</a></section>', 1)
             home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
                                 "扫描件可按页识别，完成后可在这里检索 OCR 文字。")
             home = home.replace("detail.append(archive);", """
@@ -157,6 +209,11 @@ class Handler(app.Handler):
                 }
                 actions.append(source(hit.id,""")
             return self.payload(200, home.encode(), "text/html; charset=utf-8")
+        if not post and path == "/architecture":
+            return self.payload(200, (HERE / "architecture.html").read_bytes(), "text/html; charset=utf-8")
+        if post and path == "/api/architecture":
+            from architecture import route
+            return route(self)
         if not post and path == "/followup":
             return self.payload(200, (HERE / "followup.html").read_bytes(), "text/html; charset=utf-8")
         if post and path == "/api/followup":
@@ -167,6 +224,11 @@ class Handler(app.Handler):
         store = self.server.library
         if post and path == "/api/scan":
             req = self.json_request()
+            if "region_revision" in req:
+                if type(req["region_revision"]) is not int:
+                    raise app.Bad(400, "区域修订号无效。")
+                return self.payload(200, store.recognize(req.get("id"), req.get("page"),
+                                                         region_revision=req["region_revision"]))
             return self.payload(200, store.recognize(req.get("id"), req.get("page")))
         if not post and path.startswith(("/api/scan/", "/scan-image/")):
             docid = path.rsplit("/", 1)[1]
@@ -194,11 +256,16 @@ def main():
     with ThreadingHTTPServer(("127.0.0.1", args.port), Handler) as server:
         server.library = ScanLibrary(args.data, args.lang)
         server.enable_model = args.enable_deepseek
+        from discovery.schedule import TrackingSchedule
+        server.tracking_schedule = TrackingSchedule(server.library)
+        server.tracking_schedule.start()
         print(f"http://127.0.0.1:{server.server_port}", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
             pass
+        finally:
+            server.tracking_schedule.close()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # 证据台普通话演示讲稿
 
-时间按成片顺序取整秒。视频由 Chromium 本地实录，旁白采用 Piper 华燕中文音色在本机生成。用于参赛前审核及按原时间重录。
+时间按成片顺序取整秒。视频由 Chromium 本地实录，推荐版旁白用 Kokoro 中文音色在本机生成；历史版另用 Piper 华燕。用于参赛前审核及按原时间重录。
 
 ## 00:00　项目概述
 
@@ -62,4 +62,6 @@
 
 A-lantern.pdf、B-cloud.pdf 及模拟测量数据为项目演示材料。扫描实例与双语选区来自赛题资料包镜像，样本来源和哈希见仓库 scanpdf/SAMPLE_REVIEW.md 及 scanpdf/acceptance/。
 
-本机使用 sherpa-onnx 公开发布的 zh_CN-huayan-medium 模型配音。该模型卡将训练数据许可标为 Unknown，参赛团队可核对使用条件或据此稿录制自己的普通话讲解。[模型发行包](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2)
+历史版使用 sherpa-onnx 公开发布的 zh_CN-huayan-medium 模型配音。该模型卡将训练数据许可标为 Unknown，参赛团队可核对使用条件或据此稿录制自己的普通话讲解。[模型发行包](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-huayan-medium.tar.bz2)
+
+推荐版采用 Kokoro v1.0 官方中文音色表中的 zf_xiaoxiao。详见[配音说明](VOICE-NOTES.md)。

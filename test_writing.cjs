@@ -34,3 +34,8 @@ assert.ok(method.includes('n3 -> n1;'));
 assert.ok(methodDiagram('引用 "A" -> 比较').includes(JSON.stringify('引用 "A"')));
 assert.throws(() => methodDiagram('数据 → '));
 assert.throws(() => methodDiagram('孤立步骤'));
+
+assert.match(paper('扫描表格识别').markdown, /字符错误率/);
+assert.match(paper('检索问答方法').markdown, /检索召回/);
+assert.match(paper('比较文本编码器',[hit]).markdown, /相同数据与指标/);
+assert.match(paper('比较文本编码器',[hit]).markdown, /逐项对照 E1/);

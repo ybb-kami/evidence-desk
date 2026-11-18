@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公式核对 · 证据台</title>
+<style>
+:root{color:#232b27;background:#f6f7f2;font:16px/1.55 "Source Sans 3",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0}header,main{max-width:1100px;margin:auto;padding:1rem clamp(1rem,4vw,3rem)}
+header{display:flex;align-items:center;gap:1.2rem;border-bottom:1px solid #b9c4bc}header strong{margin-right:auto}
+h1{font-size:clamp(1.75rem,4vw,2.5rem);margin:.7rem 0}h2{font-size:1.25rem;margin:0 0 .7rem}a{color:#12685d}
+.controls{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.65fr) minmax(0,1.15fr);gap:.75rem}
+label{display:grid;gap:.25rem;font-weight:600}button,select{font:inherit;padding:.55rem .7rem;border:1px solid #82968a;border-radius:5px;background:white;min-width:0;color:inherit}
+button{background:#176956;color:white;cursor:pointer}button:disabled{opacity:.55;cursor:default}
+section,aside{margin-top:1rem;border:1px solid #b9c4bc;background:white;padding:1rem;border-radius:7px}
+#crop-frame{display:block;overflow:auto;background:#fff;border:1px solid #d3ded6;padding:.7rem;min-height:4rem}img{display:block;max-width:100%;height:auto;margin:auto}
+#status{min-height:1.5rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f0;padding:.75rem;border-radius:4px}
+.actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:.8rem}summary{cursor:pointer}[hidden]{display:none!important}
+#location{color:#46574e;font-size:.9rem;overflow-wrap:anywhere}#setup p{margin:.4rem 0}
+@media(max-width:620px){.controls{grid-template-columns:1fr}header{gap:.7rem}}
+</style>
+<header><strong>证据台</strong><a href="/">文库</a><a id="scan" href="/scan">扫描页核对</a></header>
+<main>
+<h1>公式核对</h1>
+<div class="controls">
+<label>文献<select id="document" disabled></select></label>
+<label>物理页<select id="page" disabled></select></label>
+<label>公式区域<select id="region" disabled></select></label>
+</div>
+<p id="status" role="status"></p>
+<aside id="setup" hidden>
+<h2>安装本机公式模型</h2>
+<p id="installation"></p><p id="configuration"></p>
+<a id="release" target="_blank" rel="noopener noreferrer">上游权重发布页</a>
+</aside>
+<section id="evidence" hidden>
+<h2>扫描原图</h2>
+<div id="crop-frame"><img id="crop" alt="所选公式区域的扫描原图"></div>
+<p id="location"></p>
+<div class="actions"><button id="recognize" disabled>识别这一条公式</button><a id="source" target="_blank" rel="noopener">打开原 PDF</a></div>
+</section>
+<section id="draft" hidden>
+<h2>未核验候选</h2>
+<p id="agreement"></p>
+<pre id="latex"></pre>
+<details id="variant"><summary>查看放大图识别结果</summary><pre id="alternate"></pre></details>
+<details><summary>识别来源与证据</summary><pre id="metadata"></pre></details>
+</section>
+</main>
+<script>
+'use strict';
+const el=id=>document.getElementById(id);
+const docs=el('document'), pages=el('page'), regions=el('region'), status=el('status');
+const initial=new URLSearchParams(location.search);
+let catalog=[], pageRegions=[], generation=0, configured=false;
+async function request(url, options) {
+  const response=await fetch(url,options);
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error || '读取失败');
+  return data;
+}
+function params(region) {
+  const scope=new URLSearchParams({id:docs.value,page:pages.value});
+  if(region) scope.set('region',region);
+  return scope;
+}
+function setup(data) {
+  configured=data.configured;
+  el('setup').hidden=configured;
+  el('installation').textContent=data.setup.instruction;
+  el('configuration').textContent=data.setup.configuration;
+  el('release').href=data.setup.release;
+}
+function showRegion() {
+  generation++;
+  el('draft').hidden=true;
+  const region=pageRegions.find(item=>item.id===regions.value);
+  el('evidence').hidden=!region;
+  el('recognize').disabled=!region || !configured;
+  if(!region) return;
+  const scope=params(region.id);
+  history.replaceState(null,'','/formula-review?'+scope);
+  el('crop').src='/formula-review/image?'+scope;
+  el('source').href='/pdf/'+encodeURIComponent(docs.value)+'#page='+pages.value;
+  el('location').textContent='物理页 '+pages.value+' · '+region.id+' · 框坐标（点） '+region.bbox_pt.map(x=>x.toFixed(1)).join(', ');
+  status.textContent='已定位 '+pageRegions.length+' 个公式区域。';
+}
+async function showPage(preferred) {
+  const active=++generation;
+  el('scan').href='/scan?'+params();
+  history.replaceState(null,'','/formula-review?'+params());
+  pageRegions=[];
+  regions.replaceChildren();
+  regions.disabled=true;
+  el('evidence').hidden=el('draft').hidden=true;
+  status.textContent='正在读取公式区域…';
+  try {
+    const result=await request('/api/formula-review?'+params());
+    if(active!==generation) return;
+    setup(result);
+    pageRegions=result.regions;
+    for(const region of pageRegions) {
+      const label=region.equation_number ? '编号 ('+region.equation_number+') · ' : '';
+      regions.add(new Option(label+region.id,region.id));
+    }
+    regions.disabled=!pageRegions.length;
+    if(pageRegions.some(r=>r.id===preferred)) regions.value=preferred;
+    if(pageRegions.length) showRegion();
+    else status.textContent=result.page_scanned ? '本页没有已定位的公式。' : '本页没有扫描识别结果。请先打开扫描页核对并识别。';
+  } catch(error) { if(active===generation) status.textContent=error.message; }
+}
+function showDocument(preferredPage, preferredRegion) {
+  const selected=catalog.find(record=>record.id===docs.value);
+  if(!selected) return;
+  pages.replaceChildren();
+  for(let n=1;n<=selected.pages;n++) pages.add(new Option(String(n),String(n)));
+  pages.disabled=false;
+  if(Number.isInteger(preferredPage) && preferredPage>=1 && preferredPage<=selected.pages) pages.value=String(preferredPage);
+  else if(selected.textless_pages?.length) pages.value=String(selected.textless_pages[0]);
+  showPage(preferredRegion);
+}
+el('recognize').onclick=async()=>{
+  const active=generation;
+  const button=el('recognize');
+  button.disabled=true;
+  el('draft').hidden=true;
+  status.textContent='正在本机识别这一条公式…';
+  try {
+    const body=await request('/api/formula-review',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:docs.value,page:Number(pages.value),region:regions.value})});
+    if(active!==generation) return;
+    const candidate=body.candidate;
+    el('latex').textContent=candidate.variants.source_scale.latex || '原尺度未识别出内容。';
+    el('alternate').textContent=candidate.variants.upsampled_2x.latex || '放大图未识别出内容。';
+    el('variant').open=!candidate.confidence.variants_agree;
+    el('agreement').textContent=candidate.confidence.variants_agree ?
+      '两种图像尺度返回相同的 LaTeX。请与原图逐字核对。' :
+      '两种图像尺度返回不同的 LaTeX，或未识别出内容。请与原图逐字核对。';
+    el('metadata').textContent=body.model.engine+' '+body.model.package_version+' · '+body.model.provider+
+      '\n原 PDF SHA-256 '+body.source.sha256+'\n裁剪图 SHA-256 '+candidate.evidence_crop_sha256+
+      '\n推理范围（像素） '+candidate.recognition_bbox_px.join(', ');
+    el('draft').hidden=false;
+    status.textContent='已生成未核验候选。';
+  } catch(error) { if(active===generation) status.textContent=error.message; }
+  finally { if(active===generation) button.disabled=!configured; }
+};
+docs.onchange=()=>showDocument();
+pages.onchange=()=>showPage();
+regions.onchange=showRegion;
+(async()=>{
+  try {
+    const [library,config]=await Promise.all([request('/api/library'),request('/api/formula-review')]);
+    setup(config);
+    catalog=library.docs;
+    for(const doc of catalog) docs.add(new Option(doc.name,doc.id));
+    docs.disabled=!catalog.length;
+    if(!catalog.length){status.textContent='请先在文库导入扫描 PDF。';return;}
+    if(catalog.some(record=>record.id===initial.get('id'))) docs.value=initial.get('id');
+    showDocument(Number(initial.get('page')),initial.get('region'));
+  } catch(error){status.textContent=error.message;}
+})();
+</script>
+</html>

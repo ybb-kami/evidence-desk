@@ -33,3 +33,11 @@ const prose = "We study A+B and A+B.";
 const protectedTerms = parts({text:prose,protected:[]},0,prose.length,["A+B"]);
 assert.equal(protectedTerms.filter(p=>!p.translate && p.text==="A+B").length,2);
 console.log("HTML escaping, separate ranges, source invalidation and literal terminology verified.");
+
+for (const token of ["<pad>","<EOS>"]) {
+  assert.deepEqual(parts({text:token,protected:[]},0,token.length),[{text:token,translate:false}]);
+}
+
+const {denseNumericTable} = require("./reader.js");
+assert(denseNumericTable("base\n6\n0.1\n0.1\n100K"));
+assert(!denseNumericTable("This experiment uses 12 people.\nOne group has 6 participants.\n6"));

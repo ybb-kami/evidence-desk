@@ -1,4 +1,4 @@
-"""Tests for the loopback arXiv download and library integration."""
+"""Tests for bounded publisher downloads and library integration."""
 
 from email.message import Message
 from hashlib import sha256
@@ -16,6 +16,8 @@ from . import fetch, routes
 
 
 IDENTIFIER = "1706.03762v1"
+BERT_DOI = "10.18653/v1/N19-1423"
+BERT_PDF = "https://aclanthology.org/N19-1423.pdf"
 
 
 def pdf_bytes():
@@ -49,6 +51,21 @@ class Response:
 
 
 class TransportTests(TestCase):
+    def test_acl_doi_maps_to_a_fixed_publisher_pdf(self):
+        body = pdf_bytes()
+        with patch.object(fetch, "_open", return_value=Response(body, url=BERT_PDF)) as upstream:
+            self.assertEqual(fetch._download(BERT_DOI.lower(), "acl"), (0, body))
+            self.assertEqual(upstream.call_args.args[0].full_url, BERT_PDF)
+        self.assertEqual(
+            fetch.pdf_url("10.18653/v1/2024.acl-long.123", "acl"),
+            "https://aclanthology.org/2024.acl-long.123.pdf",
+        )
+        for value in (BERT_PDF, BERT_DOI + "?x=1", "10.18653/v1/../N19-1423",
+                      "10.1234/v1/N19-1423", BERT_DOI + "\n", 1):
+            with self.subTest(value=value), patch.object(fetch, "_open") as upstream:
+                self.assertEqual(fetch._download(value, "acl"), (fetch.UNAVAILABLE, b""))
+                upstream.assert_not_called()
+
     def test_only_full_identifiers_can_reach_the_known_endpoint(self):
         for value in (
             "arXiv:1706.03762v1", "https://arxiv.org/pdf/1706.03762v1",
@@ -114,6 +131,29 @@ class RouteTests(TestCase):
         self.handler.data = request
         self.assertTrue(routes.handle(self.handler, post, self.path))
         return self.handler.response
+
+    def test_acl_candidate_requires_confirmation_and_records_publisher_source(self):
+        self.path = "/api/download/acl"
+        with patch.object(fetch, "retrieve", return_value=(0, pdf_bytes())) as upstream:
+            for request, code in [
+                ({"doi": BERT_DOI}, 403),
+                ({"doi": BERT_DOI, "consent": 1}, 403),
+                ({"doi": BERT_DOI, "consent": True, "url": BERT_PDF}, 400),
+                ({"doi": BERT_PDF, "consent": True}, 400),
+            ]:
+                with self.subTest(request=request), self.assertRaises(Bad) as error:
+                    self.invoke(post=True, request=request)
+                self.assertEqual(error.exception.code, code)
+            upstream.assert_not_called()
+            code, result = self.invoke(post=True, request={"doi": BERT_DOI.lower(), "consent": True})
+        self.assertEqual(code, 200)
+        upstream.assert_called_once_with(BERT_DOI, "acl")
+        source = result["source"]
+        self.assertEqual(source["doi"], BERT_DOI)
+        self.assertEqual(source["provider"], "ACL Anthology")
+        self.assertEqual(source["url"], BERT_PDF)
+        self.assertEqual(source["sha256"], self.library.records()[0]["id"])
+        self.assertEqual(self.invoke()[1]["receipts"], [source | {"archived": False}])
 
     def test_consent_and_exact_payload_precede_network_access(self):
         for body, status in [

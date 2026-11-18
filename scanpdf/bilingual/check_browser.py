@@ -37,7 +37,7 @@ def select(page, part):
         part,
     )
     card.locator("button").click()
-    expect(page.locator("#status")).to_contain_text("本次已翻译", timeout=90000)
+    expect(page.locator("#status")).to_contain_text("本次已处理", timeout=90000)
     return card.locator(".translated").inner_text()
 
 
@@ -145,13 +145,13 @@ def verify(base, files, chromium, example_dir=None):
         )
         open_doc(page, base, fixture, 1)
         page.locator("#pageRun").click()
-        expect(page.locator("#status")).to_contain_text("本次已翻译", timeout=90000)
+        expect(page.locator("#status")).to_contain_text("本次已处理", timeout=90000)
         t = page.locator(".translated").all_text_contents()
         print("FIXTURE", t, flush=True)
         assert t[1:] == ["print(value + 1)", "x = 2 + 3"]
         page.locator("#all").click()
         expect(page.locator("#status")).to_contain_text(
-            "本次已翻译 4 段", timeout=90000
+            "本次已处理 4 段", timeout=90000
         )
         expect(page.locator("#page")).to_have_value("2")
         assert page.locator(".translated").inner_text() != "待翻译"

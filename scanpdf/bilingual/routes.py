@@ -2,13 +2,36 @@
 
 import re
 from pathlib import Path
+from threading import Lock
 from urllib.parse import parse_qs, urlsplit
 
 import fitz
 
 from app import Bad
+from reader import build_reader
 
 ASSETS = Path(__file__).parent
+_reference_cache = {}
+_reference_lock = Lock()
+
+
+def bibliography(doc):
+    """Return complete numbered entries the document reader can locate unambiguously."""
+    key = (doc["id"], doc.get("text_hash"))
+    with _reference_lock:
+        if key not in _reference_cache:
+            entries = {}
+            for ref in build_reader(doc)["references"]:
+                anchor = re.fullmatch(r"p(\d+)-b(\d+)-r\d+", ref["id"])
+                if anchor:
+                    pos = (int(anchor[1]), int(anchor[2]))
+                    entries.setdefault(pos, []).append(ref["text"])
+            if len(_reference_cache) >= 4:
+                del _reference_cache[next(iter(_reference_cache))]
+            _reference_cache[key] = {
+                pos: " ".join(" ".join(texts).split()) for pos, texts in entries.items()
+            }
+        return _reference_cache[key]
 
 
 def read_page(data, page_number):
@@ -93,7 +116,8 @@ def handle(handler, post, path):
         number = params.get("page", ["1"])[0]
         if not re.fullmatch(r"[1-9][0-9]{0,4}", number):
             raise Bad(400, "页码无效。")
-        if not handler.server.library.records([match[2]]):
+        docs = handler.server.library.records([match[2]])
+        if not docs:
             raise Bad(404, "文献不存在于活动文库。")
         data = handler.server.library.pdf(match[2])
         if data is None:
@@ -104,6 +128,11 @@ def handle(handler, post, path):
             if scan:
                 result.update(segments=scan_segments(scan), source="ocr")
         if match[1] == "page":
+            entries = bibliography(docs[0])
+            for segment in result["segments"]:
+                expected = entries.get((int(number), segment["block"]))
+                if expected and expected == " ".join(segment["text"].split()):
+                    segment["reference"] = True
             handler.payload(200, result)
         else:
             selected = params.get("block", [""])[0]

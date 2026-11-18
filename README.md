@@ -21,6 +21,8 @@ export EVIDENCE_TRANSLATION_MODELS="/path/to/models"
 # 并以 --enable-deepseek 启动，在每次请求前由操作者确认。
 ```
 
+当前分支可从工作台进入证据追问、跨篇问答、扫描核对、双语阅读、文献下载与订阅。图谱面板提供带引文的综述。提交文件与评委抽查步骤见[提交清单](scanpdf/delivery/SUBMISSION-CHECKLIST.md)。
+
 参赛团队署名与分工待参赛者确认。下文介绍原有轻量入口。
 
 > 原有轻量入口的验收记录见 [v0.4 状态](STATUS.md)。

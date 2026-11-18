@@ -186,7 +186,7 @@ def collection_review(docs):
     ]
     directions = []
     for document in docs:
-        for chunk in document.get('chunks', ()):
+        for chunk in _body_chunks(document):
             quote = next(
                 (sentence.strip() for sentence in SENTENCE_BOUNDARY.split(chunk['text'])
                  if FUTURE.search(sentence) and 25 <= len(sentence.strip()) <= 650),

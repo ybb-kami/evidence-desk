@@ -64,7 +64,7 @@ byId('ask').onsubmit=async event=>{
     if(!response.ok)throw Error(data.error||'检索失败。');
     const turn=document.createElement('section');
     turn.append(node('h2',question),node('p',picker.selectedOptions[0].text+' · '+(current?locationText(current):'全文')));
-    if(data.answer) turn.append(node('strong','段内标记值：'+data.answer));
+    if(data.answer) turn.append(node('strong',data.answer));
     if(data.gap || !data.hits.length) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
     for(const hit of data.hits)turn.append(cite(hit));
     historyBox.append(turn); field.value=''; byId('status').textContent='';

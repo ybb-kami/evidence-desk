@@ -111,7 +111,7 @@ class TestLaterCandidates(unittest.TestCase):
         )
         later = self.article('candidate.pdf', self.later_stamp, self.later_excerpt, self.references)
         result = collection_review([earlier, later])
-        self.assertEqual(len(result['future_mentions']), 1)
+        self.assertEqual(result['future_mentions'], [])
         self.assertEqual(result['later_candidates'], [])
 
     def test_generic_method_language_is_not_topic_evidence(self):

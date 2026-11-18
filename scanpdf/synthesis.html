@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文献综述 · 证据台</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f2;color:#182e2b;font:16px/1.6 'Source Sans 3',system-ui,sans-serif}main{max-width:850px;margin:auto;padding:1.5rem}a{color:#115a52}fieldset,article{background:white;border:1px solid #bac9c3;padding:1rem 1.3rem;margin:1rem 0;border-radius:.4rem}#papers{max-height:15rem;overflow:auto}#papers label,article a{display:block}button{padding:.5rem .8rem;margin:.35rem .35rem .35rem 0;font:inherit;color:inherit}blockquote{border-left:3px solid #a5bdb1;margin:.5rem 0;padding:0 1rem;white-space:pre-line;overflow-wrap:anywhere}.draft{font-weight:600}input{margin-right:.5rem}
+</style><main><a href="/">返回工作台</a><h1>文献综述</h1>
+<fieldset><legend>纳入综述的文献</legend><label><input id="all" type="checkbox">全选</label><div id="papers"></div></fieldset>
+<button id="local">整理本地证据</button><button id="remote" hidden>使用 DeepSeek 起草</button>
+<p id="status" role="status"></p><section id="review" aria-live="polite"></section></main>
+<script>
+'use strict';
+const get = id => document.getElementById(id);
+const node = (tag, text) => {const out = document.createElement(tag);out.textContent = text;return out;};
+let revision = 0;
+function invalidate(){revision++;get('review').replaceChildren();get('status').textContent='';get('local').disabled=false;get('remote').disabled=false;}
+get('all').onchange=()=>{for(const box of get('papers').querySelectorAll('input')) box.checked=get('all').checked;invalidate();};
+get('papers').onchange=()=>{get('all').checked=[...get('papers').querySelectorAll('input')].every(x=>x.checked);invalidate();};
+function show(data){
+  const area=get('review');area.replaceChildren();
+  area.append(node('p',`选中文献合并为 ${data.works} 部作品，内部引用 ${data.edges} 条。本次列出 ${data.abstracts} 部作品的摘要摘录，最多六部，按本库 PageRank 选择。`));
+  const messages={unconfigured:'此服务尚未启用 DeepSeek。',unverified:'模型输出未通过来源编号和格式检查，保留本地证据。',insufficient:'至少需要两部作品的摘要证据才能起草比较综述。'};
+  if(messages[data.mode]) area.append(node('p',messages[data.mode]));
+  if(data.paragraphs.length){area.append(node('h2','模型综述草稿'), node('p','请逐段核验推论。链接与引文已对照本库，每段论断是否成立仍须人工判断。'));
+    for(const row of data.paragraphs){const p=node('p',row.text+' ');for(const ref of row.refs){const a=node('a','['+ref+'] ');a.href='#'+ref;p.append(a);}area.append(p);}}
+  for(const group of ['摘要','引用','未来工作']){
+    const rows=data.sources.filter(s=>s.category===group);if(!rows.length)continue;
+    area.append(node('h2',group==='未来工作'?'作者讨论的未来工作':group));
+    for(const s of rows){const a=node('article','');a.id=s.ref;const link=node('a',`${s.name} · 物理第 ${s.page} 页，第 ${s.block} 块`);link.href='/pdf/'+s.doc+'#page='+s.page;link.target='_blank';link.rel='noopener';a.append(node('strong',s.ref+' · '+s.title),node('blockquote',s.text),link);area.append(a);}
+  }
+}
+async function run(mode){
+  const ids=[...get('papers').querySelectorAll('input:checked')].map(x=>x.value);
+  if(ids.length<2){get('status').textContent='请选择至少两份文献。';return;}
+  const consent=mode==='model' && window.confirm('即将把所选文献中最多六部作品的公开摘要、引用与未来工作摘录发送给 DeepSeek 生成草稿。确认这次发送？');if(mode==='model'&&!consent)return;
+  const current=++revision;get('local').disabled=get('remote').disabled=true;get('review').replaceChildren();get('status').textContent='正在整理…';
+  try{const reply=await fetch('/api/synthesis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids,mode,consent})});const data=await reply.json();if(current!==revision)return;if(!reply.ok)throw Error(data.error||'综述生成失败。');show(data);get('status').textContent='';}
+  catch(e){if(current===revision)get('status').textContent=e.message;}finally{if(current===revision)get('local').disabled=get('remote').disabled=false;}
+}
+get('local').onclick=()=>run('local');get('remote').onclick=()=>run('model');
+(async()=>{try{const reply=await fetch('/api/library');if(!reply.ok)throw Error('读取文库失败。');const data=await reply.json();get('remote').hidden=!data.deepseek_enabled;for(const doc of data.docs){const label=node('label',''),box=document.createElement('input');box.type='checkbox';box.value=doc.id;label.append(box,document.createTextNode(doc.name));get('papers').append(label);}if(!data.docs.length)get('status').textContent='请先在工作台导入文献。';}catch(e){get('status').textContent=e.message;}})();
+</script></html>

@@ -9,7 +9,7 @@ to keep the app fully local.
 
 If approved, requests go directly to
 [DeepSeek Chat Completions](https://api-docs.deepseek.com/) over verified HTTPS using
-`deepseek-flash`. The request contains the question (at most 600 characters) and
+the configured `DEEPSEEK_MODEL` (default `deepseek-flash`, live availability still to be verified). The evidence-selection request contains the question (at most 600 characters) and
 at most four locally retrieved snippets (first 1,000 characters each), labeled
 using per-request IDs. It never uploads PDF files or transmits filenames, page
 references, or the local index. For very short documents, snippets may contain
@@ -26,3 +26,5 @@ An exact quote may still be irrelevant or missing important surrounding context,
 so check the referenced passage before relying on it. Unsupported or malformed
 suggestions result in abstention. No live API call was used in testing: run
 `python -m unittest -v test_provider` for the injected-transport tests.
+
+The competition workbench also provides a separate, per-request opt-in review at `/synthesis`. Select PDFs to preview their original abstract, citation and future-work passages locally. The online option sends these extracts with opaque labels and checks reference IDs on the returned review paragraphs. Review prose is model-authored and requires a reader to check whether each cited extract supports the claim. Offline contract tests exercise the model response path.

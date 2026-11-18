@@ -63,6 +63,13 @@ def configured() -> bool:
     return bool(os.environ.get("DEEPSEEK_API_KEY", "").strip())
 
 
+def model_name() -> str:
+    name = os.environ.get("DEEPSEEK_MODEL", MODEL).strip()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,100}", name):
+        raise ValueError("Invalid DeepSeek model identifier.")
+    return name
+
+
 def _result(status: str, quotes: list | None = None) -> dict:
     return {"status": status, "quotes": quotes or [], "answer": _FRAMING[status]}
 
@@ -140,7 +147,7 @@ def summarize(query: str, hits: list[dict], *,
         raise ValueError("Question or excerpt contains a configured credential.")
     context = json.dumps({"question": query, "extracts": extracts}, ensure_ascii=True)
     payload = {
-        "model": MODEL,
+        "model": model_name(),
         "messages": [{"role": "system", "content": _SYSTEM},
                      {"role": "user", "content": context}],
         "thinking": {"type": "disabled"},

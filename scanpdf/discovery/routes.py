@@ -1,4 +1,4 @@
-"""Explicit arXiv acquisition in the active Evidence Desk library."""
+"""Explicit publisher PDF acquisition in the active Evidence Desk library."""
 
 import sqlite3
 import threading
@@ -10,73 +10,88 @@ from pathlib import Path
 import fitz
 
 from app import Bad, UPLOAD_LIMIT
+from arxiv_tracking import CATEGORIES
 from . import fetch
+from .schedule import CADENCES
 
 ASSETS = Path(__file__).parent
 REQUEST_LOCK = threading.Lock()
 ERRORS = {
-    fetch.UNAVAILABLE: (502, "本次未能连接 arXiv。可稍后重试，或手动导入已下载的 PDF。"),
-    fetch.NOT_FOUND: (404, "arXiv 未找到该编号或版本。"),
-    fetch.TOO_LARGE: (413, "arXiv PDF 超出本地文件容量上限。"),
-    fetch.INVALID_PDF: (502, "arXiv 返回的内容不是可用的 PDF。"),
-    fetch.REDIRECT: (502, "arXiv 返回了重定向，本次下载未完成。"),
-    fetch.BUSY: (429, "arXiv 请求过于频繁，请稍后重试。"),
+    fetch.UNAVAILABLE: (502, "本次未能连接 {}。可稍后重试，或手动导入已下载的 PDF。"),
+    fetch.NOT_FOUND: (404, "{} 未找到该记录或版本的 PDF。"),
+    fetch.TOO_LARGE: (413, "{} PDF 超出本地文件容量上限。"),
+    fetch.INVALID_PDF: (502, "{} 返回的内容不是可用的 PDF。"),
+    fetch.REDIRECT: (502, "{} 返回了重定向，本次下载未完成。"),
+    fetch.BUSY: (429, "{} 请求过于频繁，请稍后重试。"),
+}
+PROVIDERS = {
+    "arxiv": ("arXiv", "arxiv_downloads", "arxiv_id"),
+    "acl": ("ACL Anthology", "acl_downloads", "doi"),
 }
 CREATE_RECEIPTS = """
-    CREATE TABLE IF NOT EXISTS arxiv_downloads (
-        arxiv_id TEXT NOT NULL, doc_id TEXT NOT NULL, retrieved_at TEXT NOT NULL,
-        PRIMARY KEY (arxiv_id, doc_id)
+    CREATE TABLE IF NOT EXISTS {table} (
+        {field} TEXT NOT NULL, doc_id TEXT NOT NULL, retrieved_at TEXT NOT NULL,
+        PRIMARY KEY ({field}, doc_id)
     )
 """
 
 
-def _receipts(library):
+def _receipts(library, provider):
+    _, table, field = PROVIDERS[provider]
     with closing(sqlite3.connect(library.db)) as db, db:
-        db.execute(CREATE_RECEIPTS)
+        db.execute(CREATE_RECEIPTS.format(table=table, field=field))
         return [
-            _source(identifier, digest, timestamp) | {"archived": bool(archived)}
+            _source(identifier, digest, timestamp, provider) | {"archived": bool(archived)}
             for identifier, digest, timestamp, archived in db.execute(
-                "SELECT a.arxiv_id, a.doc_id, a.retrieved_at, "
+                f"SELECT a.{field}, a.doc_id, a.retrieved_at, "
                 "EXISTS(SELECT 1 FROM archive WHERE archive.id=a.doc_id) "
-                "FROM arxiv_downloads a JOIN docs ON docs.id=a.doc_id "
+                f"FROM {table} a JOIN docs ON docs.id=a.doc_id "
                 "ORDER BY a.retrieved_at DESC LIMIT 25"
             )
         ]
 
 
-def _source(identifier, digest, timestamp):
+def _source(identifier, digest, timestamp, provider):
+    name, _, field = PROVIDERS[provider]
     return {
-        "arxiv_id": identifier, "sha256": digest, "retrieved_at": timestamp,
-        "provider": "arXiv", "url": fetch.ENDPOINT + identifier,
+        field: identifier, "sha256": digest, "retrieved_at": timestamp,
+        "provider": name, "url": fetch.pdf_url(identifier, provider),
     }
 
 
-def _acquire(library, identifier):
+def _error(code, provider):
+    status, message = ERRORS.get(code, ERRORS[fetch.UNAVAILABLE])
+    return Bad(status, message.format(PROVIDERS[provider][0]))
+
+
+def _acquire(library, identifier, provider):
+    _, table, field = PROVIDERS[provider]
     if not REQUEST_LOCK.acquire(blocking=False):
         raise Bad(409, "另一份 PDF 正在下载，请稍后重试。")
     try:
-        code, data = fetch.retrieve(identifier)
+        code, data = fetch.retrieve(identifier) if provider == "arxiv" else fetch.retrieve(identifier, provider)
         if code:
-            raise Bad(*ERRORS.get(code, ERRORS[fetch.UNAVAILABLE]))
+            raise _error(code, provider)
         if len(data) > UPLOAD_LIMIT:
-            raise Bad(*ERRORS[fetch.TOO_LARGE])
+            raise _error(fetch.TOO_LARGE, provider)
         try:
             with fitz.open(stream=data, filetype="pdf") as pdf:
                 if not pdf.is_pdf or pdf.is_encrypted or pdf.is_repaired or len(pdf) == 0:
                     raise ValueError("invalid PDF")
         except (fitz.FileDataError, ValueError, RuntimeError) as error:
-            raise Bad(*ERRORS[fetch.INVALID_PDF]) from error
+            raise _error(fetch.INVALID_PDF, provider) from error
 
         timestamp = datetime.now(timezone.utc).isoformat()
-        name = "arXiv-" + identifier.replace("/", "-") + ".pdf"
+        name = ("arXiv-" + identifier.replace("/", "-") if provider == "arxiv"
+                else "ACL-" + identifier.rsplit("/", 1)[1]) + ".pdf"
         digest = sha256(data).hexdigest()
         # Write provenance before inserting the content. History joins library
         # documents by the same digest, so incomplete imports stay invisible.
         with closing(sqlite3.connect(library.db)) as db, db:
-            db.execute(CREATE_RECEIPTS)
+            db.execute(CREATE_RECEIPTS.format(table=table, field=field))
             db.execute(
-                "INSERT INTO arxiv_downloads VALUES (?, ?, ?) "
-                "ON CONFLICT(arxiv_id, doc_id) DO UPDATE SET retrieved_at=excluded.retrieved_at",
+                f"INSERT INTO {table} VALUES (?, ?, ?) "
+                f"ON CONFLICT({field}, doc_id) DO UPDATE SET retrieved_at=excluded.retrieved_at",
                 (identifier, digest, timestamp),
             )
         try:
@@ -84,28 +99,59 @@ def _acquire(library, identifier):
         except Exception:
             with closing(sqlite3.connect(library.db)) as db, db:
                 db.execute(
-                    "DELETE FROM arxiv_downloads WHERE arxiv_id=? AND doc_id=? AND retrieved_at=? "
+                    f"DELETE FROM {table} WHERE {field}=? AND doc_id=? AND retrieved_at=? "
                     "AND NOT EXISTS(SELECT 1 FROM docs WHERE id=?)",
                     (identifier, digest, timestamp, digest),
                 )
             raise
-        return result | {"source": _source(identifier, digest, timestamp)}
+        return result | {"source": _source(identifier, digest, timestamp, provider)}
     finally:
         REQUEST_LOCK.release()
+
+
+def _subscription(handler, post):
+    schedule = getattr(handler.server, "tracking_schedule", None)
+    if schedule is None:
+        raise Bad(503, "请从扫描工作台启动定期追踪。")
+    if not post:
+        return schedule.state() | {"categories": CATEGORIES}
+    request = handler.json_request()
+    if request == {"action": "stop"}:
+        return schedule.stop()
+    if request.get("action") != "subscribe":
+        raise Bad(400, "请选择订阅或停止。")
+    if request.get("consent") is not True:
+        raise Bad(403, "请确认定期向 arXiv 发送所选公开分类。")
+    category, cadence = request.get("category"), request.get("cadence")
+    if (set(request) != {"action", "category", "cadence", "consent"}
+            or category not in CATEGORIES or not isinstance(cadence, str) or cadence not in CADENCES):
+        raise Bad(400, "请选择一个公开 arXiv 分类和刷新频率。")
+    return schedule.subscribe(category, cadence)
 
 
 def handle(handler, post, path):
     if not post and path == "/download":
         handler.payload(200, (ASSETS / "download.html").read_bytes(), "text/html; charset=utf-8")
-    elif not post and path == "/api/download/arxiv":
-        handler.payload(200, {"receipts": _receipts(handler.server.library)})
-    elif post and path == "/api/download/arxiv":
-        request = handler.json_request()
-        if request.get("consent") is not True:
-            raise Bad(403, "请确认本次可将公开编号发送给 arXiv。")
-        if set(request) != {"arxiv_id", "consent"} or not fetch.valid_id(request["arxiv_id"]):
-            raise Bad(400, "请输入完整 arXiv 编号，可附带版本号，例如 1706.03762v1。")
-        handler.payload(200, _acquire(handler.server.library, request["arxiv_id"]))
-    else:
+        return True
+    if path == "/api/download/subscription":
+        handler.payload(200, _subscription(handler, post))
+        return True
+    provider = path.removeprefix("/api/download/")
+    if not path.startswith("/api/download/") or provider not in PROVIDERS:
         return False
+    if not post:
+        handler.payload(200, {"receipts": _receipts(handler.server.library, provider)})
+        return True
+    name, _, field = PROVIDERS[provider]
+    request = handler.json_request()
+    if request.get("consent") is not True:
+        raise Bad(403, f"请确认本次可将公开编号发送给 {name}。")
+    identifier = request.get(field)
+    if set(request) != {field, "consent"} or fetch.pdf_url(identifier, provider) is None:
+        if provider == "arxiv":
+            raise Bad(400, "请输入完整 arXiv 编号，可附带版本号，例如 1706.03762v1。")
+        raise Bad(400, "请选择带有 ACL Anthology DOI 的公开题录。")
+    if provider == "acl":
+        identifier = fetch.acl_doi(identifier)
+    handler.payload(200, _acquire(handler.server.library, identifier, provider))
     return True

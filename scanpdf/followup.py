@@ -5,6 +5,7 @@ import unicodedata
 from app import Bad, ID
 import engine
 from byline import author_number
+from paper_facts import extract_facts
 
 
 def beta_values(text):
@@ -64,6 +65,11 @@ def lookup(store, request):
     doc = docs[0]
     if "author_blocks" not in doc and author_number(question) is not None:
         doc = engine.with_author_blocks(doc, store.pdf(docid))
+    if anchor is None:
+        from metric_qa import answer_metric
+        metric = answer_metric(store, doc, question)
+        if metric is not None:
+            return metric
     chunk = None
     if anchor is not None:
         if (not isinstance(anchor, list) or len(anchor) != 3
@@ -76,4 +82,5 @@ def lookup(store, request):
     query = re.sub(r"^(?:其中|这段(?:话)?中|该段中)\s*", "", question.strip())
     if adam_pair_question(query, chunk):
         return adam_evidence(doc)
-    return {"hits": engine.find_evidence([doc], query), "answer": None}
+    hits = engine.find_evidence([doc], query)
+    return extract_facts(doc, query, hits) or {"hits": hits, "answer": None}

@@ -17,10 +17,10 @@ aside,article{background:#fff;border:1px solid #c9d1c9;border-radius:8px;padding
 .sheet{position:relative}img{display:block;width:100%;height:auto}#mark{position:absolute;border:2px solid #d26200;background:#ffb74c42;pointer-events:none}
 @media(max-width:750px){.layout{grid-template-columns:1fr}#results{max-height:25vh}}
 </style>
-<header><strong>证据台</strong><a href="/">文库</a><a href="/translation">双语阅读</a></header>
+<header><strong>证据台</strong><a href="/">文库</a><a href="/translation">双语阅读</a><a id="formula-review-link" href="/formula-review">公式核对</a></header>
 <main><h1>扫描页核对</h1>
 <div class="controls"><label>文献<select id="doc"></select></label><label>物理页<select id="page"></select></label>
-<button class="primary" id="scan" hidden disabled>识别本页</button><button id="batch" hidden>识别整篇待处理页</button><button id="cancel" hidden>完成当前页后暂停</button><a id="source" hidden target="_blank" rel="noopener">打开原 PDF</a></div>
+<button class="primary" id="scan" hidden disabled>识别本页</button><button id="update-regions" hidden disabled>更新本页区域</button><button id="batch" hidden>识别整篇待处理页</button><button id="cancel" hidden>完成当前页后暂停</button><a id="source" hidden target="_blank" rel="noopener">打开原 PDF</a></div>
 <p id="progress" hidden role="status"></p>
 <p id="status" role="status"></p>
 <div class="layout"><aside><h2>本页证据</h2><label>查找文字或区域<input type="search" id="query" placeholder="词语、表格或公式"></label>
@@ -34,9 +34,11 @@ const doc = byId('doc'), page = byId('page'), scan = byId('scan'), query = byId(
 const preview = byId('preview'), mark = byId('mark'), status = byId('status');
 let documents = [], evidence = null, generation = 0;
 const batch = byId('batch'), cancel = byId('cancel'), progress = byId('progress');
+const updateRegions = byId('update-regions');
+let regionRevision = null;
 let pendingPages = [], running = false, pause = false;
 const initial = new URLSearchParams(location.search);
-const statusLabels = {structure_recognized:'已识别表格结构',detected_only:'仅定位区域',transcribed:'已转录'};
+const statusLabels = {structure_recognized:'已识别表格结构',partial_structure:'部分结构已识别，请核对原图',detected_only:'仅定位区域',transcribed:'已转录'};
 async function getJSON(url, options) {
   const response = await fetch(url, options);
   const body = await response.json();
@@ -49,6 +51,11 @@ function clearEvidence() {
   byId('results').replaceChildren();
   byId('detail').textContent = '';
 }
+function formulaLink(region) {
+  const params = new URLSearchParams({id:doc.value,page:page.value});
+  if (region) params.set('region',region);
+  byId('formula-review-link').href = '/formula-review?'+params;
+}
 function selectItem(item, button) {
   const [left,top,right,bottom] = item.bbox_pt;
   const width = evidence.width_pt, height = evidence.height_pt;
@@ -57,12 +64,14 @@ function selectItem(item, button) {
   mark.hidden = false;
   byId('results').querySelector('[aria-pressed=true]')?.setAttribute('aria-pressed','false');
   button.setAttribute('aria-pressed','true');
+  formulaLink(item.type==='formula' ? item.id : null);
   byId('detail').textContent = item.description+'\n物理页 '+page.value+' · 框坐标（点） '+item.bbox_pt.map(n=>n.toFixed(1)).join(', ');
 }
 function showResults() {
   const list = byId('results');
   list.replaceChildren();
   mark.hidden = true;
+  formulaLink(null);
   byId('detail').textContent = '';
   if (!evidence) return;
   const items = [];
@@ -96,6 +105,8 @@ function showResults() {
 }
 function applyResponse(body) {
   evidence = body.page;
+  regionRevision = body.region_revision;
+  updateRegions.hidden = updateRegions.disabled = !body.region_update_available || running;
   const originalScan = body.native_textless.includes(Number(page.value));
   pendingPages = body.pending_pages;
   scan.hidden = !originalScan || !!evidence || running;
@@ -110,7 +121,9 @@ async function loadPage() {
   const active = ++generation;
   clearEvidence();
   scan.hidden = batch.hidden = scan.disabled = true;
+  updateRegions.hidden = updateRegions.disabled = true;
   const id = doc.value, n = Number(page.value);
+  formulaLink(null);
   const source = byId('source');
   source.href = '/pdf/'+id+'#page='+n;
   source.hidden = false;
@@ -130,9 +143,9 @@ function loadDocument(firstPage) {
   if (Number.isInteger(firstPage) && firstPage>=1 && firstPage<=selected.pages) page.value=String(firstPage);
   loadPage();
 }
-function recognizePage(id, number) {
+function recognizePage(id, number, revision) {
   return getJSON('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({id,page:number})});
+    body:JSON.stringify({id,page:number,region_revision:revision})});
 }
 batch.onclick = async ()=>{
   if (running || !pendingPages.length) return;
@@ -140,7 +153,7 @@ batch.onclick = async ()=>{
   let done = 0;
   running = true;
   pause = false;
-  batch.hidden = scan.hidden = true;
+  batch.hidden = scan.hidden = updateRegions.hidden = true;
   cancel.hidden = progress.hidden = false;
   cancel.disabled = false;
   doc.disabled = page.disabled = true;
@@ -176,6 +189,25 @@ scan.onclick = async ()=>{
     if(active===generation) applyResponse(body);
   } catch(error) {
     if(active===generation){ status.textContent=error.message; scan.disabled=false; batch.hidden=!pendingPages.length; }
+  }
+};
+updateRegions.onclick = async ()=>{
+  const active = generation;
+  updateRegions.disabled = true;
+  batch.hidden = true;
+  status.textContent = '正在更新本页的表格和公式区域…';
+  try {
+    const body = await recognizePage(doc.value, Number(page.value), regionRevision);
+    if (active===generation) {
+      applyResponse(body);
+      status.textContent += ' 区域已更新，原有文字引用仍可使用。';
+    }
+  } catch(error) {
+    if (active===generation) {
+      status.textContent = error.message;
+      updateRegions.disabled = false;
+      batch.hidden = !pendingPages.length;
+    }
   }
 };
 doc.onchange=()=>loadDocument(); page.onchange=loadPage; query.oninput=showResults;

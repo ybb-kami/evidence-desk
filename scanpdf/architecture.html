@@ -1,0 +1,47 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>跨篇问答 · 证据台</title><style>
+*{box-sizing:border-box}body{font:16px/1.6 system-ui,sans-serif;background:#f4f5f1;color:#172d28;margin:0}main{max-width:1000px;margin:auto;padding:1.5rem}a{color:#12685d}form,article,#summary{background:white;padding:1rem;border:1px solid #c6d2ca;margin:1rem 0}fieldset{max-height:16rem;overflow:auto;border:0;padding:0}fieldset label{display:block}input,textarea,button{font:inherit}textarea{width:100%;padding:.5rem}button{padding:.4rem .8rem;color:white;background:#18574d;border:0;border-radius:.3rem}blockquote{white-space:pre-wrap;overflow-wrap:anywhere;border-left:3px solid #b1c6ba;padding-left:.75rem;margin:.5rem 0 1rem}h2{font-size:1.12rem}.papers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:1rem}.papers article{min-width:0;margin:0}
+</style><main><a href="/">返回工作台</a><h1>跨篇问答</h1>
+<form id="form"><fieldset id="docs"><legend>选择两到三篇文献</legend></fieldset>
+<label for="query">对照问题</label><textarea id="query" rows="2" maxlength="500" required></textarea><button>对照原文</button></form>
+<p id="status" role="status"></p><div id="output"></div></main>
+<script>
+const byId=id=>document.getElementById(id), docs=byId('docs'), query=byId('query'), output=byId('output');
+let generation=0;
+function el(tag,text){const node=document.createElement(tag);node.textContent=text;return node;}
+function clear(){generation++;output.replaceChildren();byId('status').textContent='';}
+docs.onchange=clear;query.oninput=clear;
+(async()=>{
+ try{
+  const response=await fetch('/api/library');if(!response.ok)throw Error('无法加载文库。');
+  for(const doc of (await response.json()).docs){
+   const label=document.createElement('label'), input=document.createElement('input');
+   input.type='checkbox';input.value=doc.id;label.append(input,document.createTextNode(' '+doc.name));docs.append(label);
+  }
+  if(!docs.querySelector('input'))byId('status').textContent='请先在文库中导入 PDF。';
+ }catch(e){byId('status').textContent=e.message;}
+})();
+byId('form').onsubmit=async event=>{
+ event.preventDefault();clear();const active=generation;
+ const ids=Array.from(docs.querySelectorAll(':checked'),item=>item.value);
+ if(ids.length<2||ids.length>3){byId('status').textContent='请选择两到三篇不同文献。';return;}
+ byId('status').textContent='正在核对所选文献…';
+ try{
+  const response=await fetch('/api/architecture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids,query:query.value.trim()})});
+  const data=await response.json();if(active!==generation)return;if(!response.ok)throw Error(data.error);
+  output.append(el('p',data.answer||data.gap));output.firstChild.id='summary';
+  const papers=document.createElement('div');papers.className='papers';output.append(papers);
+  for(const paper of data.papers){
+   const article=document.createElement('article');article.append(el('h2',paper.name));
+   for(const hit of paper.hits){
+    if(hit.observation)article.append(el('p',hit.observation));
+    const source=el('a',(hit.evidence_label||'原文')+' · 物理页 '+hit.page+' · 文本块 '+hit.block);
+    source.href='/pdf/'+hit.id+'#page='+hit.page;source.target='_blank';source.rel='noopener';article.append(source,el('blockquote',hit.text));
+   }
+   if(!paper.hits.length)article.append(el('p','本篇未找到支持该问题的摘录。'));
+   papers.append(article);
+  }
+  byId('status').textContent='';
+ }catch(e){if(active===generation)byId('status').textContent=e.message;}
+};
+</script></html>

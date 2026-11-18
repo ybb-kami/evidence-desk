@@ -1,4 +1,4 @@
-"""Download one PDF from the fixed arXiv endpoint in an isolated worker."""
+"""Download one PDF from a supported publisher endpoint in an isolated worker."""
 
 import re
 import subprocess
@@ -9,6 +9,11 @@ from urllib.error import HTTPError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 ENDPOINT = "https://arxiv.org/pdf/"
+ACL_ENDPOINT = "https://aclanthology.org/"
+ACL_DOI = re.compile(
+    r"10\.18653/v1/([a-z][0-9]{2}-[0-9]{4,6}|[0-9]{4}\.[a-z0-9]+(?:-[a-z0-9]+)*\.[0-9]{1,6})",
+    re.ASCII | re.IGNORECASE,
+)
 MAX_BYTES = 24 * 1024 * 1024
 ID = re.compile(
     r"(?:[0-9]{2}(?:0[1-9]|1[0-2])\.[0-9]{4,5}|[a-z]+(?:[.-][a-z]+)*/[0-9]{2}(?:0[1-9]|1[0-2])[0-9]{3})(?:v[1-9][0-9]{0,5})?",
@@ -34,14 +39,32 @@ def valid_id(value):
     return isinstance(value, str) and len(value) <= 64 and ID.fullmatch(value) is not None
 
 
+def acl_doi(value):
+    """Return a canonical DOI for a supported ACL Anthology article."""
+    match = ACL_DOI.fullmatch(value) if isinstance(value, str) and len(value) <= 100 else None
+    if match is None:
+        return None
+    identifier = match[1]
+    identifier = identifier.upper() if identifier[0].isalpha() else identifier.lower()
+    return "10.18653/v1/" + identifier
+
+
+def pdf_url(identifier, provider):
+    if provider == "arxiv" and valid_id(identifier):
+        return ENDPOINT + identifier
+    if provider == "acl" and (doi := acl_doi(identifier)):
+        return ACL_ENDPOINT + doi.rsplit("/", 1)[1] + ".pdf"
+    return None
+
+
 def _open(request, timeout):
     return build_opener(ProxyHandler({}), NoRedirect()).open(request, timeout=timeout)
 
 
-def _download(identifier):
-    if not valid_id(identifier):
+def _download(identifier, provider="arxiv"):
+    url = pdf_url(identifier, provider)
+    if url is None:
         return UNAVAILABLE, b""
-    url = ENDPOINT + identifier
     request = Request(url, headers={"Accept": "application/pdf", "User-Agent": "EvidenceDesk/0.4"})
     try:
         with _open(request, timeout=NETWORK_TIMEOUT) as response:
@@ -78,12 +101,12 @@ def _download(identifier):
         return UNAVAILABLE, b""
 
 
-def retrieve(identifier):
-    if not valid_id(identifier):
+def retrieve(identifier, provider="arxiv"):
+    if pdf_url(identifier, provider) is None:
         return UNAVAILABLE, b""
     try:
         worker = subprocess.run(
-            [sys.executable, "-I", str(Path(__file__).resolve()), identifier],
+            [sys.executable, "-I", str(Path(__file__).resolve()), identifier, provider],
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             timeout=DEADLINE, check=False,
         )
@@ -97,7 +120,7 @@ def retrieve(identifier):
 
 
 if __name__ == "__main__":
-    status, body = _download(sys.argv[1]) if len(sys.argv) == 2 else (UNAVAILABLE, b"")
+    status, body = _download(*sys.argv[1:]) if len(sys.argv) in (2, 3) else (UNAVAILABLE, b"")
     if status == 0:
         sys.stdout.buffer.write(body)
     raise SystemExit(status)
