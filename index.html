@@ -123,12 +123,15 @@
 <div class="actions"><button id="writing-download" type="button" class="compact" disabled>下载 Markdown</button><button id="mermaid-download" type="button" class="compact">下载证据台架构 Mermaid</button></div>
 <p class="subtle">Mermaid 是本工作台实际模块的数据流示意源码，不是按主题自动生成的研究架构。文件保存在本机，不上传原文。</p>
 </section>
+<section id="radar-panel" class="panel"></section>
 <section class="panel compare" id="local-bibliography"></section>
 <section class="panel compare" id="research-plan"></section>
+<section class="panel compare" id="frontmatter"></section>
 <section id="reader" aria-label="文献阅读"></section>
 <section class="panel compare" id="scan-sidecar-panel"></section>
 <section class="panel compare" id="local-ocr-panel"></section>
 <section class="panel compare" id="page-objects"></section>
+<section class="panel" id="arxiv-import-panel"></section>
 <section class="panel" id="subscriptions-panel"></section>
 <section id="tracking" aria-label="arXiv 追踪"></section>
 <footer class="subtle"><span>证据台 · 本地文献检索</span><span>摘录用于定位，引用前请核对 PDF 原页。</span></footer>
@@ -997,14 +1000,18 @@ $('mermaid-download').onclick = () => {
   else $('writing-status').textContent = '本地框架组件未载入，请重启程序并刷新。';
 };
 discoveryEligibility();
+window.addEventListener('evidence-desk:library-changed',()=>{refreshDocs().catch(()=>{});document.dispatchEvent(new Event('evidence-desk:library'));});
 refreshDocs().catch(error => {
   $('import-log').className = 'subtle log';
   $('import-log').textContent = '无法载入文献库：' + error.message;
 });
 </script>
+<script src="/radar.js"></script>
+<script src="/radar-ui.js"></script>
 <script src="/bibliography-ui.js" defer></script>
 <script src="/research_plan.js"></script>
 <script src="/research-plan-ui.js"></script>
+<script src="/frontmatter-ui.js" defer></script>
 <script src="/reader.js"></script>
 <script src="/questions.js"></script>
 <script src="/walkthrough-ui.js" defer></script>
@@ -1013,6 +1020,7 @@ refreshDocs().catch(error => {
 <script src="/scan-sidecar.js" defer></script>
 <script src="/ocr-panel.js" defer></script>
 <script src="/page-objects.js"></script>
+<script src="/arxiv-import-ui.js" defer></script>
 <script src="/subscriptions-ui.js" defer></script>
 <script src="/tracking.js"></script>
 <script src="/review-panel.js"></script>

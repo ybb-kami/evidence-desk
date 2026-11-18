@@ -46,7 +46,68 @@ class Concepts(unittest.TestCase):
                 compare_evidence(invalid,"decoder")
         m=compare_evidence(docs,";".join(f"arbitrary{i}" for i in range(15)))
         self.assertEqual(len(m["rows"]),8)
+        self.assertEqual(m["omitted_term_count"],7)
+        self.assertTrue(any("另有 7 项未检索" in note for note in m["notes"]))
         self.assertTrue(all(c["status"]=="no_match" for r in m["rows"] for c in r["cells"]))
+
+    def test_contest_question_ln_context_parameters_with_unmapped_comma_terms(self):
+        docs=[parse_pdf(fixture("Synthetic System Configurations Alpha",
+                    "Our model uses pre-LN. The context window is 611 tokens. We use dropout.",
+                    "A contrast system reports 27 million trainable parameters."),
+                    "alpha.pdf"),
+              parse_pdf(fixture("Synthetic System Configurations Beta",
+                    "Our model uses post-LN. The context size is 634 tokens. This model uses an optimizer.",
+                    "Our tested model contains 19 million parameters."),
+                    "beta.pdf")]
+        m=compare_evidence(docs,
+            "GPT-1/2/3 的 number of trainable parameters、LN 位置、Context Window，dropout, optimizer")
+        rows={r["id"]:r for r in m["rows"]}
+        for ident in ("layer_norm","context_window","parameter_count"):
+            self.assertTrue(all(c["hits"] for c in rows[ident]["cells"]))
+        literal={r["label"]:r for r in m["rows"] if r["id"].startswith("literal")}
+        self.assertEqual(set(literal),{"dropout","optimizer"})
+        self.assertTrue(literal["dropout"]["cells"][0]["hits"])
+        self.assertTrue(literal["optimizer"]["cells"][1]["hits"])
+        self.assertTrue(all(c["match_scope"]=="lexical_only_subject_unresolved"
+                            for c in rows["parameter_count"]["cells"]))
+        self.assertNotIn("conclusion",m)
+        self.assertTrue(any("不证明归一化在子层之前或之后" in note for note in m["notes"]))
+
+    def test_exact_count_exposes_bounded_hidden_candidate_not_source_attribution(self):
+        import fitz
+        with fitz.open() as pdf:
+            for i in range(4):
+                page=pdf.new_page()
+                page.insert_text((50,100),"The baseline uses 14 million parameters." if i<3
+                                      else "Our model uses 27 million parameters.")
+            a=parse_pdf(pdf.tobytes(),"four.pdf")
+        b=parse_pdf(samples()[1],"unrelated.pdf")
+        m=compare_evidence([a,b],"number of trainable parameters")
+        c=m["rows"][0]["cells"][0]
+        self.assertEqual((c["candidate_count"],c["hidden_count"],c["candidate_count_is_lower_bound"]), (4,1,False))
+        self.assertEqual([h["page"] for h in c["hits"]],[1,2,3])
+        self.assertTrue(all("baseline" in h["text"] for h in c["hits"]))
+        self.assertEqual(c["match_scope"],"lexical_only_subject_unresolved")
+
+    @unittest.skipUnless(all(os.getenv(f"EVIDENCE_DESK_PUBLIC_GPT{i}") for i in (1,2,3)),
+                         "Optional GPT-1/2/3 originals not supplied")
+    def test_public_gpt_reports_contain_anchored_candidates_and_unresolved_cells(self):
+        paths=[Path(os.environ[f"EVIDENCE_DESK_PUBLIC_GPT{i}"]) for i in (1,2,3)]
+        docs=[parse_pdf(p.read_bytes(),p.name) for p in paths]
+        self.assertEqual([d["pages"] for d in docs],[12,24,75])
+        self.assertEqual(docs[2]["arxiv"],{"id":"2005.14165","version":4})
+        m=compare_evidence(docs,"GPT-1/2/3 参数量、LN 位置、Context Window 是如何演进的？")
+        rows={r["id"]:r for r in m["rows"]}
+        for cell,page,tokens in zip(rows["context_window"]["cells"],(5,4,8),(512,1024,2048)):
+            self.assertTrue(any(h["page"]==page and str(tokens)+" tokens" in " ".join(h["text"].split())
+                                for h in cell["hits"]))
+        p=rows["parameter_count"]["cells"]
+        self.assertEqual(p[0]["status"],"no_match")
+        self.assertTrue(any(h["page"]==1 and "1.5B parameter" in h["text"] for h in p[1]["hits"]))
+        self.assertTrue(any(h["page"]==1 and "175 billion" in h["text"] for h in p[2]["hits"]))
+        self.assertTrue(all(c["match_scope"]=="lexical_only_subject_unresolved" for c in p))
+        self.assertTrue(any(h["page"]==8 and "pre-normalization" in h["text"] for h in rows["layer_norm"]["cells"][2]["hits"]))
+        self.assertNotIn("conclusion",m)
 
     @unittest.skipUnless(os.getenv("EVIDENCE_DESK_PUBLIC_ATTENTION_V7") and os.getenv("EVIDENCE_DESK_PUBLIC_BERT"),
                          "Optional public Attention v7/BERT originals not supplied")

@@ -10,6 +10,7 @@ class Walkthrough(LocalHTTPFixture,unittest.TestCase):
         ids=[x['id'] for x in docs]
         self.assertEqual(len(set(ids)),2)
         t=self.read_json('/api/workflow',{'ids':ids,'query':'amber lantern'})
+        self.assertEqual((t['coverage'],t['papers_with_evidence'],t['claim_support']),('partial',1,'not_assessed'))
         self.assertTrue(t['papers'][0]['evidence']);self.assertFalse(t['papers'][1]['evidence'])
         self.assertEqual(t['papers'][0]['evidence'][0]['page'],1)
         self.read_json('/api/demo-import',{'confirm':True})

@@ -8,6 +8,13 @@ from urllib.parse import parse_qs, quote, urlsplit
 from local_ocr_jobs import LocalOCRJobs, OCRJobError
 from reader_cache import ReaderCache
 from subscriptions import Subscriptions, SubscriptionError
+try:
+    from arxiv_import import ArxivImport, ArxivImportError
+except ModuleNotFoundError as exc:
+    if exc.name!='arxiv_import':raise
+    ArxivImport=None
+    class ArxivImportError(Exception):
+        pass
 from engine import parse_pdf, find_evidence, duplicates
 from graph import build_graph
 from revisions import describe_revision
@@ -141,12 +148,14 @@ class Handler(BaseHTTPRequestHandler):
             raise Bad(403,'拒绝跨站请求。')
         u = urlsplit(self.path); path=u.path
         store=self.server.library
+        if path.startswith('/api/arxiv-import') and getattr(self.server,'arxiv_import',None) is None:
+            raise Bad(503,'当前安装未提供可选 arXiv 全文组件。')
         if not post:
             assets={'/':('index.html','text/html; charset=utf-8'),
                     '/index.html':('index.html','text/html; charset=utf-8'),
                     '/sample.pdf':('sample.pdf','application/pdf'),
                     '/csv-stats.js':('csv-stats.js','application/javascript; charset=utf-8')}
-            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js','scan-sidecar.js','compare-matrix.js','workflow-panel.js','subscriptions-ui.js','research_plan.js','research-plan-ui.js','bibliography-ui.js','walkthrough-ui.js'):
+            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js','scan-sidecar.js','compare-matrix.js','workflow-panel.js','subscriptions-ui.js','research_plan.js','research-plan-ui.js','bibliography-ui.js','walkthrough-ui.js','arxiv-import-ui.js','frontmatter-ui.js','radar.js','radar-ui.js'):
                 assets['/'+name]=(name, 'text/css; charset=utf-8' if name.endswith('.css') else 'application/javascript; charset=utf-8')
             if path in assets:
                 filename,mime=assets[path]
@@ -156,6 +165,11 @@ class Handler(BaseHTTPRequestHandler):
                 data=store.pdf(m[1])
                 if data is None:raise Bad(404,'找不到指定文献。')
                 return self.payload(200,inspect_page(data,int(m[2])))
+            if path.startswith('/api/frontmatter/') and ID.fullmatch(path[17:]):
+                from frontmatter import first_page
+                rows=store.records([path[17:]],archived=None)
+                if not rows:raise Bad(404,'找不到所选文献。')
+                return self.payload(200,first_page(rows[0]))
             if path.startswith('/api/reader/') and ID.fullmatch(path[12:]):
                 params=parse_qs(u.query); mode=params.get('view',['all'])[0]
                 value=params.get('page',['0'])[0]
@@ -164,6 +178,9 @@ class Handler(BaseHTTPRequestHandler):
                 data=self.server.reader_cache.get(store,path[12:],mode,int(value))
                 if data is None:raise Bad(404,'找不到指定文献。')
                 return self.payload(200,data)
+            if path=='/api/arxiv-import':return self.payload(200,self.server.arxiv_import.status())
+            if path.startswith('/api/arxiv-import/preview/'):
+                return self.payload(200,self.server.arxiv_import.preview(path[len('/api/arxiv-import/preview/'):]),'application/pdf')
             if path=='/api/subscriptions':return self.payload(200,self.server.subscriptions.status())
             if path=='/api/ocr':return self.payload(200,self.server.ocr_jobs.status())
             if path.startswith('/api/ocr/result/'):
@@ -207,6 +224,10 @@ class Handler(BaseHTTPRequestHandler):
                 if entry.get('archived'):raise Bad(409,'此样例先前已归档，请自行从文库恢复后再试。')
                 records.append(entry['doc'])
             return self.payload(200,{'docs':records})
+        elif path=='/api/arxiv-import/stage':
+            return self.payload(200,self.server.arxiv_import.stage(self.json_request()))
+        elif path=='/api/arxiv-import/commit':
+            return self.payload(200,self.server.arxiv_import.commit(self.json_request(),store.add))
         elif path=='/api/bibliography':
             from bibliography import export_refs
             req=self.json_request();ids=req.get('ids')
@@ -251,7 +272,9 @@ class Handler(BaseHTTPRequestHandler):
             if set(req)!={'category','consent','feedback'} or not isinstance(req['category'],str) or not isinstance(req['feedback'],dict):
                 raise Bad(400,'仅接受公开类别、本机反馈和本次确认。')
             from arxiv_tracking import refresh
-            return self.payload(200,refresh(req['category'],store.records(),req['feedback'],consent=True))
+            result=refresh(req['category'],store.records(),req['feedback'],consent=True)
+            if getattr(self.server,'arxiv_import',None) is not None and not result.get('error'):self.server.arxiv_import.remember(result)
+            return self.payload(200,result)
         elif path=='/api/discover':
             req=self.json_request()
             if req.get('consent') is not True:
@@ -289,7 +312,7 @@ class Handler(BaseHTTPRequestHandler):
         raise Bad(404,'没有找到资源。')
     def run_request(self,post):
         try: self.serve(post)
-        except (Bad,OCRJobError,SubscriptionError) as e: self.payload(e.code,{'error':e.msg})
+        except (Bad,OCRJobError,SubscriptionError,ArxivImportError) as e: self.payload(e.code,{'error':e.msg})
         except ValueError as e: self.payload(400,{'error':str(e)})
         except (ConnectionError,TimeoutError): return
         except RuntimeError: self.payload(502,{'error':'操作未完成。模型或解析组件不可用，请检查本机设置。'})
@@ -306,6 +329,7 @@ def main():
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
     server.subscriptions=Subscriptions(args.data/'arxiv-subscriptions.json')
     server.subscriptions.start()
+    server.arxiv_import=ArxivImport() if ArxivImport else None
     server.reader_cache=ReaderCache()
     server.ocr_jobs=LocalOCRJobs()
     def on_term(*_):raise KeyboardInterrupt

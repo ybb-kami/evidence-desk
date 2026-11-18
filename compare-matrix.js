@@ -98,7 +98,7 @@
         if (!cell?.hits?.length) td.append(make('p','未定位候选原文，不表示没有。','subtle'));
         else {
           const details=make('details');
-          details.append(make('summary',cell.hits.length+' 条候选原文'));
+          details.append(make('summary',(cell.candidate_count_is_lower_bound?'至少':'')+(cell.candidate_count ?? cell.hits.length)+' 条候选，显示 '+cell.hits.length+' 条；仅词项命中，指涉对象未辨别。' + ((cell.hidden_count || 0)>0 ? ' 另有 '+(cell.candidate_count_is_lower_bound?'至少':'')+cell.hidden_count+' 条未显示。' : '')));
           for (const h of cell.hits) {
             const block=make('div');
             block.append(link(paper.id,h.page,'PDF 第 '+h.page+' 页'+

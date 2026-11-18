@@ -141,11 +141,14 @@ def run_workflow(docs, query, get_pdf):
     n = sum(len(p["evidence"]) for p in papers)
     count = sum(p["candidate_count"] for p in papers)
     failures = sum(len(p["failures"]) for p in papers)
-    message = ("提要仅收录通过原件逐字核验的摘录。请核对每处原页以及问题与引文的关系。"
+    matched=sum(bool(p["evidence"]) for p in papers)
+    coverage="all" if matched==len(papers) else "partial" if matched else "none"
+    message = (f"{matched}/{len(papers)} 篇找到并核对摘录；问题本身尚未判定。提要仅收录通过原件逐字核验的摘录。请核对每处原页以及问题与引文的关系。"
                if n else "证据不足：本次没有通过原件核验的摘录，不提供结论或证据提要。")
     return {
         "schema":"evidence-desk-workflow-v1","query":query,
         "status":"verified_evidence" if n else "insufficient_evidence",
+        "coverage":coverage,"papers_with_evidence":matched,"papers_selected":len(papers),"claim_support":"not_assessed",
         "summary":message,"concepts":concepts,"papers":papers,"notes":list(LIMITS),
         "steps":[
             {"id":PLAN[0][0],"label":PLAN[0][1],"status":"completed","paper_count":len(papers)},
