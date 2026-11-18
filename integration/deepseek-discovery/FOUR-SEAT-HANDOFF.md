@@ -27,6 +27,17 @@ python legacy_ledger.py rollback-check --ledger "$ACTIVE_LEDGER" --migration-sha
 
 回滚应用时将 `EVIDENCE_JUDGE_PROVIDER` 设回 `off`，继续使用原四席阅读入口，并保留累计账本。迁移后的任何新增预留（含未获回执）均会阻止回退计费状态。回滚检查只读，不会恢复旧余额。原库为独立模型 `budget_config/budget_ledger`、单工具 `spend(id,seat,action,amount)` 或低价率旧模型时，用 `stage-legacy-review --help` 在静态备份上生成停用的对账副本。多账本重叠、人民币旧流水、未能核定的早期模型负债需人工核账，程序保持付费关闭。
 
+### 截止后继续评审
+
+汇率或价格证据过期时，作品仍可本地阅读和检索。维护者复核新的汇率上界、费率、有效期和授权摘要后，停写并对当前账本做新的静态备份，再用以下命令更新计价配置。旧的组、请求号和金额全部继续占额，原 20 元累计上限不会按天重置。新的美元上限低于已经预扣的金额时，续期会被拒绝。每次续期的凭证保存前一凭证摘要。
+
+```sh
+python legacy_ledger.py renew-policy-in-place --ledger "$ACTIVE_LEDGER" --snapshot "$NEW_STATIC_BACKUP" \
+  --snapshot-sha256 "$NEW_BACKUP_SHA256" --previous-config "$CURRENT_CONFIG" --target-config "$RENEWED_CONFIG" --writers-stopped
+```
+
+收费凭证绑定本机规范路径和文件身份，两端需要用相同的绝对路径。复制到另一路径、换文件或改名均会被拒绝。若拥有写权限的维护者直接向同一 inode 覆写旧备份，单机账本无法独立发现这样的恢复操作。保留外部回执并严格执行原位升级。
+
 ## 同一入口及私网路径
 
 保留实机的 `demo_slots(DEFAULT_APP, run_dir/'sessions', 4, loopback_origin)`。下面的命令在一份脱敏本机副本上生成待审核补丁。使用维护者从目标实机独立核过的哈希。此前本机副本摘要不能替代这一步。生成器仅向标准输出写 diff。

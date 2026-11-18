@@ -3,11 +3,11 @@
   "tested_on": "2026-11-18",
   "unit_and_loopback": {
     "generated": {
-      "passed": 69,
+      "passed": 72,
       "failures": 0
     },
     "provided_attention_and_bert": {
-      "passed": 69,
+      "passed": 72,
       "failures": 0
     }
   },
@@ -76,5 +76,18 @@
     "actual_paid_calls": 0
   },
   "provider_billing_observed": false,
-  "production_deployment_performed": false
+  "production_deployment_performed": false,
+  "published_fx_budget_test": {
+    "cap_cny": 20,
+    "cny_per_usd_upper": "8.00",
+    "cap_nano_usd": 2500000000,
+    "new_complete_groups_at_zero_history": 7,
+    "with_two_historical_unknown_model_reservations": 5,
+    "actual_paid_calls": 0
+  },
+  "policy_renewal": {
+    "preserve_old_reservations": true,
+    "new_payment_during_renewal": false,
+    "stale_or_insufficient_configuration": "denied"
+  }
 }

@@ -290,6 +290,100 @@ def rollback_check(path, *, migration_sha):
         raise MigrationDenied("migration_storage_unavailable") from None
 
 
+def _bound_history(ledger, db, receipt, n, instance):
+    _require(receipt.get("instance") == instance, "ledger_instance_mismatch")
+    _require(receipt.get("kind") == "policy_in_place" and receipt.get("currency") == "USD"
+             and _digest(receipt.get("snapshot_sha256")) and _digest(receipt.get("previous_config"))
+             and receipt["previous_config"] != ledger.config
+             and receipt.get("target_config") == receipt.get("applied_config") == _config_hash(db) == ledger.config
+             and receipt.get("target_cap_nano_usd") == ledger.cap
+             and receipt.get("policy_version") == ledger.policy_version
+             and db.execute("PRAGMA user_version").fetchone() == (ledger.policy_version,),
+             "unverified_policy_migration")
+    offset = receipt.get("admissions_at_cutover", 0)
+    if "predecessor_migration_sha" in receipt:
+        _require(_digest(receipt["predecessor_migration_sha"]) and _digest(receipt.get("first_migration_sha"))
+                 and type(offset) is int and 0 <= offset <= n and isinstance(receipt.get("predecessor_historical"), dict),
+                 "unverified_policy_migration")
+    else:
+        _require(offset == 0, "unverified_policy_migration")
+    historical_keys = receipt.get("historical_rids")
+    _require(isinstance(historical_keys, list) and all(map(_digest, historical_keys))
+             and historical_keys == sorted(set(historical_keys)), "unverified_policy_migration")
+    prior_rids = set(historical_keys)
+    groups, entries = _history(db, rates=NANO)
+    imported = [row for row in entries if row[0] in prior_rids]
+    prior_gids = {row[1] for row in imported}
+    historical = ([row for row in groups if row[0] in prior_gids], imported)
+    _require(len(imported) == len(prior_rids) and len(entries) == len(imported) + n - offset
+             and _fingerprint(historical) == receipt.get("history_sha256")
+             and _totals(historical) == receipt.get("historical"), "changed_policy_history")
+    totals = _totals((groups, entries))
+    seats = Counter(seat for _, seat in groups)
+    _require(totals["groups"] <= GROUPS and totals["reserved_nano_usd"] <= ledger.cap
+             and all(count <= ledger.seat_groups for count in seats.values()), "history_exceeds_policy")
+    if db.execute("SELECT 1 FROM sqlite_schema WHERE name='private_pending'").fetchone():
+        pending = [row[0] for row in db.execute("SELECT rid FROM private_pending")]
+        new_rids = {row[0] for row in entries} - prior_rids
+        _require(len(set(pending)) == len(pending) and set(pending) <= new_rids,
+                 "unverified_pending_policy_reservation")
+    return groups, entries
+
+
+def renew_policy_in_place(previous, target, *, snapshot, snapshot_sha, writers_stopped=False):
+    """Refresh the verified policy of an existing migrated ledger in one transaction."""
+    _require(writers_stopped is True, "stop_all_paid_writers_first")
+    _require(isinstance(previous, GroupBudget) and isinstance(target, GroupBudget)
+             and previous.path == target.path and target.path.is_file() and not target.path.is_symlink()
+             and previous.cap_policy is not None and target.cap_policy is not None
+             and previous.policy_version == target.policy_version
+             and previous.config != target.config and previous.seat_groups == target.seat_groups,
+             "invalid_policy_transition")
+    old_dates = (previous.checked, previous.cap_policy["fx_verified_epoch"])
+    new_dates = (target.checked, target.cap_policy["fx_verified_epoch"])
+    _require(all(new >= old for new, old in zip(new_dates, old_dates)) and new_dates != old_dates,
+             "renewal_requires_fresh_evidence")
+    try:
+        _require(not target.path.samefile(snapshot), "separate_static_snapshot_required")
+        target._time()
+        instance = _active_instance(target.path)
+        with _snapshot(snapshot, snapshot_sha) as backup:
+            _schema(backup, _GROUP_COLUMNS, adopted=True)
+            predecessor, before_n = _receipt(backup)
+            original = _bound_history(previous, backup, predecessor, before_n, instance)
+        totals = _totals(original)
+        _require(totals["reserved_nano_usd"] <= target.cap, "history_exceeds_policy")
+        proof = {"kind": "policy_in_place", "currency": "USD", "snapshot_sha256": snapshot_sha,
+                 "previous_config": previous.config, "target_config": target.config, "applied_config": target.config,
+                 "target_cap_nano_usd": target.cap, "policy_version": target.policy_version, "instance": instance,
+                 "history_sha256": _fingerprint(original), "historical": totals,
+                 "historical_rids": [row[0] for row in original[1]], "admissions_at_cutover": before_n,
+                 "predecessor_migration_sha": predecessor["migration_sha"],
+                 "predecessor_historical": predecessor["historical"],
+                 "first_migration_sha": predecessor.get("first_migration_sha", predecessor["migration_sha"])}
+        expected = _fingerprint(proof)
+        with closing(target._connect()) as db, db:
+            db.execute("PRAGMA trusted_schema=OFF")
+            db.execute("BEGIN IMMEDIATE")
+            target._time()
+            _require(_active_instance(target.path, db) == instance, "ledger_instance_mismatch")
+            _integ(db)
+            _schema(db, _GROUP_COLUMNS, adopted=True)
+            current, n = _receipt(db)
+            if current["migration_sha"] == expected:
+                _bound_history(target, db, current, n, instance)
+                return _result(current, n, "already_renewed")
+            _require(current == predecessor and n == before_n, "snapshot_out_of_sync")
+            _require(_bound_history(previous, db, current, n, instance) == original, "snapshot_out_of_sync")
+            receipt = {**proof, "migration_sha": expected}
+            db.execute("UPDATE legacy_migration SET metadata=? WHERE singleton=1", (json.dumps(receipt, sort_keys=True),))
+            updated = db.execute("UPDATE conf SET hash=? WHERE hash=?", (target.config, previous.config))
+            _require(updated.rowcount == 1 and _active_instance(target.path, db) == instance, "ledger_instance_mismatch")
+            return _result(receipt, n, "renewed_in_place")
+    except (OSError, sqlite3.Error, KeyError, TypeError, json.JSONDecodeError):
+        raise MigrationDenied("migration_storage_unavailable") from None
+
+
 def require_migrated_policy(ledger, db):
     """Check cutover proof in the caller's approved broker/gateway transaction."""
     _require(isinstance(ledger, GroupBudget) and ledger.cap_policy is not None, "policy_migration_required")
@@ -299,35 +393,7 @@ def require_migrated_policy(ledger, db):
         _require(_stamped(db), "policy_migration_required")
         _schema(db, _GROUP_COLUMNS, adopted=True, quiescent=False)
         receipt, n = _receipt(db)
-        _require(receipt.get("instance") == _active_instance(ledger.path, db), "ledger_instance_mismatch")
-        _require(receipt.get("kind") == "policy_in_place" and receipt.get("currency") == "USD"
-                 and _digest(receipt.get("snapshot_sha256")) and _digest(receipt.get("previous_config"))
-                 and receipt["previous_config"] != ledger.config
-                 and receipt.get("target_config") == receipt.get("applied_config") == _config_hash(db) == ledger.config
-                 and receipt.get("target_cap_nano_usd") == ledger.cap
-                 and receipt.get("policy_version") == ledger.policy_version
-                 and db.execute("PRAGMA user_version").fetchone() == (ledger.policy_version,),
-                 "unverified_policy_migration")
-        historical_keys = receipt.get("historical_rids")
-        _require(isinstance(historical_keys, list) and all(map(_digest, historical_keys))
-                 and historical_keys == sorted(set(historical_keys)), "unverified_policy_migration")
-        prior_rids = set(historical_keys)
-        groups, entries = _history(db, rates=NANO)
-        imported = [row for row in entries if row[0] in prior_rids]
-        prior_gids = {row[1] for row in imported}
-        historical = ([row for row in groups if row[0] in prior_gids], imported)
-        _require(len(imported) == len(prior_rids) and len(entries) == len(imported) + n
-                 and _fingerprint(historical) == receipt.get("history_sha256")
-                 and _totals(historical) == receipt.get("historical"), "changed_policy_history")
-        totals = _totals((groups, entries))
-        seats = Counter(seat for _, seat in groups)
-        _require(totals["groups"] <= GROUPS and totals["reserved_nano_usd"] <= ledger.cap
-                 and all(count <= ledger.seat_groups for count in seats.values()), "history_exceeds_policy")
-        if db.execute("SELECT 1 FROM sqlite_schema WHERE name='private_pending'").fetchone():
-            pending = [row[0] for row in db.execute("SELECT rid FROM private_pending")]
-            new_rids = {row[0] for row in entries} - prior_rids
-            _require(len(set(pending)) == len(pending) and set(pending) <= new_rids,
-                     "unverified_pending_policy_reservation")
+        _bound_history(ledger, db, receipt, n, _active_instance(ledger.path, db))
         return _result(receipt, n, "verified_migrated_policy")
     except (OSError, sqlite3.Error, KeyError, TypeError, json.JSONDecodeError):
         raise MigrationDenied("migration_storage_unavailable") from None
@@ -493,10 +559,14 @@ def main():
     commands = cli.add_subparsers(dest="command", required=True)
     upgrade = commands.add_parser("upgrade-in-place", help="Upgrade an exact, quiescent GroupBudget ledger",
                                   description="Previous and target runtime JSON may include path. When present it must equal the absolute ledger path.")
-    for flag in ("ledger", "snapshot", "previous-config", "target-config"):
-        upgrade.add_argument("--" + flag, required=True, type=Path)
-    upgrade.add_argument("--snapshot-sha256", required=True)
-    upgrade.add_argument("--writers-stopped", action="store_true", help="Attest every paid writer and in-flight send stopped")
+    renew = commands.add_parser("renew-policy-in-place", help="Refresh verified policy on the same migrated ledger",
+                                description="Keep the entire preceding static snapshot and migration receipt. Refreshing policy preserves prior reservations and does not start a paid service.")
+    for command in (upgrade, renew):
+        for flag in ("ledger", "snapshot", "previous-config", "target-config"):
+            command.add_argument("--" + flag, required=True, type=Path)
+        command.add_argument("--snapshot-sha256", required=True)
+        command.add_argument("--writers-stopped", action="store_true",
+                             help="Attest every paid writer and in-flight send stopped")
     rollback = commands.add_parser("rollback-check", help="Read-only exact check, never restores historical paid service")
     rollback.add_argument("--ledger", required=True, type=Path)
     rollback.add_argument("--migration-sha", required=True)
@@ -521,8 +591,9 @@ def main():
         else:
             previous = _group_config(_json_file(args.previous_config), args.ledger)
             target = _group_config(_json_file(args.target_config), args.ledger)
-            result = upgrade_policy_in_place(previous, target, snapshot=args.snapshot,
-                                             snapshot_sha=args.snapshot_sha256, writers_stopped=args.writers_stopped)
+            change = renew_policy_in_place if args.command == "renew-policy-in-place" else upgrade_policy_in_place
+            result = change(previous, target, snapshot=args.snapshot, snapshot_sha=args.snapshot_sha256,
+                            writers_stopped=args.writers_stopped)
     except MigrationDenied as exc:
         cli.exit(2, f"Migration denied: {exc.code}\n")
     except (Denied, OSError, ValueError, TypeError, RecursionError):

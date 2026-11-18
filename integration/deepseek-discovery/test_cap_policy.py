@@ -145,3 +145,47 @@ class CapPolicyTests(TestCase):
         result = audit(self.path, budget=budget)
         self.assertEqual(result['groups_with_reservations'], 2)
         self.assertEqual(result['reserved_operations'], {'search': 2})
+
+    def test_published_snapshot_retains_old_unknowns_and_bounds_complete_groups(self):
+        """Reproduce the seven-group estimate, then carry two unknown old model sends forward."""
+        import sqlite3
+        from legacy_ledger import upgrade_policy_in_place
+        from official_input_bound import submitted_count
+
+        policy = json.loads(Path(__file__).with_name('fx_2026-11-18.json').read_bytes())['cap_policy']
+        now = policy['fx_verified_epoch'] + 1
+        payloads = {
+            'model':{'model':'deepseek-flash','messages':[{'role':'system','content':'Return JSON.'},
+                     {'role':'user','content':'Public fixture.'}],'max_tokens':512,'stream':False,
+                     'thinking':{'type':'disabled'},'response_format':{'type':'json_object'}},
+            'search':{'query':'attention','count':1,'need_content':False},
+            'fetch':{'url':'https://arxiv.org/abs/1706.03762'},
+        }
+
+        def book(ledger, i, kind):
+            return ledger.reserve(seat=sid(('seat', i % 4)), gid=sid(i), rid=sid((i, kind)), op=kind,
+                                  endpoint=ENDPOINT[kind], wire=json.dumps(payloads[kind]).encode())
+
+        for already_reserved, expected_new in ((0, 7), (2, 5)):
+            with self.subTest(already_reserved=already_reserved), TemporaryDirectory() as temp:
+                db = Path(temp)/'original.sqlite'
+                cfg = dict(path=db, approval_sha='a'*64, price_sha='b'*64, verified_epoch=now-1,
+                           expiry_epoch=now+300, clock=lambda:now, input_bound=submitted_count)
+                old = GroupBudget(**cfg)
+                old.provision()
+                for i in range(already_reserved):
+                    book(old, i, 'model')
+                backup = Path(temp)/'snapshot.sqlite'
+                with sqlite3.connect(db) as source, sqlite3.connect(backup) as dest:
+                    source.backup(dest)
+                active = GroupBudget(**cfg,cap_policy=policy)
+                upgrade_policy_in_place(old,active,snapshot=backup,
+                                        snapshot_sha=sha256(backup.read_bytes()).hexdigest(),writers_stopped=True)
+                for i in range(already_reserved, already_reserved+expected_new):
+                    for kind in ('model','search','fetch'):
+                        book(active, i, kind)
+                with self.assertRaisesRegex(Denied,'hard cap'):
+                    book(active, already_reserved+expected_new, 'model')
+                total = audit(db,budget=active)
+                self.assertEqual(total['limit_nano_usd'], 2_500_000_000)
+                self.assertEqual(total['reserved_nano_usd'], 315187200*already_reserved+316687200*expected_new)

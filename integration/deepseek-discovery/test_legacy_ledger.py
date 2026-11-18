@@ -15,7 +15,7 @@ from candidate.gateway.model_budget import ApprovedLimits, BudgetGate, PRICE_SOU
 from discovery_tickets import Ledger as ToolLedger
 from group_dispatch import ApprovedGroupCaller
 from legacy_ledger import MigrationDenied, _group_config, adopt_legacy_snapshot, require_migrated_policy
-from legacy_ledger import rollback_check, upgrade_policy_in_place
+from legacy_ledger import renew_policy_in_place, rollback_check, upgrade_policy_in_place
 
 
 def fingerprint(data):
@@ -32,8 +32,9 @@ class LegacyLedgerTest(unittest.TestCase):
         self.addCleanup(folder.cleanup)
         self.folder = Path(folder.name)
         self.path = self.folder / "ledger.sqlite"
+        self.now = 100
         self.price = dict(approval_sha="a" * 64, price_sha="b" * 64, verified_epoch=90,
-                          expiry_epoch=180, seat_groups=100, input_bound=lambda _: 1000, clock=lambda: 100)
+                          expiry_epoch=180, seat_groups=100, input_bound=lambda _: 1000, clock=lambda: self.now)
         self.new_policy = dict(cny_per_usd_upper="8", fx_source_sha256="c" * 64,
                                fx_verified_epoch=92, fx_expiry_epoch=172)
         self.old = GroupBudget(self.path, **self.price)
@@ -310,6 +311,80 @@ class LegacyLedgerTest(unittest.TestCase):
             self.check_error("ledger_instance_mismatch", lambda: require_migrated_policy(self.new, db))
         self.check_error("ledger_instance_mismatch",
                          lambda: rollback_check(self.path, migration_sha=receipt["migration_sha"]))
+
+    def refreshed(self, *, rate="10", path=None, day=181):
+        price = {**self.price, "verified_epoch": day, "expiry_epoch": day + 80, "price_sha": identity(("price", day))}
+        fx = {"cny_per_usd_upper": rate, "fx_source_sha256": identity(("FX", day)),
+              "fx_verified_epoch": day, "fx_expiry_epoch": day + 70}
+        return GroupBudget(path or self.path, **price, cap_policy=fx)
+
+    def renew(self, previous, target, **overrides):
+        options = dict(snapshot=self.backup, snapshot_sha=fingerprint(self.backup.read_bytes()), writers_stopped=True)
+        return renew_policy_in_place(previous, target, **{**options, **overrides})
+
+    def test_expired_policy_renews_under_lower_cap_without_resetting_history(self):
+        self.reserve(self.old, 1)
+        self.snapshot()
+        first = self.upgrade()
+        self.reserve(self.new, 2, "search")
+        self.reserve(self.new, 3, private_dispatch=True)
+        with closing(self.new._connect()) as db, db:
+            # The prior sender consumed the permission. Delivery of the reserved request is unknown.
+            db.execute("DELETE FROM private_pending WHERE rid=?", (identity((3, "model")),))
+        historical = self.rows()
+        self.snapshot()
+        self.now = 182
+        with self.assertRaises(Denied):
+            self.reserve(self.new, 4, "search")
+        target = self.refreshed()
+        renewed = self.renew(self.new, target)
+        self.assertLess(target.cap, self.new.cap)
+        self.assertEqual(renewed["action"], "renewed_in_place")
+        self.assertEqual(renewed["predecessor_migration_sha"], first["migration_sha"])
+        self.assertEqual(renewed["first_migration_sha"], first["migration_sha"])
+        self.assertEqual(renewed["predecessor_historical"], first["historical"])
+        self.assertEqual(renewed["historical"]["reserved_nano_usd"], 2 * NANO["model"] + NANO["search"])
+        self.assertEqual(renewed["new_admissions"], 2)
+        self.assertEqual(self.rows(), historical)
+        self.check_error("unverified_migration", lambda: rollback_check(self.path, migration_sha=first["migration_sha"]))
+        self.check_error("rollback_requires_reconciliation",
+                         lambda: rollback_check(self.path, migration_sha=renewed["migration_sha"]))
+        self.assertEqual(self.renew(self.new, target)["action"], "already_renewed")
+        self.reserve(target, 4, "search", private_dispatch=True)
+        with closing(target._connect()) as db, db:
+            self.assertEqual(require_migrated_policy(target, db)["new_admissions"], 3)
+            db.execute("DELETE FROM private_pending WHERE rid=?", (identity((4, "search")),))
+        self.snapshot()
+        self.now = 267
+        third = self.renew(target, self.refreshed(day=266))
+        self.assertEqual(third["new_admissions"], 3)
+        self.assertEqual(third["predecessor_migration_sha"], renewed["migration_sha"])
+        self.assertEqual(third["first_migration_sha"], first["migration_sha"])
+        self.check_error("rollback_requires_reconciliation",
+                         lambda: rollback_check(self.path, migration_sha=third["migration_sha"]))
+
+    def test_renewal_refuses_insufficient_cap_clone_stale_snapshot_and_pending(self):
+        self.reserve(self.old, 1)
+        self.snapshot()
+        initial = self.upgrade()
+        self.snapshot()
+        self.reserve(self.new, 2, "search", private_dispatch=True)
+        self.now = 182
+        target = self.refreshed()
+        self.check_error("pending_paid_requests_require_reconciliation", lambda: self.renew(self.new, target))
+        with closing(self.new._connect()) as db, db:
+            db.execute("DELETE FROM private_pending")
+        self.check_error("snapshot_out_of_sync", lambda: self.renew(self.new, target))
+        self.snapshot()
+        self.check_error("history_exceeds_policy", lambda: self.renew(self.new, self.refreshed(rate="100")))
+        clone_path = self.folder / "renewal-clone.sqlite"
+        shutil.copyfile(self.path, clone_path)
+        clone = GroupBudget(clone_path, **self.price, cap_policy=self.new_policy)
+        self.check_error("ledger_instance_mismatch", lambda: self.renew(clone, self.refreshed(path=clone_path)))
+        with closing(self.new._connect()) as db:
+            self.assertEqual(db.execute("SELECT hash FROM conf").fetchone(), (self.new.config,))
+            self.assertEqual(json.loads(db.execute("SELECT metadata FROM legacy_migration").fetchone()[0])["migration_sha"],
+                             initial["migration_sha"])
 
 
 if __name__ == "__main__":
