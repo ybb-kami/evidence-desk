@@ -1,15 +1,19 @@
 """Download one PDF from a supported publisher endpoint in an isolated worker."""
 
+import os
 import re
 import subprocess
 import sys
 from http.client import HTTPException
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener, getproxies
 
 ENDPOINT = "https://arxiv.org/pdf/"
 ACL_ENDPOINT = "https://aclanthology.org/"
+JOSS_ENDPOINT = "https://raw.githubusercontent.com/openjournals/joss-papers/master/"
+JOSS_DOI = re.compile(r"10\.21105/joss\.([0-9]{5,6})", re.ASCII | re.IGNORECASE)
 ACL_DOI = re.compile(
     r"10\.18653/v1/([a-z][0-9]{2}-[0-9]{4,6}|[0-9]{4}\.[a-z0-9]+(?:-[a-z0-9]+)*\.[0-9]{1,6})",
     re.ASCII | re.IGNORECASE,
@@ -49,16 +53,42 @@ def acl_doi(value):
     return "10.18653/v1/" + identifier
 
 
+def joss_doi(value):
+    match = JOSS_DOI.fullmatch(value) if isinstance(value, str) else None
+    if match and int(match[1]):
+        return "10.21105/joss." + match[1]
+    return None
+
+
+def _joss_stem(doi):
+    identifier = doi.rsplit("/", 1)[1]
+    return JOSS_ENDPOINT + identifier + "/10.21105." + identifier
+
+
+def joss_metadata_url(identifier):
+    doi = joss_doi(identifier)
+    return _joss_stem(doi) + ".crossref.xml" if doi else None
+
+
 def pdf_url(identifier, provider):
     if provider == "arxiv" and valid_id(identifier):
         return ENDPOINT + identifier
     if provider == "acl" and (doi := acl_doi(identifier)):
         return ACL_ENDPOINT + doi.rsplit("/", 1)[1] + ".pdf"
+    if provider == "joss" and (doi := joss_doi(identifier)):
+        return _joss_stem(doi) + ".pdf"
     return None
 
 
 def _open(request, timeout):
-    return build_opener(ProxyHandler({}), NoRedirect()).open(request, timeout=timeout)
+    proxies = {}
+    if (request.full_url.startswith(JOSS_ENDPOINT)
+            and os.environ.get("EVIDENCE_JOSS_USE_SYSTEM_PROXY") == "1"):
+        proxy = getproxies().get("https", "")
+        parsed = urlsplit(proxy)
+        if parsed.scheme in ("http", "https") and parsed.hostname and parsed.username is None:
+            proxies["https"] = proxy
+    return build_opener(ProxyHandler(proxies), NoRedirect()).open(request, timeout=timeout)
 
 
 def _download(identifier, provider="arxiv"):

@@ -36,20 +36,26 @@
 <main>
   <section aria-labelledby="search-heading">
     <h2 id="search-heading">公开书目检索</h2>
-    <p class="hint" id="search-hint">可按题名或参考文献信息查找 Crossref 书目记录。匹配 ACL Anthology 论文后，可从出版方下载开放 PDF。</p>
+    <p class="hint" id="search-hint">用 Crossref 查找公开题录，或按题名查询本机已缓存的 JOSS 出版题录。可从出版方下载开放 PDF。</p>
     <form id="search">
+      <label>题录来源
+        <select id="search-provider">
+          <option value="crossref">Crossref</option>
+          <option value="joss">JOSS 本机出版题录</option>
+        </select>
+      </label>
       <label for="query">公开检索词</label>
       <div class="controls">
         <input type="search" id="query" maxlength="300" required aria-describedby="search-hint">
         <button>查找题录</button>
       </div>
-      <label class="consent"><input type="checkbox" id="search-consent" required> 同意将本次检索词发送给 Crossref</label>
+      <label class="consent" id="search-consent-label"><input type="checkbox" id="search-consent" required> 同意将本次检索词发送给 Crossref</label>
     </form>
     <p id="search-status" role="status"></p>
     <ul id="matches"></ul>
     <form id="acl-download" hidden>
       <p id="acl-selection"></p>
-      <label class="consent"><input type="checkbox" id="acl-consent" required> 同意向 ACL Anthology 请求所选论文的公开 PDF，并导入当前文库</label>
+      <label class="consent"><input type="checkbox" id="acl-consent" required> <span id="publisher-consent"></span></label>
       <button>下载所选 PDF 并导入</button>
     </form>
     <p id="acl-status" role="status"></p>
@@ -122,7 +128,9 @@
   "use strict";
   const byId = id => document.getElementById(id);
   const aclDoiPattern = /^10\.18653\/v1\/(?:[a-z][0-9]{2}-[0-9]{4,6}|[0-9]{4}\.[a-z0-9]+(?:-[a-z0-9]+)*\.[0-9]{1,6})$/i;
-  let aclDoi = "";
+  const jossDoiPattern = /^10\.21105\/joss\.[0-9]{5,6}$/i;
+  const searchProvider = byId("search-provider");
+  let selectedPaper = null;
   function link(text, url, external = false) {
     const node = document.createElement("a");
     node.textContent = text;
@@ -153,10 +161,10 @@
     const button = form.querySelector("button");
     form.addEventListener("submit", async event => {
       event.preventDefault();
-      if (!checkbox.checked || button.disabled) return;
+      if ((!checkbox.disabled && !checkbox.checked) || button.disabled) return;
       checkbox.checked = false;
       button.disabled = true;
-      status.textContent = busyText;
+      status.textContent = typeof busyText === "function" ? busyText() : busyText;
       try {
         await callback(status);
       } catch (error) {
@@ -166,15 +174,33 @@
       }
     });
   }
-  bind("search", "search-status", "search-consent", "正在查询 Crossref…", async status => {
+  searchProvider.addEventListener("change", () => {
+    const local = searchProvider.value === "joss";
+    byId("search-consent").disabled = local;
+    byId("search-consent").checked = false;
+    byId("search-consent-label").hidden = local;
+  });
+  bind("search", "search-status", "search-consent", () => searchProvider.value === "joss"
+    ? "正在查找本机 JOSS 题录…" : "正在查询 Crossref…", async status => {
     const matches = byId("matches");
     matches.replaceChildren();
     byId("acl-download").hidden = true;
     byId("acl-consent").checked = false;
     byId("acl-status").textContent = "";
-    aclDoi = "";
-    const data = await request("/api/discover", {query: byId("query").value.trim(), consent: true});
-    status.textContent = data.items.length ? "Crossref 找到 " + data.items.length + " 条公开题录。" : "Crossref 未找到匹配题录。";
+    selectedPaper = null;
+    const query = byId("query").value.trim();
+    const local = searchProvider.value === "joss";
+    let data;
+    searchProvider.disabled = true;
+    try {
+      data = local ? await request("/api/download/joss/search", {query})
+        : await request("/api/discover", {query, consent: true});
+    } finally {
+      searchProvider.disabled = false;
+    }
+    const label = local ? "本机 JOSS 题录" : "Crossref";
+    status.textContent = data.items.length ? label + "找到 " + data.items.length + " 条公开题录。"
+      : local && !data.catalog_count ? "本机尚未缓存 JOSS 题录。" : label + "未找到匹配题录。";
     for (const item of data.items) {
       const row = document.createElement("li");
       row.append(link(item.title, "https://doi.org/" + encodeURI(item.doi), true));
@@ -193,14 +219,19 @@
         });
         row.append(copy);
       }
-      if (item.doi.length <= 100 && aclDoiPattern.test(item.doi)) {
+      const provider = local && jossDoiPattern.test(item.doi) ? "joss"
+        : !local && item.doi.length <= 100 && aclDoiPattern.test(item.doi) ? "acl" : null;
+      if (provider) {
+        if (provider === "joss") row.append(link("CC BY 4.0", item.license, true), " · ");
         const select = document.createElement("button");
         select.type = "button";
         select.textContent = "选择开放 PDF";
         select.addEventListener("click", () => {
           if (byId("acl-download").querySelector("button").disabled) return;
-          aclDoi = item.doi;
+          selectedPaper = {doi: item.doi, provider};
           byId("acl-selection").textContent = item.title + " · " + item.doi;
+          byId("publisher-consent").textContent = "同意向 " + (provider === "joss" ? "JOSS 官方出版仓库" : "ACL Anthology")
+            + " 请求所选论文的公开 PDF，并导入当前文库";
           byId("acl-download").hidden = false;
           byId("acl-status").textContent = "";
           byId("acl-consent").checked = false;
@@ -216,7 +247,7 @@
     const status = byId("receipt-status");
     try {
       const sources = await Promise.all([
-        request("/api/download/arxiv"), request("/api/download/acl")
+        request("/api/download/arxiv"), request("/api/download/acl"), request("/api/download/joss")
       ]);
       const receipts = sources.flatMap(source => source.receipts)
         .sort((a, b) => b.retrieved_at.localeCompare(a.retrieved_at)).slice(0, 25);
@@ -225,7 +256,7 @@
       for (const item of receipts) {
         const row = document.createElement("li");
         row.append(link(item.arxiv_id || item.doi, item.url, true), " · ",
-          link(item.archived ? "打开归档原件" : "打开本地 PDF", "/pdf/" + item.sha256));
+          link(item.archived ? "打开归档原件" : "打开本地 PDF", "/pdf/" + item.sha256 + "#page=1"));
         const meta = document.createElement("div");
         meta.className = "meta";
         meta.textContent = item.provider + " · " + new Date(item.retrieved_at).toLocaleString() + " · SHA-256 " + item.sha256;
@@ -239,15 +270,17 @@
   function showImported(status, data) {
     status.textContent = data.archived ? "相同 PDF 已在归档，可在「版本与归档」恢复。 "
       : data.existing ? "相同 PDF 已在文库。 " : "已导入当前文库。 ";
-    status.append(link("打开本地 PDF", "/pdf/" + data.doc.id));
+    status.append(link("打开原件第 1 页", "/pdf/" + data.doc.id + "#page=1"));
   }
   bind("download", "download-status", "download-consent", "正在从 arXiv 下载并导入…", async status => {
     const data = await request("/api/download/arxiv", {arxiv_id: byId("identifier").value.trim(), consent: true});
     showImported(status, data);
     await loadReceipts();
   });
-  bind("acl-download", "acl-status", "acl-consent", "正在从 ACL Anthology 下载并导入…", async status => {
-    const data = await request("/api/download/acl", {doi: aclDoi, consent: true});
+  bind("acl-download", "acl-status", "acl-consent", "正在从出版方下载并导入…", async status => {
+    if (!selectedPaper) return;
+    const {doi, provider} = selectedPaper;
+    const data = await request("/api/download/" + provider, {doi, consent: true});
     showImported(status, data);
     await loadReceipts();
   });

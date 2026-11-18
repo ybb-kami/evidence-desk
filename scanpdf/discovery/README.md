@@ -2,9 +2,39 @@
 
 启动扫描工作台并打开 `/download`。输入公开论文题名或参考文献信息，勾选 Crossref 检索确认。带受支持 DOI 的 ACL Anthology 题录会显示「选择开放 PDF」。选择题录后，核对题名和 DOI，再单独确认从 ACL Anthology 下载并导入当前文库。例如，赛题中的 *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding* 对应 DOI `10.18653/v1/N19-1423`。
 
-下载请求仅发往固定 HTTPS 来源 ACL Anthology 或 arXiv。ACL 支持 `10.18653/v1/` 下的标准卷号和论文编号，由工作台生成出版方 PDF 路径，不解析任意 DOI 链接。arXiv 也可通过公开编号单独下载，带版本的编号可定位指定版本，例如 `1706.03762v1`。下载拒绝重定向，响应大小上限为 24 MiB，总请求限时 18 秒。导入按原件 SHA-256 去重，已归档重复项保留其归档状态。下载记录包含请求的 DOI 或 arXiv 编号、公开来源地址、UTC 下载时间及 SHA-256。PDF 请求仅发送下载所需的公开编号。
+下载请求仅发往 ACL Anthology、arXiv 或 Journal of Open Source Software（JOSS）官方出版仓库的固定 HTTPS 地址。ACL 支持 `10.18653/v1/` 下的标准卷号和论文编号，由工作台生成出版方 PDF 路径。arXiv 也可通过公开编号单独下载，带版本的编号可定位指定版本，例如 `1706.03762v1`。下载拒绝重定向，响应大小上限为 24 MiB，总请求限时 18 秒。导入按原件 SHA-256 去重，已归档重复项保留其归档状态。下载记录包含请求的 DOI 或 arXiv 编号、公开来源地址、UTC 下载时间及 SHA-256。PDF 请求仅发送下载所需的公开编号。
 
 其他 Crossref 记录可通过 DOI 查看书目信息。若运行环境无法连通服务，可通过工作台手动导入已有 PDF。
+
+## 用 JOSS 出版题录按题名获取 PDF
+
+用 JOSS 官方出版仓库的 Crossref XML 准备本机题录。准备程序可接收多个公开 JOSS DOI，核对期刊、DOI 和出版版本的 CC BY 4.0 许可，保留原始 XML 供复查。默认保存在 `~/.local/share/evidence-desk/joss-catalog`，也可在准备和启动工作台前一并设置 `EVIDENCE_JOSS_CATALOG` 选择目录。
+
+从项目根目录执行以下命令，准备三条正式出版题录并打开工作台。
+
+```sh
+(cd scanpdf && python -m discovery.joss 10.21105/joss.03020 10.21105/joss.03021 10.21105/joss.03022)
+python scanpdf/workbench.py --data ./data
+```
+
+打开 `/download`，将题录来源切换到「JOSS 本机出版题录」，输入公开题名 `seaborn statistical data visualization` 并查找。选择开放 PDF 后确认下载。页面给出本地 PDF 物理第 1 页和带 SHA-256 的下载记录。题名查询在本机已缓存的题录范围内完成。PDF 从 JOSS 官方出版仓库下载，路径由选定的 DOI 生成。
+
+若该环境需经系统 HTTPS 代理访问官方仓库，准备题录和启动工作台时可设置 `EVIDENCE_JOSS_USE_SYSTEM_PROXY=1`。该设置仅用于 JOSS 固定官方仓库，支持无凭据的系统 HTTPS 代理。
+
+### 浏览器实联复现
+
+以下命令使用 Playwright 和 Chromium，在临时题录及文库中复现全过程。连通出版仓库需要代理的环境可在命令前添加 `EVIDENCE_JOSS_USE_SYSTEM_PROXY=1`。
+
+```sh
+python scanpdf/acceptance/live_discovery.py \
+  --seed 10.21105/joss.03020 10.21105/joss.03021 10.21105/joss.03022 \
+  --query 'seaborn statistical data visualization' --expected-doi 10.21105/joss.03021 \
+  --page 1 --anchor 'Center for Neural Science, New York University'
+```
+
+2026-11-18 实联中，官方仓库的三份 XML 和所选 PDF 均返回 HTTP 200。Chromium 从这三条已缓存题录按题名命中 Waskom 的论文并完成入库。工作台返回的 PDF 为 150,825 字节、4 个物理页，SHA-256 为 `163e1f3a1c502b0cc9005144811a69e03104cf009b75b028cba6dd6b725fef0e`。验收核对了物理第 1 页的作者机构和原页渲染。该环境的 Crossref API 与 ACL Anthology PDF 地址连接失败。[JOSS 出版原件](https://raw.githubusercontent.com/openjournals/joss-papers/master/joss.03021/10.21105.joss.03021.pdf)
+
+离线单元测试使用模拟响应覆盖题录许可、确认、固定路径和代理边界。实联验收独立运行。
 
 ## 获取论文所引用的文献
 

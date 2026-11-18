@@ -12,7 +12,7 @@ import fitz
 
 from app import Bad, UPLOAD_LIMIT
 from arxiv_tracking import CATEGORIES
-from . import fetch, references
+from . import fetch, joss, references
 from .schedule import CADENCES
 
 ASSETS = Path(__file__).parent
@@ -28,6 +28,7 @@ ERRORS = {
 PROVIDERS = {
     "arxiv": ("arXiv", "arxiv_downloads", "arxiv_id"),
     "acl": ("ACL Anthology", "acl_downloads", "doi"),
+    "joss": (joss.VENUE, "joss_downloads", "doi"),
 }
 CREATE_RECEIPTS = """
     CREATE TABLE IF NOT EXISTS {table} (
@@ -83,8 +84,13 @@ def _acquire(library, identifier, provider):
             raise _error(fetch.INVALID_PDF, provider) from error
 
         timestamp = datetime.now(timezone.utc).isoformat()
-        name = ("arXiv-" + identifier.replace("/", "-") if provider == "arxiv"
-                else "ACL-" + identifier.rsplit("/", 1)[1]) + ".pdf"
+        if provider == "arxiv":
+            name = "arXiv-" + identifier.replace("/", "-")
+        else:
+            name = identifier.rsplit("/", 1)[1]
+            if provider == "acl":
+                name = "ACL-" + name
+        name += ".pdf"
         digest = sha256(data).hexdigest()
         # Write provenance before inserting the content. History joins library
         # documents by the same digest, so incomplete imports stay invisible.
@@ -146,6 +152,14 @@ def handle(handler, post, path):
             result = references.candidates(library, docid)
         handler.payload(200, result)
         return True
+    if post and path == "/api/download/joss/search":
+        request = handler.json_request()
+        query = request.get("query")
+        if (set(request) != {"query"} or not isinstance(query, str) or not query.strip()
+                or len(query) > 300 or not query.isprintable()):
+            raise Bad(400, "请输入 1–300 字的单行公开论文题名。")
+        handler.payload(200, joss.search(query))
+        return True
     provider = path.removeprefix("/api/download/")
     if not path.startswith("/api/download/") or provider not in PROVIDERS:
         return False
@@ -160,8 +174,14 @@ def handle(handler, post, path):
     if set(request) != {field, "consent"} or fetch.pdf_url(identifier, provider) is None:
         if provider == "arxiv":
             raise Bad(400, "请输入完整 arXiv 编号，可附带版本号，例如 1706.03762v1。")
+        if provider == "joss":
+            raise Bad(400, "请选择本机题录中有开放许可的 JOSS 论文。")
         raise Bad(400, "请选择带有 ACL Anthology DOI 的公开题录。")
     if provider == "acl":
         identifier = fetch.acl_doi(identifier)
+    elif provider == "joss":
+        identifier = fetch.joss_doi(identifier)
+        if not joss.published(identifier):
+            raise Bad(400, "请先从本机 JOSS 题录选择带开放许可的论文。")
     handler.payload(200, _acquire(handler.server.library, identifier, provider))
     return True
