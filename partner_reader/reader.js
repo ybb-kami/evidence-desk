@@ -7,7 +7,12 @@ function preservedRanges(text, pdfRanges, terms = []) {
   const syntax = /```[^]*?(?:```|$)|`[^`\n]+`|\$\$[^]*?\$\$|\$[^$\n]+\$|\\\([^]*?\\\)|\\\[[^]*?\\\]|^\s*(?:def |class |import |from \S+ import |function |const |let |return |#include|for\s*\(|if\s*\().*$/gm;
   const functionAssignment = /^\s*[A-Za-z][\w]*\([^\n()]*\)\s*=\s*[^\n]+$/gm;
   const equations = /(?:[\p{L}\d_]+(?:\([^()\n]*\))?\s*[=≈≤≥≠]\s*[\p{L}\d_().^{}]+(?:\s*[-+*/×÷]\s*[\p{L}\d_().^{}]+)*)/gu;
-  for (const pattern of [syntax,functionAssignment,equations]) {
+  // If a plain-font formula has a math operator or superscript/subscript,
+  // preserve the entire displayed line. An untranslated sentence is safer than
+  // rewriting part of an unmarked formula. ASCII-only ambiguous math still
+  // requires the manual whole-block or literal glossary control.
+  const mathHeavyLine=/^[^\n]*[∑∏∫√∂∇⊗⊕∥≤≥≈≠∈∉⊂⊆⁰¹²³⁴⁵⁶⁷⁸⁹₀-₉ᵀᵢⱼₖ][^\n]*$/gmu;
+  for (const pattern of [syntax,functionAssignment,equations,mathHeavyLine]) {
     for (const match of text.matchAll(pattern)) ranges.push([match.index, match.index + match[0].length]);
   }
   for (const term of terms) {
@@ -224,7 +229,7 @@ async function startReader() {
       if (stale) await load(current.page);
       if (!items.length) throw Error("原文已变化，请重新翻译后导出。");
       const name = docs.selectedOptions[0].text;
-      const html = bilingualHtml(name,docs.value,direction.value,items);
+      const html = bilingualHtml(name,docs.value,direction.value,items,window.location.origin);
       const url = URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));
       const link = document.createElement("a");
       link.href = url;

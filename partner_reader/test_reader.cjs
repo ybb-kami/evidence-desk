@@ -33,3 +33,12 @@ const prose = "We study A+B and A+B.";
 const protectedTerms = parts({text:prose,protected:[]},0,prose.length,["A+B"]);
 assert.equal(protectedTerms.filter(p=>!p.translate && p.text==="A+B").length,2);
 console.log("HTML escaping, separate ranges, source invalidation and literal terminology verified.");
+for(const formula of ['softmax(QKᵀ/√d)V','∑ᵢ yᵢ log pᵢ','f(x) = x² + β']){
+ const line='A plain font expression: '+formula+'.', protectedParts=parts({text:line,protected:[]},0,line.length);
+ assert.equal(protectedParts.filter(x=>x.translate).length,0);
+ assert.equal(protectedParts.map(x=>x.text).join(''),line);
+}
+const sourceId='a'.repeat(64);
+assert.ok(bilingualHtml('Title',sourceId,'en-zh',[entry],'http://127.0.0.1:8765').includes('href="http://127.0.0.1:8765/pdf/'+sourceId+'#page=2"'));
+assert.ok(!bilingualHtml('Title',sourceId,'en-zh',[entry],'https://external.invalid').includes('external.invalid'));
+console.log('Plain-font math line protection and safe local source links passed.');

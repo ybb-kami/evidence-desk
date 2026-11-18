@@ -39,7 +39,9 @@ function htmlText(value) {
   return String(value).replace(/[&<>"']/g,ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[ch]);
 }
 
-function bilingualHtml(name, doc, pair, items) {
+function bilingualHtml(name, doc, pair, items, origin='') {
+  let base='';
+  try {const u=new URL(origin);if(u.protocol==='http:' && ['127.0.0.1','localhost'].includes(u.hostname) && !u.username && !u.password && u.origin===origin && /^[a-f0-9]{64}$/.test(doc))base=u.origin;} catch(_){}
   const [from,to] = pair.split("-");
   const language = {en:"英文",zh:"中文"};
   const ordered = [...items].sort((a,b) => a.page-b.page || a.order-b.order || a.start-b.start || b.end-a.end);
@@ -50,7 +52,8 @@ function bilingualHtml(name, doc, pair, items) {
     const anchor = row.page === previous ? "" : `id="page-${row.page}"`;
     previous = row.page;
     const scope = row.selected ? `选区（段内字符 ${row.startChar + 1}–${row.endChar}）` : "整段";
-    return `<article ${anchor}><h2>物理第 ${row.page} 页 · 块 ${row.block} · ${scope}${row.ocr?" · OCR":""}</h2>
+    const original=base && Number.isInteger(row.page) && row.page>0 && row.page<=650 ? `<p><a href="${base}/pdf/${doc}#page=${row.page}" target="_blank" rel="noopener noreferrer">在原证据台核对 PDF 第 ${row.page} 页</a></p>` : "";
+    return `<article ${anchor}>${original}<h2>物理第 ${row.page} 页 · 块 ${row.block} · ${scope}${row.ocr?" · OCR":""}</h2>
       <div class="pair"><section><h3>原文 · ${language[from]}</h3><p lang="${from}">${htmlText(row.original)}</p></section>
       <section><h3>译文 · ${language[to]}</h3><p lang="${to}">${htmlText(row.translation)}</p></section></div></article>`;
   }).join("\n");
@@ -62,7 +65,7 @@ h1{font-size:2rem;overflow-wrap:anywhere}h2{font-size:1.05rem}h3{font-size:.85re
 article{background:white;padding:.8rem 1.2rem;margin:1rem 0;border:1px solid #bccdc6}.pair{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
 section{min-width:0}section p{margin-top:0;white-space:pre-wrap;overflow-wrap:anywhere}.digest{overflow-wrap:anywhere;font-size:.8rem}
 @media(max-width:620px){.pair{grid-template-columns:1fr;gap:0}main{padding:.7rem}}@media print{nav{display:none}body{background:white}article{break-inside:avoid}}
-</style></head><body><main><h1>${htmlText(name)}</h1><p>${language[from]} → ${language[to]} · 已完成 ${items.length} 条译文，涉及 ${pages.length} 个物理页。专业术语请与原文核对。</p>
+</style></head><body><main><h1>${htmlText(name)}</h1><p>${language[from]} → ${language[to]} · 已完成 ${items.length} 条译文，涉及 ${pages.length} 个物理页。专业术语请与原文核对。原 PDF 链接需在原电脑上保持同一服务、端口和文库可用，分享本 HTML 不会附上源 PDF。</p>
 <p class="digest">源 PDF SHA-256：${htmlText(doc)}</p><nav aria-label="按物理页定位">${navigation}</nav>${body}</main></body></html>`;
 }
 
