@@ -8,6 +8,7 @@ import unicodedata
 
 import fitz
 
+from byline import author_blocks, author_number
 from graph import extract_identity
 
 MAX_BYTES = 24 * 1024 * 1024
@@ -56,9 +57,9 @@ _RESEARCH_TERMS = {
     "贝塔": ("beta", "β"),
 }
 _QUERY_FILLER = re.compile(
-    r"请问|请指出|请给出|告诉我|给出|列出|在论文中|在文中|论文中|文章中|这篇论文|这篇文章|该论文|本文|"
+    r"请问|请指出|请给出|请列出|告诉我|给出|列出|这篇论文中提到的|在论文中|在文中|论文中|文章中|这篇论文|这篇文章|该论文|本文|其中|"
     r"该模型|这个模型|训练过程中|模型训练|训练时|训练|实验中|"
-    r"分别是多少|分别是什么|分别为|分别|是什么|叫什么|是多少|有多少|多少|一共|总共|"
+    r"分别是多少|分别是什么|分别为|分别|被设置为|是什么|叫什么|是多少|有多少|多少个|多少|一共|总共|模型时|"
     r"用了哪种|使用了哪种|使用哪些|采用哪种|哪一种|哪种|什么|几个|几块|几张|"
     r"在哪里|哪里|何处|具体|设置为|设为|参数值|取值|型号|数量|个数|分数|得分|使用了|用到了|采用了|用了|使用|采用|"
     r"完整参考文献|参考文献|完整引文|引文|条目|引用|"
@@ -88,6 +89,8 @@ def _query_groups(query):
     groups = {}
     normalized = _search_text(query)
     remaining = normalized
+    if _CITATION_QUERY.search(normalized):
+        remaining = re.sub(r"\(references?\)|关于|完整作者和年份", " ", remaining)
     for chinese, aliases in sorted(_RESEARCH_TERMS.items(), key=lambda entry: -len(entry[0])):
         if chinese in remaining:
             groups.setdefault(aliases, set()).add(chinese)
@@ -190,6 +193,7 @@ def parse_pdf(data: bytes, name: str) -> dict:
             if not 1 <= pages <= MAX_PAGES:
                 raise ValueError("PDF must contain between 1 and 650 pages.")
             identity = extract_identity(pdf[0])
+            byline = author_blocks(pdf[0].get_text("blocks", flags=fitz.TEXTFLAGS_BLOCKS), identity.get("title"))
             for page in pdf:
                 page_num = page.number + 1
                 page_labels.append(page.get_label() or str(page_num))
@@ -235,7 +239,24 @@ def parse_pdf(data: bytes, name: str) -> dict:
         arxiv = {"id": arxiv_id, "version": version}
     return {"id": hashlib.sha256(data).hexdigest(), "name": str(name), "pages": pages,
             "chunks": chunks, "size": len(data), "textless_pages": textless_pages,
-            "page_labels": page_labels, "arxiv": arxiv, "bibliographic_identity": identity, "text_hash": content.hexdigest(), "text_chars": chars}
+            "page_labels": page_labels, "arxiv": arxiv, "bibliographic_identity": identity,
+            "author_blocks": byline, "text_hash": content.hexdigest(), "text_chars": chars}
+
+
+def with_author_blocks(doc, pdf_bytes):
+    """Read just the first page when an existing library predates the byline index."""
+    if not pdf_bytes or "author_blocks" in doc:
+        return doc
+    try:
+        with fitz.open(stream=pdf_bytes, filetype="pdf") as pdf:
+            page = pdf[0]
+            identity = doc.get("bibliographic_identity") or {}
+            if not identity.get("title"):
+                identity = extract_identity(page)
+            blocks = author_blocks(page.get_text("blocks", flags=fitz.TEXTFLAGS_BLOCKS), identity.get("title"))
+        return dict(doc, bibliographic_identity=identity, author_blocks=blocks)
+    except (RuntimeError, ValueError, IndexError):
+        return doc
 
 
 def find_evidence(docs: list[dict], query: str) -> list[dict]:
@@ -243,6 +264,32 @@ def find_evidence(docs: list[dict], query: str) -> list[dict]:
     if not isinstance(query, str) or not query.strip() or len(query) > MAX_QUERY:
         return []
 
+    number = author_number(query)
+    if number is not None:
+        title_match = re.search(r"《([^》]+)》|论文\s*([A-Za-z][^？?。]*?)\s*的第", query)
+        title = _search_text(next(v for v in title_match.groups() if v)) if title_match else None
+        hits = []
+        for doc in docs:
+            if title and title != _search_text((doc.get("bibliographic_identity") or {}).get("title") or ""):
+                continue
+            blocks = doc.get("author_blocks", [])
+            if 1 <= number <= len(blocks):
+                hit = next((c for c in doc["chunks"] if c["page"] == 1 and c["block"] == blocks[number - 1]), None)
+                if hit:
+                    hits.append(dict(hit, id=doc["id"], name=doc["name"], page_label=doc["page_labels"][0], score=1.0))
+        return hits[:MAX_RESULTS]
+
+    # Papers often name their architecture in the abstract but omit it from the
+    # hardware paragraph. Drop that qualifier only within a corroborating paper.
+    architecture = re.search(r"\b([A-Za-z][\w-]*)\s*架构", query)
+    if architecture and _MEASUREMENT.search(query) and re.search(r"\bGPUs?\b|显卡", query, re.I):
+        topic = re.compile(r"\b" + re.escape(architecture[1]) + r"\b", re.I)
+        qualified = [doc for doc in docs if any(
+            c["page"] == 1 and topic.search(c["text"]) and re.search(r"\barchitecture\b", c["text"], re.I)
+            for c in doc["chunks"])]
+        scoped_hits = _ranked_evidence(qualified, query[:architecture.start()] + query[architecture.end():])
+        if scoped_hits:
+            return scoped_hits
     hits = _ranked_evidence(docs, query)
     if hits:
         return hits

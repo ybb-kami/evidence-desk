@@ -1,6 +1,6 @@
 "use strict";
 // Offsets from PyMuPDF count Unicode code points. DOM ranges count UTF-16 units.
-function preservedRanges(text, pdfRanges) {
+function preservedRanges(text, pdfRanges, terms = []) {
   const offsets = [0];
   for (const char of text) offsets.push(offsets.at(-1) + char.length);
   const ranges = pdfRanges.map(([a,b]) => [offsets[a], offsets[b]]);
@@ -9,6 +9,11 @@ function preservedRanges(text, pdfRanges) {
   const equations = /(?:[\p{L}\d_]+(?:\([^()\n]*\))?\s*[=≈≤≥≠]\s*[\p{L}\d_().^{}]+(?:\s*[-+*/×÷]\s*[\p{L}\d_().^{}]+)*)/gu;
   for (const pattern of [syntax,functionAssignment,equations]) {
     for (const match of text.matchAll(pattern)) ranges.push([match.index, match.index + match[0].length]);
+  }
+  for (const term of terms) {
+    if (!term) continue;
+    for (let i = text.indexOf(term); i >= 0; i = text.indexOf(term,i+term.length))
+      ranges.push([i,i+term.length]);
   }
   ranges.sort((a,b) => a[0] - b[0]);
   const merged = [];
@@ -19,7 +24,7 @@ function preservedRanges(text, pdfRanges) {
   return merged;
 }
 
-function parts(segment, start, end) {
+function parts(segment, start, end, terms = []) {
   let pos = start;
   const out = [];
   function prose(stop) {
@@ -42,7 +47,7 @@ function parts(segment, start, end) {
       }
     }
   }
-  for (const [left,right] of preservedRanges(segment.text,segment.protected)) {
+  for (const [left,right] of preservedRanges(segment.text,segment.protected,terms)) {
     if (right <= start || left >= end) continue;
     const begin = Math.max(start,left);
     prose(begin);
@@ -59,9 +64,17 @@ if (typeof document !== "undefined") startReader();
 async function startReader() {
   const $ = id => document.getElementById(id);
   const docs = $("doc"), direction = $("direction"), rows = $("rows"), status = $("status");
-  const saved = new Map(), engines = new Map(), keep = new Set();
+  const saved = new TranslationBook(), engines = new Map(), keep = new Set(), glossaries = new Map();
   let localDirections = [], current, epoch = 0, generation = 0, running = false, selected = null;
-  const key = (page, block) => [docs.value,direction.value,page,block].join("/");
+  const pairKey = () => docs.value + "/" + direction.value;
+  const records = () => saved.list(docs.value,direction.value);
+  function refreshExport() {
+    $("export").disabled = running || !current || !records().length;
+  }
+  function rendered(record) {
+    if (!record) return "待翻译";
+    return record.selected ? "选区「" + record.original + "」\n" + record.translation : record.translation;
+  }
   async function json(url, options) {
     const response = await fetch(url,options);
     const result = await response.json();
@@ -85,17 +98,22 @@ async function startReader() {
   }
   function setRunning(value) {
     running = value;
-    for (const id of ["doc","direction","page","go","pageRun","all"]) $(id).disabled = value;
-    for (const button of rows.querySelectorAll("button")) button.disabled = value;
-    $("cancel").disabled = !value;
+    for (const id of ["doc","direction","page","go","pageRun","all","terms","applyTerms"]) $(id).disabled = value;
+    for (const button of rows.querySelectorAll("button,input")) button.disabled = value;
+    $("cancel").disabled = !value; refreshExport();
   }
   async function load(page) {
     const token = ++epoch;
     current = null; selected = null; rows.replaceChildren(); $("original").removeAttribute("href"); $("count").textContent = "";
+    refreshExport();
     if (!docs.value) return;
     const data = await json("/api/bilingual/page/" + docs.value + "?page=" + encodeURIComponent(page));
     if (token !== epoch) return;
     current = data;
+    saved.reconcile(docs.value,data);
+    const latest = new Map(records().filter(r => r.page === data.page).map(r => [r.block,r]));
+    $("terms").value = (glossaries.get(pairKey()) || []).join("\n");
+    refreshExport();
     $("original").href = "/pdf/" + docs.value + "#page=" + data.page;
     $("page").value = data.page; $("page").max = data.pages;
     $("count").textContent = "共 " + data.pages + " 页"; status.textContent = data.segments.length ? "" : "此页没有可划选文字。可先在扫描工作台识别本页，再返回阅读。";
@@ -106,7 +124,7 @@ async function startReader() {
       button.textContent = "翻译此段或选区"; button.disabled = running;
       const source = document.createElement("p"), target = document.createElement("p");
       source.className = "source"; target.className = "translated"; source.textContent = segment.text;
-      target.textContent = saved.get(key(data.page,segment.block)) || "待翻译";
+      target.textContent = rendered(latest.get(segment.block));
       function remember() {
         const selection = window.getSelection();
         if (!selection.rangeCount || selection.isCollapsed) { selected = null; return; }
@@ -122,7 +140,13 @@ async function startReader() {
       checkbox.type = "checkbox";
       const keepKey = [docs.value,data.page,segment.block].join("/");
       checkbox.checked = keep.has(keepKey);
-      checkbox.onchange = () => checkbox.checked ? keep.add(keepKey) : keep.delete(keepKey);
+      checkbox.disabled = running;
+      checkbox.onchange = () => {
+        if (checkbox.checked) keep.add(keepKey); else keep.delete(keepKey);
+        saved.remove(r => r.doc===docs.value && r.page===data.page && r.block===segment.block);
+        target.textContent = "待翻译";
+        refreshExport();
+      };
       keepLabel.append(checkbox," 公式或代码整段保留");
       const proof = document.createElement("details"), label = document.createElement("summary");
       label.textContent = "核对原 PDF 段落截图";
@@ -151,7 +175,7 @@ async function startReader() {
           status.textContent = "正在翻译第 " + page + " 页 · 块 " + segment.block;
           let result = "";
           const keepKey = [docs.value,page,segment.block].join("/");
-          const fragments = keep.has(keepKey) ? [{text:segment.text.slice(start,end),translate:false}] : parts(segment,start,end);
+          const fragments = keep.has(keepKey) ? [{text:segment.text.slice(start,end),translate:false}] : parts(segment,start,end,glossaries.get(pairKey()));
           for (const part of fragments) {
             if (token !== generation) return;
             if (part.translate) {
@@ -160,9 +184,13 @@ async function startReader() {
             } else result += part.text;
           }
           if (token !== generation) return;
-          const content = selection ? "选区「" + segment.text.slice(start,end) + "」\n" + result : result;
-          saved.set(key(page,segment.block),content);
-          rows.children[index].querySelector(".translated").textContent = content;
+          const record = {doc:docs.value,direction:direction.value,page,block:segment.block,order:index,
+            start,end,startChar:Array.from(segment.text.slice(0,start)).length,
+            endChar:Array.from(segment.text.slice(0,end)).length,selected:Boolean(selection),
+            original:segment.text.slice(start,end),translation:result,
+            signature:sourceSignature(segment,current.source),ocr:current.source==="ocr"};
+          saved.save(record);
+          rows.children[index].querySelector(".translated").textContent = rendered(record);
           completed++;
         }
         if (mode !== "all" || page === current.pages) break;
@@ -174,6 +202,44 @@ async function startReader() {
     } catch (e) { if (token === generation) status.textContent = e.message; }
     finally { setRunning(false); }
   }
+  $("applyTerms").onclick = () => {
+    if (!current || running) return;
+    const key = pairKey();
+    const terms = [...new Set($("terms").value.split(/\r?\n/).map(t=>t.trim()).filter(Boolean))].sort();
+    if (JSON.stringify(terms) === JSON.stringify(glossaries.get(key) || [])) return;
+    glossaries.set(key,terms);
+    const count = saved.remove(r=>r.doc===docs.value && r.direction===direction.value);
+    for (const cell of rows.querySelectorAll(".translated")) cell.textContent = "待翻译";
+    status.textContent = "已应用 " + terms.length + " 个术语，需重新翻译 " + count + " 条已有译文。";
+    refreshExport();
+  };
+  $("export").onclick = async () => {
+    if (running || !current || !records().length) return;
+    setRunning(true);
+    $("cancel").disabled = true;
+    try {
+      status.textContent = "正在核对导出译段的来源…";
+      const pages = [...new Set(records().map(r=>r.page))];
+      let stale = 0;
+      for (const page of pages) {
+        const result = await json("/api/bilingual/page/"+docs.value+"?page="+page);
+        stale += saved.reconcile(docs.value,result);
+      }
+      const items = records();
+      if (stale) await load(current.page);
+      if (!items.length) throw Error("原文已变化，请重新翻译后导出。");
+      const name = docs.selectedOptions[0].text;
+      const html = bilingualHtml(name,docs.value,direction.value,items);
+      const url = URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name.replace(/[^\p{L}\p{N}._-]/gu,"_").slice(0,90) + "-" + direction.value + ".html";
+      link.click();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      status.textContent = "已导出 " + items.length + " 条译文。" + (stale ? "原文变动的 " + stale + " 条已移除。" : "");
+    } catch (error) { status.textContent = error.message; }
+    finally { setRunning(false); }
+  };
   function show(page) {load(page).catch(e => {status.textContent=e.message;});}
   docs.onchange = () => show(1); direction.onchange = () => show(current?.page || 1);
   $("go").onclick = () => show($("page").value); $("pageRun").onclick = () => run("page");

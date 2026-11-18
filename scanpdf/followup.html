@@ -1,0 +1,84 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>证据追问 · 证据台</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f2;color:#1b2e29;font:16px/1.6 system-ui,sans-serif}main{max-width:840px;margin:auto;padding:1.5rem}a{color:#12685d}
+section,form{background:#fff;padding:1rem;border:1px solid #ccd5ce;border-radius:.4rem;margin:1rem 0}
+label{display:block;font-weight:600}select,input,button{font:inherit;padding:.45rem .65rem;border:1px solid #8b9d93;border-radius:.3rem;background:white;color:inherit}
+select,input{width:100%;margin:.3rem 0 .6rem}button{cursor:pointer}button:disabled{cursor:default}button.primary{background:#18574d;color:white}
+blockquote{white-space:pre-wrap;overflow-wrap:anywhere;margin:.5rem 0;padding-left:.8rem;border-left:3px solid #b2c7ba}h2{font-size:1.15rem}
+article{padding:.7rem 0;border-top:1px solid #d6dfd8}article a{margin-right:.7rem}
+</style>
+<main><a href="/">返回工作台</a><h1>证据追问</h1><label for="doc">当前文献</label><select id="doc"></select>
+<p>先在整篇文献中提问。选中命中摘录的「在此段追问」后，后续问题只查询该段原文。</p>
+<div id="history" aria-live="polite"></div>
+<form id="ask"><p id="scope">检索范围：当前文献全文</p><button type="button" id="release" hidden>返回全文范围</button>
+<label for="question">问题</label><input id="question" maxlength="500" required autocomplete="off">
+<button class="primary" id="send">查找原文</button> <button type="button" id="clear">清空会话</button></form><p id="status" role="status"></p></main>
+<script>
+'use strict';
+const byId = id=>document.getElementById(id);
+const picker=byId('doc'), historyBox=byId('history'), field=byId('question'), scope=byId('scope'), release=byId('release');
+let anchor=null, version=0;
+function node(tag,text){const n=document.createElement(tag); n.textContent=text; return n;}
+function locationText(a){return '物理页 '+a[0]+' · 文本块 '+a[1]+' · 摘录 '+a[2];}
+function selectAnchor(value){
+  version++;
+  anchor=value;
+  scope.textContent='检索范围：'+(value?locationText(value):'当前文献全文');
+  release.hidden=!value;
+  byId('status').textContent='';
+  byId('send').disabled=!picker.value;
+}
+function clearSession(){
+  selectAnchor(null);
+  historyBox.replaceChildren();
+  field.value='';
+  byId('status').textContent='';
+}
+function cite(hit){
+  const block=document.createElement('article'), position=[hit.page,hit.block,hit.part||1];
+  const source=node('a',locationText(position)+' · 打开原 PDF');
+  source.href='/pdf/'+hit.id+'#page='+hit.page; source.target='_blank'; source.rel='noopener';
+  block.append(source);
+  if(hit.source==='ocr'){
+    const scan=node('a','核对 OCR 图像'); scan.href='/scan?id='+hit.id+'&page='+hit.page; block.append(scan);
+  }
+  const focus=node('button','在此段追问'); focus.type='button';
+  focus.onclick=()=>{selectAnchor(position); field.focus();};
+  block.append(node('blockquote',hit.text),focus);
+  return block;
+}
+picker.onchange=clearSession;
+byId('clear').onclick=clearSession;
+release.onclick=()=>{selectAnchor(null);field.focus();};
+byId('ask').onsubmit=async event=>{
+  event.preventDefault();
+  const question=field.value.trim();
+  if(!picker.value||!question||byId('send').disabled)return;
+  const active=++version, current=anchor, id=picker.value;
+  byId('send').disabled=true; byId('status').textContent='正在查找原文…';
+  try{
+    const response=await fetch('/api/followup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,question,anchor:current})});
+    const data=await response.json();
+    if(active!==version)return;
+    if(!response.ok)throw Error(data.error||'检索失败。');
+    const turn=document.createElement('section');
+    turn.append(node('h2',question),node('p',picker.selectedOptions[0].text+' · '+(current?locationText(current):'全文')));
+    if(data.answer) turn.append(node('strong','段内标记值：'+data.answer));
+    if(data.gap || !data.hits.length) turn.append(node('p',data.gap||'所选范围内没有匹配原文。'));
+    for(const hit of data.hits)turn.append(cite(hit));
+    historyBox.append(turn); field.value=''; byId('status').textContent='';
+    field.focus();
+  }catch(error){if(active===version)byId('status').textContent=error.message;}
+  finally{if(active===version)byId('send').disabled=false;}
+};
+(async()=>{
+  try{
+    const response=await fetch('/api/library');
+    if(!response.ok)throw Error('无法读取文库。');
+    for(const doc of (await response.json()).docs)picker.add(new Option(doc.name,doc.id));
+    clearSession();
+    if(!picker.value)byId('status').textContent='请先在文库中导入 PDF。';
+  }catch(error){byId('status').textContent=error.message;}
+})();
+</script></html>

@@ -98,6 +98,44 @@ class TableDetectionTests(unittest.TestCase):
             "Sample", "Protocol", "Score", "Control", "Method A", "15", "Treatment", "Method B", "29",
         ])
 
+    def test_grouped_header_has_anchored_spans_and_preserves_empty_cells(self):
+        for y in [80, 300, 370]:
+            self.draw.line((80, y, 640, y), fill=0, width=2)
+        for x0, x1, y in [(245, 415, 130), (432, 615, 130), (80, 214, 180), (239, 640, 180)]:
+            self.draw.line((x0, y, x1, y), fill=0, width=2)
+        ocr = [
+            word("Sample", 95, 122),
+            word("Accuracy", 295, 101, 65), word("Run time", 488, 101, 65),
+            word("Left", 255, 145, 45), word("Right", 349, 145, 44),
+            word("Left", 451, 145, 35), word("Right", 553, 145, 45),
+            *[
+                word(value, x, y, 30)
+                for y in [200, 233]
+                for x, value in [(95, "Trial"), (260, "32"), (355, "46"), (453, "83"), (558, "98")]
+            ],
+            word("Incomplete", 95, 266, 90), word("62", 255, 266),
+            word("Pooled", 95, 318, 62), word("78", 255, 318), word("56", 349, 318),
+            word("1.23", 499, 318, 42),
+        ]
+
+        (table,) = detect_tables(self.page, ocr, dpi=144)
+        cells = {(c["row"], c["column"]): c for c in table["cells"]}
+
+        self.assertEqual(table["method"], "grouped_horizontal_rules_ocr_alignment")
+        self.assertEqual(cells[1, 1]["text"], "Sample")
+        self.assertEqual(cells[1, 1]["row_span"], 2)
+        self.assertEqual(cells[1, 2]["text"], "Accuracy")
+        self.assertEqual(cells[1, 2]["column_span"], 2)
+        self.assertEqual(cells[1, 4]["text"], "Run time")
+        self.assertEqual(cells[1, 4]["column_span"], 2)
+        self.assertNotIn((2, 1), cells)
+        self.assertEqual([cells[2, j]["text"] for j in [2, 3, 4, 5]], ["Left", "Right", "Left", "Right"])
+        self.assertEqual(cells[5, 3]["status"], "empty_or_unread")
+        self.assertEqual(cells[5, 3]["text"], "")
+        self.assertEqual(cells[6, 4]["text"], "1.23")
+        self.assertEqual(cells[6, 4]["column_span"], 2)
+        self.assertNotIn((6, 5), cells)
+
     def test_grouped_header_and_long_body_gap_keeps_full_extent(self):
         for y in [80, 300, 430]:
             self.draw.line((80, y, 640, y), fill=0, width=2)

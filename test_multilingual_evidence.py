@@ -1,6 +1,7 @@
 import unittest
 
 from engine import find_evidence
+from byline import author_blocks, author_number
 
 
 def document(*passages):
@@ -13,6 +14,28 @@ def document(*passages):
 
 
 class MultilingualEvidenceTests(unittest.TestCase):
+    def test_author_ordinal_uses_visual_rows_and_abstains_on_unparsed_author(self):
+        title = "A Study of Reading Order"
+        blocks = [
+            (30, 10, 90, 20, title, 0, 0),
+            (65, 40, 100, 59, "Min Lee\nLab\nml@lab.example", 1, 0),
+            (10, 41, 45, 60, "Ren Xi\nLab\nrx@lab.example", 2, 0),
+            (30, 70, 75, 90, "Ke Wu\nkw@lab.example", 3, 0),
+            (30, 100, 80, 110, "Abstract", 4, 0),
+        ]
+        self.assertEqual(author_blocks(blocks, title), [3, 2, 4])
+        self.assertEqual(author_number("请找第十二位作者"), 12)
+        self.assertEqual(author_number("第２作者"), 2)
+        blocks[1] = (*blocks[1][:4], "Unparsed name, another name", 1, 0)
+        self.assertEqual(author_blocks(blocks, title), [])
+
+    def test_gpu_architecture_context_requires_paper_evidence(self):
+        docs = [document("We present the Ray architecture.",
+                         "We trained our base model on six Atlas GPUs.")]
+        question = "这篇论文中提到的 Ray 架构，在训练 Base 模型时使用了多少个 GPU？具体是什么型号？"
+        self.assertEqual(find_evidence(docs, question)[0]["page"], 2)
+        self.assertEqual(find_evidence(docs, question.replace("Ray", "Quartz")), [])
+
     def test_count_and_model_query_prefers_specific_gpu_evidence(self):
         docs = [document("Training ran for 2.5 days on four GPUs.",
                          "The same convolutional network was trained on six Ascend A300 GPUs.")]

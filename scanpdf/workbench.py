@@ -139,7 +139,7 @@ class Handler(app.Handler):
         if not post and path in ("/", "/index.html"):
             home = (app.HERE / "index.html").read_text()
             home = home.replace('<span class="tag">本地工作区</span>',
-                                '<nav><a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a></nav>')
+                                '<nav><a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a> · <a href="/followup">证据追问</a></nav>')
             home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
                                 "扫描件可按页识别，完成后可在这里检索 OCR 文字。")
             home = home.replace("detail.append(archive);", """
@@ -157,6 +157,11 @@ class Handler(app.Handler):
                 }
                 actions.append(source(hit.id,""")
             return self.payload(200, home.encode(), "text/html; charset=utf-8")
+        if not post and path == "/followup":
+            return self.payload(200, (HERE / "followup.html").read_bytes(), "text/html; charset=utf-8")
+        if post and path == "/api/followup":
+            from followup import lookup
+            return self.payload(200, lookup(self.server.library, self.json_request()))
         if not post and path == "/scan":
             return self.payload(200, (HERE / "scan.html").read_bytes(), "text/html; charset=utf-8")
         store = self.server.library

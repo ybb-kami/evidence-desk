@@ -187,6 +187,14 @@ class ScanPDFTests(unittest.TestCase):
                     with self.subTest(anchor=anchor["anchor"]):
                         self.assertTrue(anchor["localized_at_0.5"], anchor)
                 # A numeric lookup must have a row and column in the actual table.
+                bleu = next(r for r in result["pages"][7]["regions"] if r["type"] == "table")
+                self.assertEqual(bleu["status"], "structure_recognized")
+                grid = {(c["row"], c["column"]): c for c in bleu["cells"]}
+                self.assertEqual((grid[1, 2]["text"], grid[1, 2]["column_span"]), ("BLEU", 2))
+                self.assertEqual([grid[2, col]["text"] for col in (2, 3)], ["EN-DE", "EN-FR"])
+                self.assertEqual([grid[12, col]["text"] for col in (1, 2, 3)],
+                                 ["Transformer (big)", "28.4", "41.0"])
+                self.assertEqual(grid[1, 1]["row_span"], 2)
                 table = next(r for r in result["pages"][8]["regions"]
                              if r["type"] == "table" and r["bbox_pt"][1] > 400)
                 self.assertEqual(table["status"], "structure_recognized")
