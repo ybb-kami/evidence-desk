@@ -51,6 +51,8 @@ export EVIDENCE_LOCAL_QA_MODEL=evidence-local-qwen
 
 只运行基础提取与已识别表格问答时可用 `scanpdf/requirements.txt`。本机多语向量、翻译、读者及本地生成有各自依赖和可用状态。部署者选用 DeepSeek 时另按项目说明配置，外发按钮须由使用者逐次确认。冻结工作台的 Host/Origin 校验和单文库性质仍适用。[公网隔离条件](../deploy/README.md)
 
+[本机 Docker 构建与重启验收](container/README.md) · [个人赛协同与 Prompt 审计](delivery/AI-COLLABORATION.md)
+
 ## 一次提问如何回答
 
 1. 用户选定一个确定的 PDF 版本，或者进一步限定在一个已引用的段落。完整 SHA 决定来源文件。
