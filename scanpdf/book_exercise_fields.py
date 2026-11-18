@@ -220,12 +220,17 @@ def _references(question, source, zh):
     return _unique(kind, label, rows)
 
 
-def _math_fields(question, source, zh):
+def _math_fields(question, source, zh, read_formula):
     if _FORMULA_ASK.search(question) and not (_FORMULA_SOLVE.search(question) or _reference_kind(question)):
         left = re.search(rf'(?:defines?|gives?|to|for|成|得到)\s+(?P<var>{_SYMBOL})(?=\s*(?:[?？.,，。]|$))', question, FLAGS)
         rows = [(match[0], hit) for match, _, hit in _matches(source, _FORMULA)
                 if not left or match['lhs'] == left['var']]
-        yield _unique('formula', '题设原式' if zh else 'Formula given in the statement', rows)
+        label = '题设原式' if zh else 'Formula given in the statement'
+        checked = [read_formula(value, hit) for value, hit in rows] if len(rows) <= 8 else [None]
+        if any(value is None for value in checked):
+            yield Field('formula', label, None, tuple(hit for _, hit in rows[:3]), 'math_layout')
+        else:
+            yield _unique('formula', label, checked)
     if _VARIABLE_ASK.search(question):
         for role, alias in (('input', '输入'), ('output', '输出')):
             if not re.search(rf'\b{role}\b|{alias}', question, FLAGS):
@@ -235,13 +240,14 @@ def _math_fields(question, source, zh):
             yield _unique(role, f'{alias}变量' if zh else f'{role.capitalize()} variable', rows)
 
 
-def _fields(part, source, zh):
+def _fields(part, source, zh, read_formula):
     if not ASK.search(part):
         return []
     if RESULT.search(part) or (COMPUTE.search(part) and not TASK_ASK.search(part)):
         return []
     reference = _references(part, source, zh)
-    fields = [*_fixed_fields(part, source, zh), *_numeric_fields(part, source, zh), *_math_fields(part, source, zh)]
+    fields = [*_fixed_fields(part, source, zh), *_numeric_fields(part, source, zh),
+              *_math_fields(part, source, zh, read_formula)]
     if reference:
         fields.insert(0, reference)
     if any(field.name != 'task' for field in fields):
@@ -249,14 +255,14 @@ def _fields(part, source, zh):
     return fields
 
 
-def statement_fields(question, hits):
+def statement_fields(question, hits, read_formula):
     """Return deduplicated, original-statement fields and unhandled subquestions."""
     normalized = _literal(question, form='NFKC')
     zh = bool(re.search(r'[㐀-鿿]', normalized))
     source = tuple(_sentences(hits))
     fields, unhandled = {}, []
     for part in split_question(normalized):
-        requested = _fields(part, source, zh)
+        requested = _fields(part, source, zh, read_formula)
         if requested:
             for field in requested:
                 fields.setdefault(field.name, field)

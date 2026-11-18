@@ -225,10 +225,10 @@ def _sampling_dimensions(hits, question):
     return next(iter(found.items())) if len(found) == 1 else ((), None)
 
 
-def _statement_answer(result, question, zh):
+def _statement_answer(result, question, zh, read_formula):
     from book_exercise_fields import statement_fields
 
-    fields, unhandled = statement_fields(question, result['hits'])
+    fields, unhandled = statement_fields(question, result['hits'], read_formula)
     if not fields:
         return None
     answers, gaps, linked = [], [], {}
@@ -241,6 +241,9 @@ def _statement_answer(result, question, zh):
         elif field.reason == 'ambiguous':
             gaps.append(f'{field.label}有多个候选，题干未明确指向题问所需的一项' if zh else
                         f'The statement does not identify one matching {field.label.lower()}')
+        elif field.reason == 'math_layout':
+            gaps.append('题干公式的字形位置未能核实，请在原页图像查看上下标及其他排版' if zh else
+                        'The formula layout could not be verified. Check the original page image for superscripts and subscripts')
         else:
             gaps.append(f'题干未明确给出{field.label}' if zh else f'{field.label} remains unconfirmed in the statement')
         for hit in field.hits:
@@ -258,7 +261,7 @@ def _statement_answer(result, question, zh):
                 hits=list(linked.values()) or result['hits'])
 
 
-def locate_exercise(doc, question):
+def locate_exercise(doc, question, *, load_pdf=None):
     """Return verbatim exercise evidence, with a location or a bounded evidence gap."""
     requested = _request(question)
     if requested is None:
@@ -308,7 +311,9 @@ def locate_exercise(doc, question):
         answer = (f"题干要求在 {'、'.join(values)} 维采样。" if zh
                   else f"The exercise specifies sampling in {', '.join(values)} dimensions.")
         return dict(result, answer=answer, hits=supported, gap=None)
-    details = _statement_answer(result, question, zh)
+    from book_formula_layout import formula_reader
+
+    details = _statement_answer(result, question, zh, formula_reader(load_pdf, doc['id']))
     if details is not None:
         return details
     if _SOLVE.search(question):

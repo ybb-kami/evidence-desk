@@ -1,0 +1,937 @@
+{
+  "official": {
+    "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+    "physical_page": 6,
+    "table": "p6-r1",
+    "marked": [
+      {
+        "row": 2,
+        "column": 2,
+        "bbox": [
+          779,
+          462,
+          1113,
+          502
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 87.05,
+        "ocr_raw": {
+          "text": "O(n? - d)",
+          "confidence": 87.05
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "bbox_pt": [
+          233.7,
+          138.6,
+          333.9,
+          150.6
+        ]
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "bbox": [
+          1113,
+          462,
+          1297,
+          502
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 34.96,
+        "ocr_raw": {
+          "text": "O(1)",
+          "confidence": 34.96
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "low_confidence_notation"
+        },
+        "bbox_pt": [
+          333.9,
+          138.6,
+          389.1,
+          150.6
+        ]
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "bbox": [
+          1297,
+          462,
+          1645,
+          502
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 54.78,
+        "ocr_raw": {
+          "text": "O(1)",
+          "confidence": 54.78
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "low_confidence_notation"
+        },
+        "bbox_pt": [
+          389.1,
+          138.6,
+          493.5,
+          150.6
+        ]
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "bbox": [
+          779,
+          502,
+          1113,
+          540
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 8.66,
+        "ocr_raw": {
+          "text": "O(n: d?)",
+          "confidence": 8.66
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "bbox_pt": [
+          233.7,
+          150.6,
+          333.9,
+          162.0
+        ]
+      },
+      {
+        "row": 4,
+        "column": 2,
+        "bbox": [
+          779,
+          540,
+          1113,
+          576
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 21.73,
+        "ocr_raw": {
+          "text": "O(k+n-d?)",
+          "confidence": 21.73
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "bbox_pt": [
+          233.7,
+          162.0,
+          333.9,
+          172.8
+        ]
+      },
+      {
+        "row": 4,
+        "column": 4,
+        "bbox": [
+          1297,
+          540,
+          1645,
+          576
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 27.63,
+        "ocr_raw": {
+          "text": "O(log;,.())",
+          "confidence": 27.63
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "bbox_pt": [
+          389.1,
+          162.0,
+          493.5,
+          172.8
+        ]
+      },
+      {
+        "row": 5,
+        "column": 2,
+        "bbox": [
+          779,
+          576,
+          1113,
+          622
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 79.5,
+        "ocr_raw": {
+          "text": "O(r-n-d)",
+          "confidence": 79.5
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "bbox_pt": [
+          233.7,
+          172.8,
+          333.9,
+          186.6
+        ]
+      },
+      {
+        "row": 5,
+        "column": 4,
+        "bbox": [
+          1297,
+          576,
+          1645,
+          622
+        ],
+        "text": "",
+        "status": "math_unverified",
+        "ocr_confidence": 89.79,
+        "ocr_raw": {
+          "text": "O(n/r)",
+          "confidence": 89.79
+        },
+        "text_method": "math_original_review",
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "bbox_pt": [
+          389.1,
+          172.8,
+          493.5,
+          186.6
+        ]
+      }
+    ],
+    "unchanged_simple": "O(n)",
+    "exact_original_and_highlight": true
+  },
+  "synthetic": {
+    "source_sha256": "4984245adcf9bd9ba53aecd8cd1e251136669d91e7a3817f4c7564d224c6c446",
+    "physical_page": 1,
+    "marked": {
+      "row": 2,
+      "column": 2,
+      "bbox": [
+        839,
+        566,
+        1419,
+        733
+      ],
+      "text": "",
+      "status": "math_unverified",
+      "ocr_confidence": 86.62,
+      "ocr_raw": {
+        "text": "O(k - f)",
+        "confidence": 86.62
+      },
+      "text_method": "math_original_review",
+      "math_review": {
+        "status": "needs_original",
+        "reason": "layout_sensitive_notation"
+      },
+      "bbox_pt": [
+        251.7,
+        169.8,
+        425.7,
+        219.9
+      ]
+    },
+    "simple": {
+      "row": 3,
+      "column": 2,
+      "bbox": [
+        839,
+        733,
+        1419,
+        900
+      ],
+      "text": "O(t)",
+      "status": "ocr_text",
+      "ocr_confidence": 82.2,
+      "bbox_pt": [
+        251.7,
+        219.9,
+        425.7,
+        270.0
+      ]
+    },
+    "score": {
+      "row": 3,
+      "column": 3,
+      "bbox": [
+        1419,
+        733,
+        1893,
+        900
+      ],
+      "text": "14.6",
+      "status": "ocr_text",
+      "ocr_confidence": 96.73,
+      "text_method": "numeric_crop_agreement",
+      "ocr_raw": {
+        "text": "14.6",
+        "confidence": 96.63
+      },
+      "numeric_ocr": {
+        "status": "agreed",
+        "bbox": [
+          1466,
+          796,
+          1568,
+          838
+        ],
+        "attempts": [
+          {
+            "method": "grayscale_strip",
+            "text": "14.6",
+            "confidence": 96.61,
+            "valid": true
+          },
+          {
+            "method": "thresholded_strip",
+            "text": "14.6",
+            "confidence": 96.73,
+            "valid": true
+          }
+        ],
+        "bbox_pt": [
+          439.8,
+          238.8,
+          470.4,
+          251.4
+        ]
+      },
+      "bbox_pt": [
+        425.7,
+        219.9,
+        567.9,
+        270.0
+      ]
+    }
+  },
+  "optional_cpu": {
+    "source": {
+      "filename": "1706.03762v1_img.pdf",
+      "sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+      "page_count": 15
+    },
+    "render": {
+      "dpi": 240,
+      "lang": "eng",
+      "frame": "rotated_visible_page_top_left"
+    },
+    "model": {
+      "engine": "RapidLaTeXOCR",
+      "package_version": "0.0.9",
+      "onnxruntime_version": "1.32.0",
+      "provider": "CPUExecutionProvider",
+      "upstream_release": "https://github.com/RapidAI/RapidLaTeXOCR/releases/tag/v0.0.0",
+      "files_sha256": {
+        "image_resizer.onnx": "e0b075c39700f64d50400f39c8fc186bbb3b5d84d31864008313f376603aca9d",
+        "encoder.onnx": "01bf5dc25539ca0cd5b1bd29296ea495977a6ba5f629dc4178277809d26e5e7d",
+        "decoder.onnx": "bd695497bf1b22279b7626f5916c79226e1e244c84355f8da7edfd2d921d0072",
+        "tokenizer.json": "1dc27b18d6a518d0d5ff3f4bb7bd98521fe80ad39e5b2a246d4109f1bb9d5019"
+      }
+    },
+    "cells": [
+      {
+        "row": 2,
+        "column": 2,
+        "bbox": [
+          779,
+          462,
+          1113,
+          502
+        ],
+        "bbox_pt": [
+          233.7,
+          138.6,
+          333.9,
+          150.6
+        ],
+        "ocr_raw": {
+          "text": "O(n? - d)",
+          "confidence": 87.05
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row2-col2.png",
+        "crop_sha256": "94b94b81163a9a1950df0663db3e52c8dbf47b248e1967e24e230c6336003eb6",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(n^{2}\\cdot d)",
+            "inference_seconds": 0.1513
+          },
+          "upsampled_2x": {
+            "latex": "O(n^{2}\\cdot d)",
+            "inference_seconds": 0.1993
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          883,
+          464,
+          1007,
+          499
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "bbox": [
+          1113,
+          462,
+          1297,
+          502
+        ],
+        "bbox_pt": [
+          333.9,
+          138.6,
+          389.1,
+          150.6
+        ],
+        "ocr_raw": {
+          "text": "O(1)",
+          "confidence": 34.96
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "low_confidence_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row2-col3.png",
+        "crop_sha256": "5c8d9112157832d059bfa60a80ac4c66e6e729838f00b85e3597b642880a7e0a",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(1)",
+            "inference_seconds": 0.089
+          },
+          "upsampled_2x": {
+            "latex": "O(1)",
+            "inference_seconds": 0.1226
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          1171,
+          467,
+          1236,
+          499
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "bbox": [
+          1297,
+          462,
+          1645,
+          502
+        ],
+        "bbox_pt": [
+          389.1,
+          138.6,
+          493.5,
+          150.6
+        ],
+        "ocr_raw": {
+          "text": "O(1)",
+          "confidence": 54.78
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "low_confidence_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row2-col4.png",
+        "crop_sha256": "1f927a30d395054ad1d00d808774dd61c2b3e1c009e4e6aa5a54450d82f30364",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(1)",
+            "inference_seconds": 0.0942
+          },
+          "upsampled_2x": {
+            "latex": "O(1)",
+            "inference_seconds": 0.1015
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          1438,
+          467,
+          1503,
+          499
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "bbox": [
+          779,
+          502,
+          1113,
+          540
+        ],
+        "bbox_pt": [
+          233.7,
+          150.6,
+          333.9,
+          162.0
+        ],
+        "ocr_raw": {
+          "text": "O(n: d?)",
+          "confidence": 8.66
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row3-col2.png",
+        "crop_sha256": "7110bf1106578b01008eb50c78d16d2ff7221cf51e5a09c4439498aa794bdff6",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(n\\cdot d^{2})",
+            "inference_seconds": 0.1525
+          },
+          "upsampled_2x": {
+            "latex": "O(n\\cdot d^{2})",
+            "inference_seconds": 0.626
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          883,
+          504,
+          1007,
+          538
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 4,
+        "column": 2,
+        "bbox": [
+          779,
+          540,
+          1113,
+          576
+        ],
+        "bbox_pt": [
+          233.7,
+          162.0,
+          333.9,
+          172.8
+        ],
+        "ocr_raw": {
+          "text": "O(k+n-d?)",
+          "confidence": 21.73
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row4-col2.png",
+        "crop_sha256": "dee52f2f55c553ab4dbc725bfb9dc491b5552f9b55aa0d01791be62d0bacfa5c",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(k\\cdot n\\cdot d^{2})",
+            "inference_seconds": 0.2904
+          },
+          "upsampled_2x": {
+            "latex": "O(k\\cdot n\\cdot d^{2})",
+            "inference_seconds": 0.2965
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          861,
+          542,
+          1028,
+          574
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 4,
+        "column": 4,
+        "bbox": [
+          1297,
+          540,
+          1645,
+          576
+        ],
+        "bbox_pt": [
+          389.1,
+          162.0,
+          493.5,
+          172.8
+        ],
+        "ocr_raw": {
+          "text": "O(log;,.())",
+          "confidence": 27.63
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row4-col4.png",
+        "crop_sha256": "4800dfa79d7da0ccdcfb4515ada2044bb552963ff3dcbefa9cfcd31a59f66d68",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(l o g_{k}(n))",
+            "inference_seconds": 0.1701
+          },
+          "upsampled_2x": {
+            "latex": "O(l o g_{k}(n))",
+            "inference_seconds": 0.2089
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          1394,
+          542,
+          1546,
+          574
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 5,
+        "column": 2,
+        "bbox": [
+          779,
+          576,
+          1113,
+          622
+        ],
+        "bbox_pt": [
+          233.7,
+          172.8,
+          333.9,
+          186.6
+        ],
+        "ocr_raw": {
+          "text": "O(r-n-d)",
+          "confidence": 79.5
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row5-col2.png",
+        "crop_sha256": "bdba020129e3cd1972df5cebc9b96f4d74138d1d6e20a4707c747d3aca48905f",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(r\\cdot n\\cdot d)",
+            "inference_seconds": 0.2017
+          },
+          "upsampled_2x": {
+            "latex": "O(r\\cdot n\\cdot d)",
+            "inference_seconds": 0.2301
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          870,
+          579,
+          1019,
+          611
+        ],
+        "calibrated_probability": null
+      },
+      {
+        "row": 5,
+        "column": 4,
+        "bbox": [
+          1297,
+          576,
+          1645,
+          622
+        ],
+        "bbox_pt": [
+          389.1,
+          172.8,
+          493.5,
+          186.6
+        ],
+        "ocr_raw": {
+          "text": "O(n/r)",
+          "confidence": 89.79
+        },
+        "math_review": {
+          "status": "needs_original",
+          "reason": "layout_sensitive_notation"
+        },
+        "region": "p6-r1",
+        "physical_page": 6,
+        "source_sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+        "crop": "p6-r1-row5-col4.png",
+        "crop_sha256": "aedeef1c38967e31abffbc760af1ad123bdf30ab172b2c277548ec13acf1ae0e",
+        "status": "unverified_candidate",
+        "variants": {
+          "source_scale": {
+            "latex": "O(n/r)",
+            "inference_seconds": 0.1014
+          },
+          "upsampled_2x": {
+            "latex": "O(n/r)",
+            "inference_seconds": 0.196
+          }
+        },
+        "variants_agree": true,
+        "recognition_bbox_px": [
+          1419,
+          579,
+          1520,
+          611
+        ],
+        "calibrated_probability": null
+      }
+    ],
+    "same_scale_pairs": 8
+  },
+  "numeric_regression": [
+    {
+      "case": "Attention v1 scan Table 1 structure",
+      "status": "structure_recognized",
+      "iou": 0.991,
+      "row_col": [
+        5,
+        4
+      ],
+      "expected_shape": [
+        5,
+        4
+      ],
+      "spans": [],
+      "tally": {},
+      "discrepancies": []
+    },
+    {
+      "case": "Attention v1 scan Table 2 grouped scores & scientific",
+      "status": "structure_recognized",
+      "iou": 0.989,
+      "row_col": [
+        12,
+        5
+      ],
+      "expected_shape": [
+        12,
+        5
+      ],
+      "spans": [
+        [
+          1,
+          2,
+          "Model"
+        ]
+      ],
+      "tally": {
+        "exact": 31
+      },
+      "discrepancies": []
+    },
+    {
+      "case": "Attention v1 scan Table 3 result columns",
+      "status": "partial_structure",
+      "iou": 0.999,
+      "row_col": [
+        20,
+        13
+      ],
+      "expected_shape": [
+        20,
+        13
+      ],
+      "spans": [
+        [
+          3,
+          4,
+          "(A)"
+        ],
+        [
+          7,
+          2,
+          "(B)"
+        ],
+        [
+          9,
+          7,
+          "(C)"
+        ],
+        [
+          16,
+          4,
+          "(D)"
+        ]
+      ],
+      "tally": {
+        "exact": 57
+      },
+      "discrepancies": []
+    },
+    {
+      "case": "Attention v1 scan Table 3 settings and blanks",
+      "status": "partial_structure",
+      "iou": 0.999,
+      "row_col": [
+        20,
+        13
+      ],
+      "expected_shape": [
+        20,
+        13
+      ],
+      "spans": [
+        [
+          3,
+          4,
+          "(A)"
+        ],
+        [
+          7,
+          2,
+          "(B)"
+        ],
+        [
+          9,
+          7,
+          "(C)"
+        ],
+        [
+          16,
+          4,
+          "(D)"
+        ]
+      ],
+      "tally": {
+        "exact": 44,
+        "preserved_blank": 127
+      },
+      "discrepancies": []
+    },
+    {
+      "case": "Attention v1 scan Table 4 structure and scores",
+      "status": "structure_recognized",
+      "iou": 0.997,
+      "row_col": [
+        12,
+        3
+      ],
+      "expected_shape": [
+        12,
+        3
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 11
+      },
+      "discrepancies": []
+    },
+    {
+      "case": "Holdout 1 multi-metric training table",
+      "status": "structure_recognized",
+      "iou": 0.996,
+      "row_col": [
+        8,
+        10
+      ],
+      "expected_shape": [
+        8,
+        10
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 45
+      },
+      "discrepancies": []
+    },
+    {
+      "case": "Holdout 2 scientific and magnitude notation",
+      "status": "structure_recognized",
+      "iou": 0.998,
+      "row_col": [
+        37,
+        4
+      ],
+      "expected_shape": [
+        37,
+        4
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 107,
+        "wrong_value": 1
+      },
+      "discrepancies": [
+        {
+          "point": [
+            348.334,
+            523.467
+          ],
+          "text": "199B",
+          "actual": "[sic] 199B",
+          "verdict": "wrong_value"
+        }
+      ]
+    }
+  ]
+}

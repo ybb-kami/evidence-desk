@@ -4,7 +4,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock
 
+import pymupdf
+
 from book_exercises import locate_exercise
+from engine import parse_pdf
 from followup import _answer_one
 
 
@@ -16,6 +19,14 @@ def exercise(text):
 
 def quote(hit):
     return hit['text'][hit['start']:hit['end']]
+
+
+def native_exercise(html):
+    with pymupdf.open() as pdf:
+        page = pdf.new_page()
+        page.insert_htmlbox(pymupdf.Rect(25, 40, 570, 260), html)
+        content = pdf.tobytes()
+    return parse_pdf(content, 'Measurements.pdf'), content
 
 
 class ExerciseFieldsTest(unittest.TestCase):
@@ -30,16 +41,45 @@ class ExerciseFieldsTest(unittest.TestCase):
         self.assertIsNone(result['gap'])
 
     def test_statement_formula_and_input_output_are_independent(self):
-        doc = exercise('Exercise 9.7 Consider the mapping y = x² + 2 with input x and output y. Find the inverse of the mapping.')
-        formula = locate_exercise(doc, 'What equation is given in Exercise 9.7?')
+        doc, data = native_exercise('Exercise 9.7 Consider the mapping y = x<sup>2</sup> + 2 with input x and output y. '
+                                    'Find the inverse of the mapping.')
+        formula = locate_exercise(doc, 'What equation is given in Exercise 9.7?', load_pdf=lambda: data)
         self.assertIn('y = x² + 2', formula['answer'])
         self.assertNotIn('inverse', formula['answer'])
+        hit, = formula['hits']
+        self.assertEqual(quote(hit), 'y = x2 + 2')
         result = locate_exercise(doc, 'Which variables represent the input and output in Exercise 9.7?')
         self.assertIn('Input variable: x', result['answer'])
         self.assertIn('Output variable: y', result['answer'])
         self.assertIsNone(result['gap'])
         solved = locate_exercise(doc, 'Solve Exercise 9.7.')
         self.assertIsNone(solved['answer'])
+
+    def test_subscript_and_superscript_with_same_flat_text_do_not_collapse(self):
+        q = 'What equation is given in Exercise 1.2?'
+        for tag, value in [('sup', 'x²'), ('sub', 'x₂'), ('span', 'x2')]:
+            with self.subTest(tag=tag):
+                doc, data = native_exercise(f'Exercise 1.2 Consider the formula y = x<{tag}>2</{tag}>. Evaluate it.')
+                result = locate_exercise(doc, q, load_pdf=lambda: data)
+                self.assertIn(f'y = {value}', result['answer'])
+                self.assertEqual(quote(result['hits'][0]), 'y = x2')
+        doc, data = native_exercise('Exercise 1.2 Assume y = x<sup>2</sup> in run A. '
+                                    'In run B use y = x<sub>2</sub>. Compare the two runs.')
+        result = locate_exercise(doc, q, load_pdf=lambda: data)
+        self.assertIsNone(result['answer'])
+        self.assertEqual(result['exercise']['fields'][0]['reason'], 'ambiguous')
+
+    def test_missing_or_mismatched_original_keeps_partial_fields_and_original_quote(self):
+        doc, data = native_exercise('Exercise 1.2 Assume the base density is defined on z ∈[0, 1]. '
+                                    'Consider the formula x = z<sup>3</sup>. Check the setup.')
+        q = '习题 1.2 的基密度定义在哪个区间？题目用什么函数把 z 变成 x？'
+        for load in (None, lambda: data + b'changed'):
+            result = locate_exercise(doc, q, load_pdf=load)
+            self.assertEqual(result['exercise']['completeness'], 'partial')
+            self.assertIn('[0, 1]', result['answer'])
+            self.assertNotIn('z3', result['answer'])
+            self.assertIn('请在原页图像', result['gap'])
+            self.assertTrue(any('x = z3' in quote(hit) for hit in result['hits']))
 
     def test_figure_partial_does_not_swallow_unrelated_field(self):
         doc = exercise('Exercise 1.8 Explain why the branch values of the estimator shown in figure 5.11b are uncorrelated.')

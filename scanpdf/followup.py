@@ -84,7 +84,8 @@ def lookup(store, request, *, dense=None):
             candidates, retrieval = ranked_passages(scoped, query, engine.find_evidence([scoped], query), dense)
             index_entry.update(hits=candidates, retrieval=retrieval)
         return index_entry
-    exercise = locate_exercise(doc if chunk is None else dict(doc, chunks=[chunk]), question)
+    exercise = locate_exercise(doc if chunk is None else dict(doc, chunks=[chunk]), question,
+                               load_pdf=lambda: store.pdf(doc["id"]))
     if exercise is not None:
         return exercise
     from abbreviations import answer as abbreviation_answer
