@@ -1,0 +1,1159 @@
+{
+  "transport": "browser UI → local HTTP",
+  "gpt2_original_present": false,
+  "sources": {
+    "1706.03762v1.pdf": {
+      "file": "1706.03762v1.pdf",
+      "sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+    },
+    "1706.03762v7.pdf": {
+      "file": "1706.03762v7.pdf",
+      "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+    },
+    "N19-1423.pdf": {
+      "file": "N19-1423.pdf",
+      "sha256": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4"
+    },
+    "language_understanding_paper.pdf": {
+      "file": "language_understanding_paper.pdf",
+      "sha256": "eb81a65e0856bd38e855e1f1de6ee12e7c3eb92ae05c8270d345a475beb631d0"
+    },
+    "2005.14165v4.pdf": {
+      "file": "2005.14165v4.pdf",
+      "sha256": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83"
+    }
+  },
+  "evidence_summary": {
+    "complete": 12,
+    "partial": 2,
+    "missing": 1
+  },
+  "answer_summary": {
+    "supported": 12,
+    "missing": 3
+  },
+  "cases": [
+    {
+      "number": 1,
+      "question": "论文Attention Is All You Need的第6作者是谁，在哪个公司/机构工作？",
+      "selected": [
+        "1706.03762v1.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "第 6 位署名作者为 Aidan N. Gomez。署名机构为 University of Toronto。作者的 † 脚注说明，这项工作是在 Google Brain 完成的。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "第六位作者及署名机构",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 1,
+              "block": 7
+            }
+          ],
+          "matches": [
+            {
+              "page": 1,
+              "block": 7,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "† 说明研究完成时所在机构",
+          "paper": "1706.03762v1.pdf",
+          "required": false,
+          "expected": [
+            {
+              "page": 1,
+              "block": 15
+            }
+          ],
+          "matches": [
+            {
+              "page": 1,
+              "block": 15,
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 1,
+          "page": 1,
+          "block": 7,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 2,
+          "page": 1,
+          "block": 15,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "question": "其中Adam 优化器的超参数 β₁ 和 β₂ 分别被设置为了多少？",
+      "selected": [
+        "1706.03762v1.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "β₁ = 0.9，β₂ = 0.98",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "Adam 段落同时明确 β₁ 和 β₂",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 7,
+              "block": 5
+            }
+          ],
+          "matches": [
+            {
+              "page": 7,
+              "block": 5,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 1,
+          "page": 7,
+          "block": 5,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "question": "这篇论文中提到的 Transformer 架构，在训练 Base 模型时使用了多少个 GPU？具体是什么型号？",
+      "selected": [
+        "1706.03762v1.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "文中报告的训练硬件为 8 块 NVIDIA P100 GPU。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "Base 训练硬件与 GPU 数量、型号",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 7,
+              "block": 3
+            }
+          ],
+          "matches": [
+            {
+              "page": 7,
+              "block": 3,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 1,
+          "page": 7,
+          "block": 3,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "question": "Transformer (big) 模型在 English-to-German 任务上的 BLEU 分数是多少？当时的 State-of-the-art 模型是多少？提升了多少？",
+      "selected": [
+        "1706.03762v1.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "EN-DE 的 BLEU 列中，Transformer (big) 为 28.4；表中既有模型最高为 ConvS2S Ensemble（26.36）。28.4 − 26.36 = 2.04，提升 2.04 BLEU。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "英德翻译成绩与相对先前最佳的提升",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 7,
+              "block": 19
+            }
+          ],
+          "matches": [
+            {
+              "page": 7,
+              "block": 19,
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的英德与英法任务语境",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 1
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 1,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的先前最佳英德比较行",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 9
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 9,
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的 Transformer (big) 行",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 11
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 11,
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的 EN-DE 栏",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 3
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 3,
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 1,
+          "page": 8,
+          "block": 1,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 2,
+          "page": 8,
+          "block": 2,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 3,
+          "page": 8,
+          "block": 3,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 4,
+          "page": 8,
+          "block": 9,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 5,
+          "page": 8,
+          "block": 11,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 6,
+          "page": 7,
+          "block": 19,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "question": "请列出论文中引用的关于 “Layer Normalization” 的参考文献（References）的完整作者和年份。",
+      "selected": [
+        "1706.03762v1.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "《Layer Normalization》的作者为 Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E Hinton，年份为 2016。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "Layer Normalization 参考文献完整作者及年份",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 10,
+              "block": 7
+            }
+          ],
+          "matches": [
+            {
+              "page": 10,
+              "block": 7,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 1,
+          "page": 10,
+          "block": 7,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 1,
+      "question": "论文Attention Is All You Need的第6作者是谁，在哪个公司/机构工作？",
+      "selected": [
+        "1706.03762v7.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "第 6 位署名作者为 Aidan N. Gomez。署名机构为 University of Toronto。作者的 † 脚注说明，这项工作是在 Google Brain 完成的。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "第六位作者及署名机构",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 1,
+              "block": 8
+            }
+          ],
+          "matches": [
+            {
+              "page": 1,
+              "block": 8,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "† 说明研究完成时所在机构",
+          "paper": "1706.03762v7.pdf",
+          "required": false,
+          "expected": [
+            {
+              "page": 1,
+              "block": 13
+            }
+          ],
+          "matches": [
+            {
+              "page": 1,
+              "block": 13,
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 1,
+          "page": 1,
+          "block": 8,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 2,
+          "page": 1,
+          "block": 13,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "question": "其中Adam 优化器的超参数 β₁ 和 β₂ 分别被设置为了多少？",
+      "selected": [
+        "1706.03762v7.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "β₁ = 0.9，β₂ = 0.98",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "Adam 段落同时明确 β₁ 和 β₂",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 7,
+              "block": 11
+            }
+          ],
+          "matches": [
+            {
+              "page": 7,
+              "block": 11,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 1,
+          "page": 7,
+          "block": 11,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "question": "这篇论文中提到的 Transformer 架构，在训练 Base 模型时使用了多少个 GPU？具体是什么型号？",
+      "selected": [
+        "1706.03762v7.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "文中报告的训练硬件为 8 块 NVIDIA P100 GPU。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "Base 训练硬件与 GPU 数量、型号",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 7,
+              "block": 9
+            }
+          ],
+          "matches": [
+            {
+              "page": 7,
+              "block": 9,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 1,
+          "page": 7,
+          "block": 9,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "question": "Transformer (big) 模型在 English-to-German 任务上的 BLEU 分数是多少？当时的 State-of-the-art 模型是多少？提升了多少？",
+      "selected": [
+        "1706.03762v7.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "EN-DE 的 BLEU 列中，Transformer (big) 为 28.4；表中既有模型最高为 ConvS2S Ensemble（26.36）。28.4 − 26.36 = 2.04，提升 2.04 BLEU。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "英德翻译成绩与相对先前最佳的提升",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 16
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 16,
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的英德与英法任务语境",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 1
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 1,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的先前最佳英德比较行",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 9
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 9,
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的 Transformer (big) 行",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 11
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 11,
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "criterion": "表 2 的 EN-DE 栏",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 3
+            }
+          ],
+          "matches": [
+            {
+              "page": 8,
+              "block": 3,
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 1,
+          "page": 8,
+          "block": 1,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 2,
+          "page": 8,
+          "block": 2,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 3,
+          "page": 8,
+          "block": 3,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 4,
+          "page": 8,
+          "block": 9,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 5,
+          "page": 8,
+          "block": 11,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 6,
+          "page": 8,
+          "block": 16,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "question": "请列出论文中引用的关于 “Layer Normalization” 的参考文献（References）的完整作者和年份。",
+      "selected": [
+        "1706.03762v7.pdf"
+      ],
+      "endpoint": "/api/followup",
+      "evidence": "complete",
+      "answer": "《Layer Normalization》的作者为 Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E Hinton，年份为 2016。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "Layer Normalization 参考文献完整作者及年份",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 10,
+              "block": 13
+            }
+          ],
+          "matches": [
+            {
+              "page": 10,
+              "block": 13,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 1,
+          "page": 10,
+          "block": 13,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "question": "根据《Attention Is All You Need》和《BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding》。请对比：BERT 的架构和原始 Transformer 的 Encoder 有什么承袭关系？BERT 丢弃了原始 Transformer 的哪个部分？",
+      "selected": [
+        "1706.03762v1.pdf",
+        "N19-1423.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "complete",
+      "answer": "BERT 的主体沿用多层双向 Transformer 编码器。原架构的编码器包含自注意力和前馈网络，其独立解码器还会对编码器输出进行注意力计算。由两篇的架构描述可知，BERT 保留了编码器，省去了原来的独立解码器栈。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "原始 Transformer 的 Encoder",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 2,
+              "block": 12
+            }
+          ],
+          "matches": [
+            {
+              "page": 2,
+              "block": 12,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "原始 Transformer 独立的 Decoder",
+          "paper": "1706.03762v1.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 2,
+              "block": 13
+            }
+          ],
+          "matches": [
+            {
+              "page": 2,
+              "block": 13,
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "criterion": "BERT 明确沿用多层双向 Transformer Encoder",
+          "paper": "N19-1423.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 3,
+              "block": 26
+            }
+          ],
+          "matches": [
+            {
+              "page": 3,
+              "block": 26,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "N19-1423.pdf",
+          "rank": 1,
+          "page": 3,
+          "block": 26,
+          "verbatim": true
+        },
+        {
+          "paper": "N19-1423.pdf",
+          "rank": 2,
+          "page": 11,
+          "block": 24,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 1,
+          "page": 2,
+          "block": 12,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v1.pdf",
+          "rank": 2,
+          "page": 2,
+          "block": 13,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "question": "根据《Attention Is All You Need》和《BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding》。请对比：BERT 的架构和原始 Transformer 的 Encoder 有什么承袭关系？BERT 丢弃了原始 Transformer 的哪个部分？",
+      "selected": [
+        "1706.03762v7.pdf",
+        "N19-1423.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "complete",
+      "answer": "BERT 的主体沿用多层双向 Transformer 编码器。原架构的编码器包含自注意力和前馈网络，其独立解码器还会对编码器输出进行注意力计算。由两篇的架构描述可知，BERT 保留了编码器，省去了原来的独立解码器栈。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "原始 Transformer 的 Encoder",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 3,
+              "block": 4
+            }
+          ],
+          "matches": [
+            {
+              "page": 3,
+              "block": 4,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "原始 Transformer 独立的 Decoder",
+          "paper": "1706.03762v7.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 3,
+              "block": 5
+            }
+          ],
+          "matches": [
+            {
+              "page": 3,
+              "block": 5,
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "criterion": "BERT 明确沿用多层双向 Transformer Encoder",
+          "paper": "N19-1423.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 3,
+              "block": 26
+            }
+          ],
+          "matches": [
+            {
+              "page": 3,
+              "block": 26,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "N19-1423.pdf",
+          "rank": 1,
+          "page": 3,
+          "block": 26,
+          "verbatim": true
+        },
+        {
+          "paper": "N19-1423.pdf",
+          "rank": 2,
+          "page": 11,
+          "block": 24,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 1,
+          "page": 3,
+          "block": 4,
+          "verbatim": true
+        },
+        {
+          "paper": "1706.03762v7.pdf",
+          "rank": 2,
+          "page": 3,
+          "block": 5,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "question": "对比GPT-1、GPT-2和GPT-3的论文，说明这些模型的参数的变化。",
+      "selected": [
+        "language_understanding_paper.pdf",
+        "2005.14165v4.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "partial",
+      "answer": null,
+      "answer_status": "missing",
+      "gap": "题目涉及三代模型，当前仅选择两篇文献，缺少一份原始论文。请逐篇核对摘录中的模型、指标和实验条件。",
+      "criteria": [
+        {
+          "criterion": "GPT-1 参数总量，原文未明确找到",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [],
+          "source_available": true,
+          "matches": []
+        },
+        {
+          "criterion": "GPT-2 参数表中最大模型的参数规模",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [],
+          "source_available": false,
+          "matches": []
+        },
+        {
+          "criterion": "GPT-3 的 1750 亿参数",
+          "paper": "2005.14165v4.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 1,
+              "block": 11
+            },
+            {
+              "page": 8,
+              "block": 12
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 1,
+              "block": 11,
+              "rank": 1
+            },
+            {
+              "page": 8,
+              "block": 12,
+              "rank": 5
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 1,
+          "page": 1,
+          "block": 11,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 2,
+          "page": 4,
+          "block": 5,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 3,
+          "page": 5,
+          "block": 2,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 4,
+          "page": 6,
+          "block": 2,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 5,
+          "page": 8,
+          "block": 12,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "question": "GPT-2 相比于 GPT-1，在 Transformer 的 Layer Normalization（LN）位置上做了什么关键的调整？",
+      "selected": [
+        "language_understanding_paper.pdf",
+        "2005.14165v4.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "missing",
+      "answer": null,
+      "answer_status": "missing",
+      "gap": "请逐篇核对摘录中的模型、指标和实验条件。",
+      "criteria": [
+        {
+          "criterion": "GPT-1 归一化和子层的先后次序，原文未明确找到",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [],
+          "source_available": true,
+          "matches": []
+        },
+        {
+          "criterion": "GPT-2 预归一化与额外末端 LayerNorm 的直接原文",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [],
+          "source_available": false,
+          "matches": []
+        }
+      ],
+      "hits": [
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 1,
+          "page": 8,
+          "block": 12,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "question": "从 GPT-1 到 GPT-3，模型的最大上下文 Token 长度（Context Window）分别递增到了多少？",
+      "selected": [
+        "language_understanding_paper.pdf",
+        "2005.14165v4.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "partial",
+      "answer": null,
+      "answer_status": "missing",
+      "gap": "题目涉及三代模型，当前仅选择两篇文献，缺少一份原始论文。请逐篇核对摘录中的模型、指标和实验条件。",
+      "criteria": [
+        {
+          "criterion": "GPT-1 的 512 token 训练序列，只作为部分证据",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 5,
+              "block": 5
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 5,
+              "block": 5,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 的上下文长度原文",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [],
+          "source_available": false,
+          "matches": []
+        },
+        {
+          "criterion": "GPT-3 的 2048 token 上下文窗口",
+          "paper": "2005.14165v4.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 13
+            },
+            {
+              "page": 10,
+              "block": 3
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 8,
+              "block": 13,
+              "rank": 1
+            },
+            {
+              "page": 10,
+              "block": 3,
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 1,
+          "page": 8,
+          "block": 13,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 2,
+          "page": 10,
+          "block": 3,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 3,
+          "page": 5,
+          "block": 2,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 4,
+          "page": 6,
+          "block": 8,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 5,
+          "page": 43,
+          "block": 10,
+          "verbatim": true
+        },
+        {
+          "paper": "language_understanding_paper.pdf",
+          "rank": 1,
+          "page": 5,
+          "block": 5,
+          "verbatim": true
+        }
+      ]
+    }
+  ]
+}

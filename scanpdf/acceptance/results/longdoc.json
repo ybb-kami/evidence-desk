@@ -1,0 +1,41 @@
+{
+  "bytes": 22344992,
+  "pages": 541,
+  "sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+  "queries": [
+    {
+      "category": "chapter prose",
+      "pdf_page": 440,
+      "printed_page": "426",
+      "rank": 1,
+      "query_seconds": 0.446,
+      "server_peak_rss_kib": 171752
+    },
+    {
+      "category": "appendix prose",
+      "pdf_page": 476,
+      "printed_page": "462",
+      "rank": 1,
+      "query_seconds": 0.47,
+      "server_peak_rss_kib": 171752
+    },
+    {
+      "category": "final-page index entry only",
+      "pdf_page": 541,
+      "printed_page": "527",
+      "rank": 1,
+      "query_seconds": 0.381,
+      "server_peak_rss_kib": 171752
+    }
+  ],
+  "baseline_peak_rss_kib": 46560,
+  "import_seconds": 3.163,
+  "import_peak_rss_kib": 171752,
+  "indexed_passages": 6890,
+  "textless_pdf_pages": [
+    2,
+    4,
+    10,
+    12
+  ]
+}

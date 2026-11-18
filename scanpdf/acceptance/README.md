@@ -41,8 +41,9 @@ python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --chr
 OpenAI 仓库所链的报告在当前环境返回 HTTP 403。补测采用公开课程仓库固定提交中的报告，正文为 OpenAI 作者发布的 *Language Models are Unsupervised Multitask Learners*。报告为 582,775 字节、24 页，SHA-256 为 `d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e`，与第二个公开阅读清单仓库中的文件逐字节一致。[官方报告链接](https://d4mucfpksywv.cloudfront.net/better-language-models/language-models.pdf) · [补测所用课程镜像](https://github.com/NLPcourse/Representation/blob/6c063e520f4496834d7a944fade39bfa6d2c5cd4/Alternative%20Reading%20List/language%20models%20are%20unsupervised%20multitask%20learners.pdf) · [独立镜像提交](https://github.com/Pooret/Andrej-Kaparthy-Reading-List/tree/295574d236bb97cf4796e81e0a0d7d6a5bf9e942)
 
 ```sh
-python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --gpt2 /path/to/GPT2-course.pdf --show-hits
-python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --gpt2 /path/to/GPT2-course.pdf --chromium /usr/bin/chromium
+python scanpdf/acceptance/fetch_inputs.py /path/to/supplement --gpt2-only
+python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --gpt2 /path/to/supplement/GPT2-course.pdf --show-hits
+python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --gpt2 /path/to/supplement/GPT2-course.pdf --chromium /usr/bin/chromium
 ```
 
 这组只补测三道 GPT 原问。HTTP 与浏览器两条路径均为 **3 个证据齐全，3 个结构化答案通过**。核对了页面显示的引文、链接和原 PDF 字节哈希。
@@ -58,3 +59,5 @@ python scanpdf/acceptance/official_http.py "/workspace/shared/contest-pdf" --gpt
 额外核对了 OpenAI 发布的实现。GPT-1 的 `block()` 在残差相加后调用归一化，`n_ctx` 默认 512。GPT-2 在 attention 和 MLP 前调用归一化，最后还有 `ln_f`，`n_ctx` 默认 1024。GPT-2 官方模型卡列出的最大模型为 15 亿参数，仓库 README 同时提示早期报告部分规模数字存在误差。这些代码和模型卡证据未计入 PDF 问答命中。[GPT-1 实现](https://github.com/openai/finetune-transformer-lm/blob/a69b5c43b0452462890bca8ff92fb75dee9290cf/train.py#L140) · [GPT-2 实现](https://github.com/openai/gpt-2/blob/9b63575ef42771a015060c964af2c3da4cf7c8ab/src/model.py#L123) · [GPT-2 模型卡](https://github.com/openai/gpt-2/blob/9b63575ef42771a015060c964af2c3da4cf7c8ab/model_card.md)
 
 四篇文献的综述来源可另行用 `python scanpdf/acceptance/synthesis_browser.py /path/to/pdf` 复测。浏览器从工作台进入综述页，全选后核对所返回的 4 个摘要、1 条引文及 2 条未来工作摘录。七条均与对应 PDF 原块一致。可选模型生成仅通过协议测试。
+
+[原包浏览器答题结果](results/questions-contest.json)、[补入 GPT-2 的结果](results/questions-extra-gpt2.json)、[扫描定位](results/scan.json)、[批量入库](results/corpus.json)和[长文档检索](results/longdoc.json)保留了本次运行的机器输出。两组问答结果各自列出所选原件的 SHA-256、返回答案及证据页块。

@@ -1,0 +1,118 @@
+{
+  "source": {
+    "filename": "1706.03762v1_img.pdf",
+    "sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+    "page_count": 15
+  },
+  "render": {
+    "dpi": 240,
+    "lang": "eng",
+    "frame": "rotated_visible_page_top_left"
+  },
+  "pages_with_ocr_lines": 15,
+  "region_counts": {
+    "formula/detected_only": 4,
+    "table/partial_structure": 1,
+    "table/structure_recognized": 3
+  },
+  "anchors": [
+    {
+      "anchor": "Table 1",
+      "physical_page": 6,
+      "reference_bbox_pt": [
+        118,
+        113,
+        494,
+        187
+      ],
+      "iou": 0.991,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p6-r1",
+      "candidate_status": "structure_recognized"
+    },
+    {
+      "anchor": "Table 2",
+      "physical_page": 8,
+      "reference_bbox_pt": [
+        130,
+        94,
+        482,
+        244
+      ],
+      "iou": 0.989,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p8-r1",
+      "candidate_status": "structure_recognized"
+    },
+    {
+      "anchor": "Table 3",
+      "physical_page": 9,
+      "reference_bbox_pt": [
+        108,
+        130,
+        509,
+        372
+      ],
+      "iou": 0.999,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p9-r1",
+      "candidate_status": "partial_structure"
+    },
+    {
+      "anchor": "Table 4",
+      "physical_page": 9,
+      "reference_bbox_pt": [
+        145,
+        414,
+        467,
+        546
+      ],
+      "iou": 0.997,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p9-r2",
+      "candidate_status": "structure_recognized"
+    },
+    {
+      "anchor": "Equation 1",
+      "physical_page": 3,
+      "reference_bbox_pt": [
+        220,
+        700,
+        504,
+        725
+      ],
+      "iou": 0.97,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p3-r1",
+      "candidate_status": "detected_only"
+    },
+    {
+      "anchor": "Equation 2",
+      "physical_page": 5,
+      "reference_bbox_pt": [
+        227,
+        294,
+        504,
+        305
+      ],
+      "iou": 0.899,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p5-r1",
+      "candidate_status": "detected_only"
+    },
+    {
+      "anchor": "Equation 3",
+      "physical_page": 7,
+      "reference_bbox_pt": [
+        163,
+        280,
+        504,
+        294
+      ],
+      "iou": 0.856,
+      "localized_at_0.5": true,
+      "best_overlapping_candidate": "p7-r1",
+      "candidate_status": "detected_only"
+    }
+  ]
+}

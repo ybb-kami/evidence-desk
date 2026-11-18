@@ -36,7 +36,11 @@ def package(output):
                 if name == 'SUBMISSION-CHECKLIST.md':
                     data = data.replace('封包或推送后填写最终提交哈希 ________'.encode(), commit.encode())
                 write(name, data)
-            pointer = f'证据台 · 传智杯科研助手\n\n源代码及 Git 历史\n{REPO_URL}/tree/{commit}\n\n提交前待参赛者填写及确认的项目见 SUBMISSION-CHECKLIST.md。\n'
+            result_files = git('ls-tree', '--name-only', f'{commit}:scanpdf/acceptance/results').decode().splitlines()
+            for name in result_files:
+                if name.endswith('.json'):
+                    write('verification/' + name, git('show', f'{commit}:scanpdf/acceptance/results/{name}'))
+            pointer = f'证据台 · 可溯源科研文献助手\n青海大学 · 队伍 26CZB0001406 · 袁瑞\n\n源代码及 Git 历史\n{REPO_URL}/tree/{commit}\n\n提交前待参赛者填写及确认的项目见 SUBMISSION-CHECKLIST.md。\n'
             write('SOURCE.txt', pointer.encode())
             write('SHA256SUMS.txt', ('\n'.join(sums) + '\n').encode())
         with zipfile.ZipFile(archive) as checkout:

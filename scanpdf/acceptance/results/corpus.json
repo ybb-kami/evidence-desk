@@ -1,0 +1,867 @@
+{
+  "files_seen": 39,
+  "imported": {
+    "1706.03762v7.pdf": {
+      "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+      "pages": 15,
+      "chunks": 450,
+      "textless_pages": []
+    },
+    "1706.03762v1.pdf": {
+      "sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+      "pages": 15,
+      "chunks": 443,
+      "textless_pages": []
+    },
+    "1607.06450v1.pdf": {
+      "sha256": "c464f839fb8d59f7fde92f9b4caa67c2d1f2f196b88f93fb60502249df0aaef7",
+      "pages": 14,
+      "chunks": 458,
+      "textless_pages": []
+    },
+    "1706.03762v1_img.pdf": {
+      "sha256": "64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d",
+      "pages": 15,
+      "chunks": 0,
+      "textless_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    "1707.06347v2.pdf": {
+      "sha256": "e78feadadbdbb0b601b3c2bcc81404722cd431a489b307545f9b7bea1e8c4f5b",
+      "pages": 12,
+      "chunks": 439,
+      "textless_pages": []
+    },
+    "1910.02054v3.pdf": {
+      "sha256": "c531734c7d9ee647fda9b4f0e1a6abd6d58ad34e862bc945451b09032be3167e",
+      "pages": 24,
+      "chunks": 208,
+      "textless_pages": []
+    },
+    "1910.10683v4.pdf": {
+      "sha256": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+      "pages": 67,
+      "chunks": 779,
+      "textless_pages": []
+    },
+    "2001.08361v1.pdf": {
+      "sha256": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+      "pages": 30,
+      "chunks": 1007,
+      "textless_pages": []
+    },
+    "2002.04745v2.pdf": {
+      "sha256": "e1fa0519ed8e09a676d56c983e99ead5effd7ef840ae86a186729287469bf883",
+      "pages": 17,
+      "chunks": 748,
+      "textless_pages": []
+    },
+    "2005.14165v4.pdf": {
+      "sha256": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+      "pages": 75,
+      "chunks": 923,
+      "textless_pages": []
+    },
+    "2010.11929v2.pdf": {
+      "sha256": "8ce7b83971a14508ca711a27c875c9b6914c4f6767cf3150fb1ca6c07aa056d6",
+      "pages": 22,
+      "chunks": 560,
+      "textless_pages": []
+    },
+    "209_Emergent_Abilities_of_Larg.pdf": {
+      "sha256": "2d5d4690b43be8965a6b17ae28b370ab4b8774b2213c41111c1f584cc3c447a3",
+      "pages": 30,
+      "chunks": 799,
+      "textless_pages": []
+    },
+    "2101.03961v3.pdf": {
+      "sha256": "f340f6ace31abf7d0730ef461404279f40d3c890e9cc2daeb7068b3304afdbd6",
+      "pages": 40,
+      "chunks": 744,
+      "textless_pages": []
+    },
+    "2103.00020v1.pdf": {
+      "sha256": "6478b6e571a7d6fcd846d8ef77bfd60c285f1986abb8f475eedc43de403074f5",
+      "pages": 48,
+      "chunks": 1962,
+      "textless_pages": []
+    },
+    "2106.09685v2.pdf": {
+      "sha256": "e9a0d3128767db616085dc0f4e6e455e672e89af823e8ed1282793682787395a",
+      "pages": 26,
+      "chunks": 655,
+      "textless_pages": []
+    },
+    "2107.03374v2.pdf": {
+      "sha256": "ebae72ea0e8a5eb2ecbccdb985aec6cc1254a7c4d29e6d4de7866db1e66c4855",
+      "pages": 35,
+      "chunks": 700,
+      "textless_pages": []
+    },
+    "2201.11903v6.pdf": {
+      "sha256": "7d9f878c23b460e4566aa4ec9201b1abfb3b8faefb2b1356e411cb90fef72a12",
+      "pages": 43,
+      "chunks": 839,
+      "textless_pages": []
+    },
+    "2203.02155v1.pdf": {
+      "sha256": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+      "pages": 68,
+      "chunks": 1263,
+      "textless_pages": []
+    },
+    "2205.14135v2.pdf": {
+      "sha256": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+      "pages": 34,
+      "chunks": 599,
+      "textless_pages": []
+    },
+    "2206.07682v2.pdf": {
+      "sha256": "f457f08102eb381f2300e1653bf4c82a9aa5dce0eb8dba8fe744ccc2500c3755",
+      "pages": 30,
+      "chunks": 808,
+      "textless_pages": []
+    },
+    "2210.02414v2.pdf": {
+      "sha256": "82d5b9634b3d2601b3eb494dcc9e2189132f5d6e479233b91c7ce411dbdfcfa4",
+      "pages": 56,
+      "chunks": 1078,
+      "textless_pages": []
+    },
+    "2211.05100v4.pdf": {
+      "sha256": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+      "pages": 73,
+      "chunks": 1419,
+      "textless_pages": []
+    },
+    "2212.04356v1.pdf": {
+      "sha256": "6337bde031b2f237547a977b022f831169a7e05b4d9047f29501166d83594566",
+      "pages": 28,
+      "chunks": 1144,
+      "textless_pages": []
+    },
+    "2303.08774v6.pdf": {
+      "sha256": "c33a66dadca2388d7b172d6293b00dc32b71110c6f38fafe0d41112e61be7774",
+      "pages": 100,
+      "chunks": 1544,
+      "textless_pages": []
+    },
+    "2304.08485v2.pdf": {
+      "sha256": "dc8bace378a282ea78caa9b5959306202fbfa3b8cedaf8a66541a9af18f4d3bf",
+      "pages": 25,
+      "chunks": 324,
+      "textless_pages": []
+    },
+    "2305.13048v2.pdf": {
+      "sha256": "57d18c40bdbb4bc1ab69c078a304f97e31657b4f543c408d8a5520e672a3fab0",
+      "pages": 30,
+      "chunks": 805,
+      "textless_pages": []
+    },
+    "2305.14314v1.pdf": {
+      "sha256": "33a4e757c19d6ea8d3cca8958fce8fe405e290272e135c99ee66065c775d5bd1",
+      "pages": 26,
+      "chunks": 417,
+      "textless_pages": []
+    },
+    "2305.18290v3.pdf": {
+      "sha256": "92cb3a2b71362acda98a789b03d88688fd33cf5fcf13f81d2b1de30ee7d3b67a",
+      "pages": 27,
+      "chunks": 549,
+      "textless_pages": []
+    },
+    "2307.09288v2.pdf": {
+      "sha256": "1df284ce95f783002074bfe8f21d47c646b396ceb1736ea3ec0ea212fc070d91",
+      "pages": 77,
+      "chunks": 1443,
+      "textless_pages": []
+    },
+    "2310.06825v1.pdf": {
+      "sha256": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+      "pages": 9,
+      "chunks": 120,
+      "textless_pages": []
+    },
+    "2406.14491v2.pdf": {
+      "sha256": "8bc106e62eeb6f6f15328e8af107df8eb66ce7ddc3ba694a2ef8ea743f829f0f",
+      "pages": 22,
+      "chunks": 506,
+      "textless_pages": []
+    },
+    "2407.21783v3.pdf": {
+      "sha256": "481f1599468f95a07d05e97fafe55bbe786dc1624c6f881bcb4c7d14c933d083",
+      "pages": 92,
+      "chunks": 1574,
+      "textless_pages": []
+    },
+    "2412.15115v2.pdf": {
+      "sha256": "73b3292bead3ac8896679d3ac8be87439756faf356566cbda3ccc8a3dc7d79d3",
+      "pages": 26,
+      "chunks": 435,
+      "textless_pages": []
+    },
+    "2412.19437v1.pdf": {
+      "sha256": "a67e18a4ca6e2c81abc030239a3ee53705f656b79efab8ce1d6b5ac25630c2a5",
+      "pages": 53,
+      "chunks": 1008,
+      "textless_pages": []
+    },
+    "2501.12948v2.pdf": {
+      "sha256": "b191b0a365a64b4ab2791d117069ed17a2933d03554a662ced58b37df52018f4",
+      "pages": 86,
+      "chunks": 1784,
+      "textless_pages": []
+    },
+    "333078981_693988129081760_4712707815225756708_n.pdf": {
+      "sha256": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+      "pages": 27,
+      "chunks": 420,
+      "textless_pages": []
+    },
+    "N19-1423.pdf": {
+      "sha256": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+      "pages": 16,
+      "chunks": 347,
+      "textless_pages": []
+    },
+    "UnderstandingDeepLearning_02_09_26_C.pdf": {
+      "sha256": "f8237d393163900fa8e43210e680a3f987b45ccac7750b372e156fae3df0bf32",
+      "pages": 541,
+      "chunks": 6890,
+      "textless_pages": [
+        2,
+        4,
+        10,
+        12
+      ]
+    },
+    "language_understanding_paper.pdf": {
+      "sha256": "eb81a65e0856bd38e855e1f1de6ee12e7c3eb92ae05c8270d345a475beb631d0",
+      "pages": 12,
+      "chunks": 177,
+      "textless_pages": []
+    }
+  },
+  "import_failures": {},
+  "version_check": {
+    "score": 0.72,
+    "v7_retained_and_v1_restored": true
+  },
+  "ocr": {
+    "pages": [
+      {
+        "physical_page": 1,
+        "regions": 0
+      },
+      {
+        "physical_page": 2,
+        "regions": 0
+      },
+      {
+        "physical_page": 3,
+        "regions": 1
+      },
+      {
+        "physical_page": 4,
+        "regions": 0
+      },
+      {
+        "physical_page": 5,
+        "regions": 1
+      },
+      {
+        "physical_page": 6,
+        "regions": 1
+      },
+      {
+        "physical_page": 7,
+        "regions": 2
+      },
+      {
+        "physical_page": 8,
+        "regions": 1
+      },
+      {
+        "physical_page": 9,
+        "regions": 2
+      },
+      {
+        "physical_page": 10,
+        "regions": 0
+      },
+      {
+        "physical_page": 11,
+        "regions": 0
+      },
+      {
+        "physical_page": 12,
+        "regions": 0
+      },
+      {
+        "physical_page": 13,
+        "regions": 0
+      },
+      {
+        "physical_page": 14,
+        "regions": 0
+      },
+      {
+        "physical_page": 15,
+        "regions": 0
+      }
+    ],
+    "indexed_blocks": 282,
+    "gpu_evidence_page": 7
+  },
+  "graph": {
+    "nodes": 38,
+    "edges": 75,
+    "unresolved_references": 1458,
+    "missing_bibliographies": 1,
+    "rank_sum": 1.0,
+    "anchors_checked": [
+      {
+        "from": "209_Emergent_Abilities_of_Larg.pdf",
+        "to": "f340f6ace31abf7d0730ef461404279f40d3c890e9cc2daeb7068b3304afdbd6",
+        "page": 13,
+        "block": 11,
+        "method": "arxiv"
+      },
+      {
+        "from": "209_Emergent_Abilities_of_Larg.pdf",
+        "to": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+        "page": 14,
+        "block": 14,
+        "method": "arxiv"
+      },
+      {
+        "from": "209_Emergent_Abilities_of_Larg.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 16,
+        "block": 2,
+        "method": "arxiv"
+      },
+      {
+        "from": "209_Emergent_Abilities_of_Larg.pdf",
+        "to": "7d9f878c23b460e4566aa4ec9201b1abfb3b8faefb2b1356e411cb90fef72a12",
+        "page": 17,
+        "block": 14,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "e9a0d3128767db616085dc0f4e6e455e672e89af823e8ed1282793682787395a",
+        "page": 18,
+        "block": 11,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 19,
+        "block": 7,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 19,
+        "block": 13,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+        "page": 19,
+        "block": 16,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+        "page": 20,
+        "block": 3,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "7d9f878c23b460e4566aa4ec9201b1abfb3b8faefb2b1356e411cb90fef72a12",
+        "page": 20,
+        "block": 9,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.14314v1.pdf",
+        "to": "82d5b9634b3d2601b3eb494dcc9e2189132f5d6e479233b91c7ce411dbdfcfa4",
+        "page": 20,
+        "block": 17,
+        "method": "arxiv"
+      },
+      {
+        "from": "2407.21783v3.pdf",
+        "to": "c531734c7d9ee647fda9b4f0e1a6abd6d58ad34e862bc945451b09032be3167e",
+        "page": 86,
+        "block": 6,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+        "page": 10,
+        "block": 5,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+        "page": 10,
+        "block": 17,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+        "page": 11,
+        "block": 16,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+        "page": 12,
+        "block": 19,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+        "page": 13,
+        "block": 4,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "page": 13,
+        "block": 5,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.13048v2.pdf",
+        "to": "7d9f878c23b460e4566aa4ec9201b1abfb3b8faefb2b1356e411cb90fef72a12",
+        "page": 13,
+        "block": 11,
+        "method": "arxiv"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+        "page": 13,
+        "block": 6,
+        "method": "arxiv"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+        "page": 13,
+        "block": 7,
+        "method": "exact_title"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+        "page": 14,
+        "block": 1,
+        "method": "arxiv"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 14,
+        "block": 18,
+        "method": "exact_title"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "eb81a65e0856bd38e855e1f1de6ee12e7c3eb92ae05c8270d345a475beb631d0",
+        "page": 14,
+        "block": 20,
+        "method": "exact_title"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 15,
+        "block": 2,
+        "method": "exact_title"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+        "page": 15,
+        "block": 7,
+        "method": "arxiv"
+      },
+      {
+        "from": "333078981_693988129081760_4712707815225756708_n.pdf",
+        "to": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "page": 15,
+        "block": 18,
+        "method": "exact_title"
+      },
+      {
+        "from": "2201.11903v6.pdf",
+        "to": "ebae72ea0e8a5eb2ecbccdb985aec6cc1254a7c4d29e6d4de7866db1e66c4855",
+        "page": 10,
+        "block": 15,
+        "method": "arxiv"
+      },
+      {
+        "from": "2201.11903v6.pdf",
+        "to": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+        "page": 11,
+        "block": 3,
+        "method": "exact_title"
+      },
+      {
+        "from": "2201.11903v6.pdf",
+        "to": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+        "page": 11,
+        "block": 13,
+        "method": "arxiv"
+      },
+      {
+        "from": "2201.11903v6.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 12,
+        "block": 12,
+        "method": "arxiv"
+      },
+      {
+        "from": "2201.11903v6.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 12,
+        "block": 18,
+        "method": "exact_title"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+        "page": 9,
+        "block": 17,
+        "method": "exact_title"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "dfbac4e7035344b305c947481f2e7e8a02f7a24a563917eb6e47f6591d14c5ae",
+        "page": 10,
+        "block": 19,
+        "method": "arxiv"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "eb81a65e0856bd38e855e1f1de6ee12e7c3eb92ae05c8270d345a475beb631d0",
+        "page": 12,
+        "block": 19,
+        "method": "exact_title"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 13,
+        "block": 1,
+        "method": "exact_title"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "1df284ce95f783002074bfe8f21d47c646b396ceb1736ea3ec0ea212fc070d91",
+        "page": 13,
+        "block": 17,
+        "method": "arxiv"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "7d9f878c23b460e4566aa4ec9201b1abfb3b8faefb2b1356e411cb90fef72a12",
+        "page": 14,
+        "block": 2,
+        "method": "exact_title"
+      },
+      {
+        "from": "2406.14491v2.pdf",
+        "to": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+        "page": 14,
+        "block": 5,
+        "method": "arxiv"
+      },
+      {
+        "from": "2305.18290v3.pdf",
+        "to": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+        "page": 11,
+        "block": 8,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.18290v3.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 13,
+        "block": 3,
+        "method": "exact_title"
+      },
+      {
+        "from": "2305.18290v3.pdf",
+        "to": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+        "page": 14,
+        "block": 4,
+        "method": "exact_title"
+      },
+      {
+        "from": "N19-1423.pdf",
+        "to": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "page": 11,
+        "block": 24,
+        "method": "exact_title"
+      },
+      {
+        "from": "2001.08361v1.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 29,
+        "block": 17,
+        "method": "arxiv"
+      },
+      {
+        "from": "1706.03762v7.pdf",
+        "to": "c464f839fb8d59f7fde92f9b4caa67c2d1f2f196b88f93fb60502249df0aaef7",
+        "page": 10,
+        "block": 13,
+        "method": "arxiv"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+        "page": 18,
+        "block": 5,
+        "method": "exact_title"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+        "page": 18,
+        "block": 11,
+        "method": "exact_title"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 18,
+        "block": 12,
+        "method": "arxiv"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "c464f839fb8d59f7fde92f9b4caa67c2d1f2f196b88f93fb60502249df0aaef7",
+        "page": 18,
+        "block": 14,
+        "method": "arxiv"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "7d9f878c23b460e4566aa4ec9201b1abfb3b8faefb2b1356e411cb90fef72a12",
+        "page": 18,
+        "block": 15,
+        "method": "exact_title"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+        "page": 19,
+        "block": 2,
+        "method": "arxiv"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "8033c3e611aaa120cb7294085ebd6ee297ffae9ec02393b1c4f1593d7e6ee065",
+        "page": 19,
+        "block": 14,
+        "method": "arxiv"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+        "page": 19,
+        "block": 16,
+        "method": "exact_title"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+        "page": 20,
+        "block": 2,
+        "method": "arxiv"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "eb81a65e0856bd38e855e1f1de6ee12e7c3eb92ae05c8270d345a475beb631d0",
+        "page": 20,
+        "block": 9,
+        "method": "exact_title"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "page": 20,
+        "block": 10,
+        "method": "exact_title"
+      },
+      {
+        "from": "2303.08774v6.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 22,
+        "block": 2,
+        "method": "arxiv"
+      },
+      {
+        "from": "1910.02054v3.pdf",
+        "to": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+        "page": 20,
+        "block": 4,
+        "method": "exact_title"
+      },
+      {
+        "from": "2205.14135v2.pdf",
+        "to": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+        "page": 11,
+        "block": 7,
+        "method": "exact_title"
+      },
+      {
+        "from": "2205.14135v2.pdf",
+        "to": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+        "page": 12,
+        "block": 8,
+        "method": "exact_title"
+      },
+      {
+        "from": "2205.14135v2.pdf",
+        "to": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "page": 15,
+        "block": 13,
+        "method": "exact_title"
+      },
+      {
+        "from": "2304.08485v2.pdf",
+        "to": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83",
+        "page": 10,
+        "block": 9,
+        "method": "exact_title"
+      },
+      {
+        "from": "2304.08485v2.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 12,
+        "block": 5,
+        "method": "exact_title"
+      },
+      {
+        "from": "2304.08485v2.pdf",
+        "to": "6478b6e571a7d6fcd846d8ef77bfd60c285f1986abb8f475eedc43de403074f5",
+        "page": 12,
+        "block": 8,
+        "method": "arxiv"
+      },
+      {
+        "from": "2304.08485v2.pdf",
+        "to": "ad07e47cedf437a4156419ce5d3076e08a3e59bbfd6dac7cc53df1009cdcbe7f",
+        "page": 12,
+        "block": 9,
+        "method": "exact_title"
+      },
+      {
+        "from": "2304.08485v2.pdf",
+        "to": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+        "page": 13,
+        "block": 1,
+        "method": "exact_title"
+      },
+      {
+        "from": "2310.06825v1.pdf",
+        "to": "ebae72ea0e8a5eb2ecbccdb985aec6cc1254a7c4d29e6d4de7866db1e66c4855",
+        "page": 8,
+        "block": 6,
+        "method": "arxiv"
+      },
+      {
+        "from": "2310.06825v1.pdf",
+        "to": "ca7f9fda10b90fc05dd291a3accc85e9c1a4a860b99b31928dab03ed3fcb14e4",
+        "page": 8,
+        "block": 12,
+        "method": "exact_title"
+      },
+      {
+        "from": "2310.06825v1.pdf",
+        "to": "775ff8d09b6e5b06314135d87c194ce3535a821eeaee4be9051b331162c5fefd",
+        "page": 9,
+        "block": 1,
+        "method": "exact_title"
+      },
+      {
+        "from": "2310.06825v1.pdf",
+        "to": "1df284ce95f783002074bfe8f21d47c646b396ceb1736ea3ec0ea212fc070d91",
+        "page": 9,
+        "block": 1,
+        "method": "arxiv"
+      },
+      {
+        "from": "2310.06825v1.pdf",
+        "to": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+        "page": 9,
+        "block": 1,
+        "method": "exact_title"
+      },
+      {
+        "from": "language_understanding_paper.pdf",
+        "to": "c464f839fb8d59f7fde92f9b4caa67c2d1f2f196b88f93fb60502249df0aaef7",
+        "page": 9,
+        "block": 1,
+        "method": "arxiv"
+      },
+      {
+        "from": "2206.07682v2.pdf",
+        "to": "f340f6ace31abf7d0730ef461404279f40d3c890e9cc2daeb7068b3304afdbd6",
+        "page": 13,
+        "block": 13,
+        "method": "arxiv"
+      },
+      {
+        "from": "2206.07682v2.pdf",
+        "to": "a41bd7877fd1a6bcbba096b2619618bd2f90e02488f2365644903eb2f7c6a494",
+        "page": 15,
+        "block": 2,
+        "method": "arxiv"
+      },
+      {
+        "from": "2206.07682v2.pdf",
+        "to": "c1984bb50a5b90fddb895fdc3a0f72e5bc977148c9f63ef6040cbe7a3e1f0d98",
+        "page": 16,
+        "block": 3,
+        "method": "arxiv"
+      }
+    ]
+  },
+  "review_edge_excerpts": 12,
+  "future_mentions": 12
+}

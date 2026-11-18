@@ -1,0 +1,480 @@
+{
+  "transport": "browser UI → local HTTP",
+  "gpt2_original_present": true,
+  "sources": {
+    "1706.03762v1.pdf": {
+      "file": "1706.03762v1.pdf",
+      "sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476"
+    },
+    "1706.03762v7.pdf": {
+      "file": "1706.03762v7.pdf",
+      "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+    },
+    "N19-1423.pdf": {
+      "file": "N19-1423.pdf",
+      "sha256": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4"
+    },
+    "language_understanding_paper.pdf": {
+      "file": "language_understanding_paper.pdf",
+      "sha256": "eb81a65e0856bd38e855e1f1de6ee12e7c3eb92ae05c8270d345a475beb631d0"
+    },
+    "2005.14165v4.pdf": {
+      "file": "2005.14165v4.pdf",
+      "sha256": "97fd272f1fdfc18677462d0292f5fbf26ca86b4d1b485c2dba03269b643a0e83"
+    },
+    "language-models.pdf": {
+      "file": "GPT2-course.pdf",
+      "sha256": "d9d852e2894556e73f53cb22b7c605a9643d6f0b19bf604b429ed6192fa24f4e"
+    }
+  },
+  "evidence_summary": {
+    "complete": 3
+  },
+  "answer_summary": {
+    "supported": 3
+  },
+  "cases": [
+    {
+      "number": 7,
+      "question": "对比GPT-1、GPT-2和GPT-3的论文，说明这些模型的参数的变化。",
+      "selected": [
+        "language_understanding_paper.pdf",
+        "language-models.pdf",
+        "2005.14165v4.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "complete",
+      "answer": "GPT（第一代）约 117M，依据后继论文表中与其等价的最小模型；GPT-2 最大模型 1542M；GPT-3 为 175 billion。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "GPT-1 的论文架构参数与 GPT-2 报告所称同等级小模型相符",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 5,
+              "block": 5
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 5,
+              "block": 5,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 表 2 的参数列标题",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 9
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 9,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 表 2 原报四组参数规模，包括最大模型 1542M",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 10
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 10,
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 表 2 的标题与四组规模语境",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 11
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 11,
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 报告将最小模型与原 GPT 对应、最大模型称为 GPT-2",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 15
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 15,
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-3 的 1750 亿参数",
+          "paper": "2005.14165v4.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 1,
+              "block": 11
+            },
+            {
+              "page": 8,
+              "block": 12
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 1,
+              "block": 11,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "language-models.pdf",
+          "rank": 1,
+          "page": 4,
+          "block": 9,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 2,
+          "page": 4,
+          "block": 10,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 3,
+          "page": 4,
+          "block": 11,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 4,
+          "page": 4,
+          "block": 15,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 5,
+          "page": 4,
+          "block": 8,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 6,
+          "page": 12,
+          "block": 5,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 1,
+          "page": 1,
+          "block": 11,
+          "verbatim": true
+        },
+        {
+          "paper": "language_understanding_paper.pdf",
+          "rank": 1,
+          "page": 5,
+          "block": 5,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "question": "GPT-2 相比于 GPT-1，在 Transformer 的 Layer Normalization（LN）位置上做了什么关键的调整？",
+      "selected": [
+        "language_understanding_paper.pdf",
+        "language-models.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "complete",
+      "answer": "GPT-2 将 Layer Normalization 移到每个子块输入端（Pre-LN），并在最后一个自注意力块后增加归一化。前代 GPT 的结构顺序可在架构图中核对。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "GPT-1 图 1 左图显示残差相加后 Layer Norm",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 1
+            }
+          ],
+          "source_available": true,
+          "visual_gold_checked_manually": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 1,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-1 的模型说明只明确广泛使用归一化",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 5,
+              "block": 5
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 5,
+              "block": 5,
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 将架构变更与原始 OpenAI GPT 建立来源联系",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 8
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 8,
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 把归一化移到各子块输入并增加末端归一化",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 12
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 12,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "language-models.pdf",
+          "rank": 1,
+          "page": 4,
+          "block": 12,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 2,
+          "page": 4,
+          "block": 8,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 3,
+          "page": 12,
+          "block": 5,
+          "verbatim": true
+        },
+        {
+          "paper": "language_understanding_paper.pdf",
+          "rank": 1,
+          "page": 4,
+          "block": 1,
+          "verbatim": true
+        },
+        {
+          "paper": "language_understanding_paper.pdf",
+          "rank": 2,
+          "page": 5,
+          "block": 5,
+          "verbatim": true
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "question": "从 GPT-1 到 GPT-3，模型的最大上下文 Token 长度（Context Window）分别递增到了多少？",
+      "selected": [
+        "language_understanding_paper.pdf",
+        "language-models.pdf",
+        "2005.14165v4.pdf"
+      ],
+      "endpoint": "/api/architecture",
+      "evidence": "complete",
+      "answer": "上下文窗口依次为 GPT（第一代）512、GPT-2 1024、GPT-3 2048 tokens。前代训练序列长度由其原文给出，GPT-2 另明确写出窗口从 512 扩至 1024。",
+      "answer_status": "supported",
+      "gap": null,
+      "criteria": [
+        {
+          "criterion": "GPT-1 的 512 token 训练序列，只作为部分证据",
+          "paper": "language_understanding_paper.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 5,
+              "block": 5
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 5,
+              "block": 5,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-2 明确上下文长度由 512 增加至 1024 token",
+          "paper": "language-models.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 4,
+              "block": 13
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 4,
+              "block": 13,
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "criterion": "GPT-3 的 2048 token 上下文窗口",
+          "paper": "2005.14165v4.pdf",
+          "required": true,
+          "expected": [
+            {
+              "page": 8,
+              "block": 13
+            },
+            {
+              "page": 10,
+              "block": 3
+            }
+          ],
+          "source_available": true,
+          "matches": [
+            {
+              "page": 8,
+              "block": 13,
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "hits": [
+        {
+          "paper": "language-models.pdf",
+          "rank": 1,
+          "page": 4,
+          "block": 13,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 2,
+          "page": 4,
+          "block": 8,
+          "verbatim": true
+        },
+        {
+          "paper": "language-models.pdf",
+          "rank": 3,
+          "page": 12,
+          "block": 5,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 1,
+          "page": 8,
+          "block": 13,
+          "verbatim": true
+        },
+        {
+          "paper": "2005.14165v4.pdf",
+          "rank": 2,
+          "page": 1,
+          "block": 11,
+          "verbatim": true
+        },
+        {
+          "paper": "language_understanding_paper.pdf",
+          "rank": 1,
+          "page": 5,
+          "block": 5,
+          "verbatim": true
+        }
+      ]
+    }
+  ]
+}
