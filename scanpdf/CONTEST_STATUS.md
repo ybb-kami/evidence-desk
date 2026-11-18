@@ -17,7 +17,13 @@
 
 [提交清单](delivery/SUBMISSION-CHECKLIST.md) · [推荐视频](delivery/evidence-desk-kokoro-mandarin-1080p.mp4) · [配音来源](delivery/VOICE-NOTES.md) · [技术说明](delivery/technical-report-zh.pdf)。视频记录开发期间的一次实际操作。后续成果的可复现实测见下表及技术稿。待参赛者核对官网截止时间并自行提交。
 
-### 逐模块核对
+### 新分支已复核的改进
+
+- 扫描表 3 保留 `partial_structure`。对冻结读数逐格核对，右侧 57/57、实验设置 44/44、空白 127/127；数学表头仍不完整。对另外两篇 PDF 制成的无文字层页，分别 45/45、107/108。第 9 页已有 41 处裁切引文升级后仍回到原框。[原样本和跨文档验收](SAMPLE_REVIEW.md)
+- 复杂公式默认路径提供检测框。启用独立转写器可取 LaTeX 候选，公式 (3) 的若干字符有字形证据支持的修订；第 4 页投影式的两次原始识别仍不一致，须人工核对。[候选与逐字差异](FORMULA_REVIEW.md)
+- CSV 支持按自变量和组别绘图、数据行追溯、TikZ 和 Mermaid 下载。Chromium 真读 32 条 mtcars 观测；XeLaTeX 编译矢量 PDF；固定 Mermaid 引擎成功渲染 36 节点 / 45 边。等距 Nile 年度序列另有 100 点真数值折线验证。[图表复测](acceptance/CSV-TRENDS.md)
+
+### 历史扫描分支的六模块核对
 
 | 题面模块 | 实际运行与验证 | 边界 |
 |---|---|---|

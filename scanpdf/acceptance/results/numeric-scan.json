@@ -1,0 +1,366 @@
+{
+  "baseline_commit": "5203688cf7d8b1f3340b63eeada92167855455bc",
+  "gold_sha256": "183749ec9bd76645ce70de19feaad15b25fabd3460e5584cd2a50219fee34127",
+  "dpi": 240,
+  "lang": "eng",
+  "tesseract": "5.5.0",
+  "pymupdf": "1.26.6",
+  "notes": [
+    "Held-out paper pages were rasterized at 220 DPI and input as text-free PDFs.",
+    "The first held-out reference shape was corrected by inspecting the published layout before parser edits. It prints two separate size labels in the first column, so it is 8 by 10.",
+    "The only remaining strict-value mismatch on the second held-out page is the source annotation [sic] before the correctly recognized value 199B."
+  ],
+  "before": [
+    {
+      "case": "Attention v1 scan Table 1 structure",
+      "status": "structure_recognized",
+      "iou": 0.991,
+      "row_col": [
+        5,
+        4
+      ],
+      "expected_shape": [
+        5,
+        4
+      ],
+      "spans": [],
+      "tally": {}
+    },
+    {
+      "case": "Attention v1 scan Table 2 grouped scores & scientific",
+      "status": "structure_recognized",
+      "iou": 0.989,
+      "row_col": [
+        12,
+        5
+      ],
+      "expected_shape": [
+        12,
+        5
+      ],
+      "spans": [
+        [
+          1,
+          2,
+          "Model"
+        ]
+      ],
+      "tally": {
+        "exact": 16,
+        "wrong_value": 15
+      }
+    },
+    {
+      "case": "Attention v1 scan Table 3 result columns",
+      "status": "partial_structure",
+      "iou": 0.999,
+      "row_col": [
+        20,
+        13
+      ],
+      "expected_shape": [
+        20,
+        13
+      ],
+      "spans": [
+        [
+          3,
+          4,
+          "(A)"
+        ],
+        [
+          7,
+          2,
+          "(B)"
+        ],
+        [
+          9,
+          7,
+          "(C)"
+        ],
+        [
+          16,
+          4,
+          "(D)"
+        ]
+      ],
+      "tally": {
+        "exact": 43,
+        "wrong_value": 14
+      }
+    },
+    {
+      "case": "Attention v1 scan Table 3 settings and blanks",
+      "status": "partial_structure",
+      "iou": 0.999,
+      "row_col": [
+        20,
+        13
+      ],
+      "expected_shape": [
+        20,
+        13
+      ],
+      "spans": [
+        [
+          3,
+          4,
+          "(A)"
+        ],
+        [
+          7,
+          2,
+          "(B)"
+        ],
+        [
+          9,
+          7,
+          "(C)"
+        ],
+        [
+          16,
+          4,
+          "(D)"
+        ]
+      ],
+      "tally": {
+        "exact": 43,
+        "wrong_value": 1,
+        "preserved_blank": 127
+      }
+    },
+    {
+      "case": "Attention v1 scan Table 4 structure and scores",
+      "status": "structure_recognized",
+      "iou": 0.997,
+      "row_col": [
+        12,
+        3
+      ],
+      "expected_shape": [
+        12,
+        3
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 11
+      }
+    },
+    {
+      "case": "Holdout 1 multi-metric training table",
+      "status": "structure_recognized",
+      "iou": 0.996,
+      "row_col": [
+        8,
+        10
+      ],
+      "expected_shape": [
+        8,
+        10
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 45
+      }
+    },
+    {
+      "case": "Holdout 2 scientific and magnitude notation",
+      "status": "structure_recognized",
+      "iou": 0.998,
+      "row_col": [
+        37,
+        3
+      ],
+      "expected_shape": [
+        37,
+        4
+      ],
+      "spans": [],
+      "tally": {
+        "wrong_value": 7,
+        "exact": 101
+      }
+    }
+  ],
+  "after": [
+    {
+      "case": "Attention v1 scan Table 1 structure",
+      "status": "structure_recognized",
+      "iou": 0.991,
+      "row_col": [
+        5,
+        4
+      ],
+      "expected_shape": [
+        5,
+        4
+      ],
+      "spans": [],
+      "tally": {}
+    },
+    {
+      "case": "Attention v1 scan Table 2 grouped scores & scientific",
+      "status": "structure_recognized",
+      "iou": 0.989,
+      "row_col": [
+        12,
+        5
+      ],
+      "expected_shape": [
+        12,
+        5
+      ],
+      "spans": [
+        [
+          1,
+          2,
+          "Model"
+        ]
+      ],
+      "tally": {
+        "exact": 31
+      }
+    },
+    {
+      "case": "Attention v1 scan Table 3 result columns",
+      "status": "partial_structure",
+      "iou": 0.999,
+      "row_col": [
+        20,
+        13
+      ],
+      "expected_shape": [
+        20,
+        13
+      ],
+      "spans": [
+        [
+          3,
+          4,
+          "(A)"
+        ],
+        [
+          7,
+          2,
+          "(B)"
+        ],
+        [
+          9,
+          7,
+          "(C)"
+        ],
+        [
+          16,
+          4,
+          "(D)"
+        ]
+      ],
+      "tally": {
+        "exact": 57
+      }
+    },
+    {
+      "case": "Attention v1 scan Table 3 settings and blanks",
+      "status": "partial_structure",
+      "iou": 0.999,
+      "row_col": [
+        20,
+        13
+      ],
+      "expected_shape": [
+        20,
+        13
+      ],
+      "spans": [
+        [
+          3,
+          4,
+          "(A)"
+        ],
+        [
+          7,
+          2,
+          "(B)"
+        ],
+        [
+          9,
+          7,
+          "(C)"
+        ],
+        [
+          16,
+          4,
+          "(D)"
+        ]
+      ],
+      "tally": {
+        "exact": 44,
+        "preserved_blank": 127
+      }
+    },
+    {
+      "case": "Attention v1 scan Table 4 structure and scores",
+      "status": "structure_recognized",
+      "iou": 0.997,
+      "row_col": [
+        12,
+        3
+      ],
+      "expected_shape": [
+        12,
+        3
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 11
+      }
+    },
+    {
+      "case": "Holdout 1 multi-metric training table",
+      "status": "structure_recognized",
+      "iou": 0.996,
+      "row_col": [
+        8,
+        10
+      ],
+      "expected_shape": [
+        8,
+        10
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 45
+      }
+    },
+    {
+      "case": "Holdout 2 scientific and magnitude notation",
+      "status": "structure_recognized",
+      "iou": 0.998,
+      "row_col": [
+        37,
+        4
+      ],
+      "expected_shape": [
+        37,
+        4
+      ],
+      "spans": [],
+      "tally": {
+        "exact": 107,
+        "wrong_value": 1
+      }
+    }
+  ],
+  "workbench_refresh": {
+    "from_revision": 1,
+    "to_revision": 2,
+    "physical_pages": [
+      8,
+      9
+    ],
+    "page_9_original_crop_anchors_preserved": 41,
+    "restart_and_repeat_verified": true,
+    "original_index_and_ocr_lines_preserved": true,
+    "table_2_historical_bleu_change": "2.04"
+  }
+}

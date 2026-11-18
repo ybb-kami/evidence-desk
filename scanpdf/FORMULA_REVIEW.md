@@ -4,6 +4,8 @@
 
 `source_scale` 和 `upsampled_2x` 分别对原尺度和放大两倍的图像运行模型。`variants_agree` 表示两次 LaTeX 文本完全相同。`calibrated_probability` 始终为 null，两次一致也可能同时误读。每条模型输出均为 `unverified_candidate`，请对照原图检查字符、上下标和结构后引用。
 
+两种尺度的原始 LaTeX 都会保留。若两路只对等号左侧的多字母变量名有一处字形分歧，且扫描 OCR 在等号左侧唯一支持其中一项，可以给出校对候选。对于两路都写成 `_{-}` 的位置，只有同一公式框内的文字 OCR 也读到对应的含下划线词，且每次出现都能在词图中找到低位细横笔画，才建议把它写作 `\_`。缺少对应证据的差异继续并排显示。核对页展示完整扫描裁图、每个有证据的词图以及笔画框。候选和差异仍使用 `unverified_candidate` 状态。
+
 ## 在工作台核对
 
 识别扫描页后，点击左侧的公式区域，再点击页首的「公式核对」。核对页会继承文献、物理页和选中的公式区域。也可直接在核对页切换文献、物理页或区域。页面始终能查看所选区域的原图与页码。配置了本机模型时，点击「识别这一条公式」可对该区域运行 CPU 模型，结果显示为「未核验候选」。
@@ -16,7 +18,22 @@ export EVIDENCE_FORMULA_WEIGHTS=/absolute/path/to/weights
 python workbench.py
 ```
 
-## 镜像实测
+## 更新后复测
+
+输入为同一份 15 页纯图像扫描件，SHA-256 为 `64094fe169dd4ff454f579e9f197298df1c118c24b71b1f1ca8bb218c9e4801d`。RapidLaTeXOCR 0.0.9 和 ONNX Runtime 1.32.0 在 CPU 上运行，裁图来自扫描页的 240 DPI 渲染。复测保留两种原始输出及可复查的扫描裁图。对应电子稿用于人工核对。第 4 页另选了两条实际印刷公式，在推理前按扫描页定位裁切，作为转写样例。
+
+| 扫描原图 | 原始结果 | 校对及人工核图 |
+|---|---|---|
+| 第 3 页 (1) | 两路相同 | 保留转置上标、分式、平方根和 `d_k` 下标，未触发字形改动 |
+| 第 5 页 (2) | 两路相同 | 保留 `max` 的参数结构、权重与偏置下标，未触发字形改动 |
+| 第 7 页 (3) | 原尺度首字母为 `I`，两倍图为 `l`。两路均把三处字面下划线写成下标减号 | 同图文字 OCR 支持 `lrate`。两个 `step_num` 与一个 `warmup_steps` 各有低位横笔画。校对候选保留三处字面下划线以及原输出的全部指数和运算结构 |
+| 第 7 页无编号注意力式 | 两路相同 | 分子转置、分母根号和括号结构可辨，函数名与左括号仍共用字体分组 |
+| 第 4 页 MultiHead 式 | 两路相同 | 人工核图确认 `head_1`、省略号及 `head_h` 对应，保留末尾小写 `h` |
+| 第 4 页 `head_i` 投影式 | 两路不同 | 原尺度保留左侧 `i` 下标但少一个 `t`。两倍放大保留 `Attention`，左侧 `i` 读成基线字母。保留两份模型草稿供核对 |
+
+第 7 页 (3) 的三处笔画在 240 DPI 页图的半开像素框分别为 `[888,969,904,971]`、`[1104,969,1120,971]`、`[1335,969,1352,971]`。`lrate` 对应 OCR 框为 `[544,943,608,967]`。该条两尺度一致性依然为 `false`，增强候选由扫描图证据逐处核对。裁紧空白和 1.5 倍放大均保留原始下划线误读，二值化还曾引入 `min` 字形误读，因此这次仍保留现有的双尺度原图输入。第 4 页两条另选样例只检查转写，未通过工作台自动定位。以上是六条抽核结果，未估计通用召回率或准确率。
+
+## 更新前镜像基线
 
 使用[镜像样本](SAMPLE_REVIEW.md)的物理第 3、5、7 页，以 240 DPI 裁剪，再使用 RapidLaTeXOCR 0.0.9、ONNX Runtime 1.32.0 的 CPU 后端推理。逐条在原图检查字符及结构，并对照官方 [arXiv v1](https://arxiv.org/pdf/1706.03762v1) 的排版。官方电子稿只用于核对，模型输入为扫描图。
 
@@ -37,7 +54,7 @@ python workbench.py
 set -eu
 pdf=/path/to/1706.03762v1_img.pdf
 trial=$(mktemp -d)
-python -m scanpdf "$pdf" --pages 3,5,7 --dpi 240 --lang eng \
+python -m scanpdf "$pdf" --pages 3,4,5,7 --dpi 240 --lang eng \
   --output "$trial/result.json" --crops "$trial/crops"
 
 python3.12 -m venv "$trial/formula-env"
@@ -56,7 +73,9 @@ bd695497bf1b22279b7626f5916c79226e1e244c84355f8da7edfd2d921d0072  decoder.onnx
 1dc27b18d6a518d0d5ff3f4bb7bd98521fe80ad39e5b2a246d4109f1bb9d5019  tokenizer.json
 SUMS
 )
-"$trial/formula-env/bin/python" tools/formula_candidates.py "$trial/result.json" \
-  --crops "$trial/crops" --weights "$trial/weights" --output "$trial/formula-candidates.json"
-python -m unittest tests.test_formula_candidates
+"$trial/formula-env/bin/python" tools/check_formula_quality.py "$pdf" "$trial/result.json" \
+  --crops "$trial/crops" --weights "$trial/weights" --output "$trial/formula-audit"
+python -m unittest tests.test_formula_candidates tests.test_formula_symbols tests.test_formula_review
 ```
+
+复测目录包含候选 JSON 和对应扫描裁图。第 4 页补抽图在 JSON 中标记为 `manual_crop`。

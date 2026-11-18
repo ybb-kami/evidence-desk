@@ -175,6 +175,19 @@ def ocr_paragraphs(scan):
     return list(groups.values())
 
 
+def ocr_index_cells(scan):
+    """Keep the original indexed crop order and the text and rectangle it cited."""
+    if "indexed_crop_cells" in scan:
+        saved = scan["indexed_crop_cells"]
+        if not isinstance(saved, list):
+            return []
+        return [cell if isinstance(cell, dict) and isinstance(cell.get("text"), str)
+                else {"text": "", "bbox_pt": None} for cell in saved]
+    return [{"text": cell["text"], "bbox_pt": cell.get("bbox_pt")}
+            for region in scan["regions"] for cell in region.get("cells", ())
+            if cell.get("text_method") == "cell_crop_tesseract"]
+
+
 def _cached_ocr(store, docid, number):
     if not hasattr(store, "db"):
         return None
@@ -226,8 +239,8 @@ def _ocr_paragraph(page, chunk, span, lines):
 
 
 def _ocr_cell(page, chunk, group, cells, document):
-    # Region refresh preserves the OCR text index. Match the full indexed cell
-    # and require a unique current candidate before using its cell rectangle.
+    # Match the full indexed cell and require a unique original candidate
+    # before using its rectangle.
     expected = [(part["text"], part.get("offset")) for part in document["chunks"]
                 if part["page"] == chunk["page"] and part["block"] == chunk["block"]]
     if not 0 <= group < len(cells) or not expected:
@@ -246,9 +259,7 @@ def _ocr(store, document, page, chunk, span):
     group = chunk["block"] - 1
     if group < len(paragraphs):
         return _ocr_paragraph(page, chunk, span, paragraphs[group])
-    cells = [cell for region in scan["regions"] for cell in region.get("cells", ())
-             if cell.get("text_method") == "cell_crop_tesseract"]
-    return _ocr_cell(page, chunk, group - len(paragraphs), cells, document)
+    return _ocr_cell(page, chunk, group - len(paragraphs), ocr_index_cells(scan), document)
 
 
 def _passage_view(store, doc, page, request):

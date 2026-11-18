@@ -1,0 +1,29 @@
+{
+  "renderer": "Mermaid 11.12.0",
+  "bundle_sha256": "07e37dfa97b337ccc85365d57eddf99b9706f09db3b59b260d0333b23b343c4b",
+  "chromium_network": "offline for render; workbench loopback only",
+  "external_requests": 0,
+  "mtcars_sha256": "4d6dfa9b029dbcc15333a6e3598803fae8ae7c4d08605040b1706e6367695058",
+  "mtcars_rendered_nodes": 36,
+  "mtcars_rendered_edges": 45,
+  "original_export_replayed": true,
+  "reserved_character_labels_exact": true,
+  "reserved_graph_rendered_nodes": 4,
+  "reserved_graph_rendered_edges": 3,
+  "nile_sha256": "d0452bea38c61e796a4eeb950bf91d20fb5c7f13d5822eadf5990fe54f9c8d07",
+  "nile_chart_vertices_verified": 100,
+  "nile_axis_units": [
+    "年",
+    "10⁸ m³"
+  ],
+  "fallback_cases": [
+    "missing_y",
+    "missing_x",
+    "invalid",
+    "duplicate",
+    "irregular",
+    "scientific_notation",
+    "flowchart_point_limit",
+    "malformed_mermaid"
+  ]
+}

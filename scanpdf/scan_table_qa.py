@@ -22,7 +22,7 @@ REFERENCE = re.compile(r"\s*[\[|]\s*(?:[0-9]{1,3}|[a-z][a-z+]{1,10}[0-9]{2,4})\s
 DECIMAL = r"[+-]?(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?"
 SUPERSCRIPT = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻", "0123456789+-")
 DASHES = str.maketrans("‐‑–—−", "-----")
-UNIT = r"%|flops|ms|s|sec(?:onds?)?|kb|mb|gb|tb|thousand|million|billion|trillion"
+UNIT = r"%|flops|ms|s|sec(?:onds?)?|kb|mb|gb|tb|[kmbt]|thousand|million|billion|trillion"
 NATIVE_CANDIDATE_LIMIT = 6
 NATIVE_GRID_LOCK = Lock()
 QUERY_TERMS = {"a", "an", "and", "are", "did", "for", "from", "how", "in", "is", "many", "much", "of", "on",
@@ -327,7 +327,7 @@ def _numeric(text):
     scientific = re.fullmatch(rf"({DECIMAL})\s*(?:[·×x*]\s*10\s*\^\s*|e\s*)([+-]?[0-9]{{1,3}})\s*({UNIT})?", text)
     if direct:
         scalar, unit = direct.groups()
-        suffix = unit if unit == "%" else f" {unit}" if unit else ""
+        suffix = unit if unit == "%" else unit.upper() if unit in {"k", "m", "b", "t"} else f" {unit}" if unit else ""
         return Decimal(scalar.replace(",", "")), scalar + suffix, unit
     if scientific:
         mantissa, exponent, unit = scientific.groups()
@@ -483,6 +483,8 @@ def _response(store, doc, question, page, number, region, cells, hits, anchor):
         raw = cell["text"]
         value = _numeric(cell.get("number_text", raw)) if cell.get("status") in {"ocr_text", "native_text"} and cell.get("bbox_pt") else None
         method = "cached_ocr" if source == "ocr" else "native_pdf"
+        if source == "ocr" and cell.get("text_method") == "numeric_crop_agreement":
+            method = "crop_ocr"
         if source == "ocr" and value is None and cell.get("status") == "ocr_text":
             value = _recover_numeric(store, doc["id"], page, cell)
             method = "crop_ocr" if value else "unresolved"
@@ -503,6 +505,9 @@ def _response(store, doc, question, page, number, region, cells, hits, anchor):
                  "row_label": REFERENCE.sub("", " ".join(row["text"].split())), "column_label": column_label,
                  "text": raw, "value": values[-1][1] if value else None, "method": method,
                  "bbox_pt": cell.get("bbox_pt"), "line_id": line, "region_status": region["status"], "source": source}
+        for key in ("ocr_raw", "ocr_confidence", "numeric_ocr"):
+            if key in cell:
+                entry[key] = cell[key]
         if hit:
             entry.update(block=hit["block"], part=hit["part"])
         evidence.append(entry)

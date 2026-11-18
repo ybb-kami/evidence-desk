@@ -51,7 +51,7 @@ def index_page(doc, page):
 
 class ScanLibrary(app.Library):
     # Bump when older table or formula regions need an explicit refresh.
-    REGION_REVISION = 1
+    REGION_REVISION = 2
 
     def __init__(self, root, lang="eng"):
         super().__init__(root)
@@ -131,6 +131,9 @@ class ScanLibrary(app.Library):
                     raise ValueError("更新后的区域坐标与原页不一致。")
                 # Keep line, word, and indexed block anchors from the original OCR.
                 page = cached | {"regions": page["regions"]}
+                if "indexed_crop_cells" not in cached:
+                    from source_locator import ocr_index_cells
+                    page["indexed_crop_cells"] = ocr_index_cells(cached)
             page["region_revision"] = self.REGION_REVISION
             packed = zlib.compress(json.dumps(page, ensure_ascii=False).encode())
             with self.lock, closing(sqlite3.connect(self.db)) as db, db:
@@ -179,6 +182,10 @@ class Handler(app.Handler):
         if path in {"/formula-review", "/formula-review/image", "/api/formula-review"}:
             from formula_review import handle
             return handle(self, post, url)
+        if not post and path in {"/csv-trends", "/csv-trends.js"}:
+            filename, mime = (("csv-trends.html", "text/html; charset=utf-8") if path == "/csv-trends" else
+                              ("csv-trends.js", "application/javascript; charset=utf-8"))
+            return self.payload(200, (HERE / filename).read_bytes(), mime)
         if not post and path == "/synthesis":
             return self.payload(200, (HERE / "synthesis.html").read_bytes(), "text/html; charset=utf-8")
         if post and path == "/api/synthesis":
@@ -196,6 +203,7 @@ class Handler(app.Handler):
             home = (app.HERE / "index.html").read_text()
             home = home.replace('<span class="tag">本地工作区</span>',
                                 '<nav><a href="/scan">扫描页识别</a> · <a href="/translation">双语精读</a> · <a href="/download">下载论文</a> · <a href="/followup">证据追问</a> · <a href="/architecture">跨篇问答</a></nav>')
+            home = home.replace('<p class="subtle" id="csv-help">', '<p><a href="/csv-trends">按变量绘图与核对趋势</a></p><p class="subtle" id="csv-help">', 1)
             home = home.replace('id="local-review"></section>', 'id="local-review"><a href="/synthesis">选择文献生成综述</a></section>', 1)
             home = home.replace("扫描件若没有文本层，可以查看原件，但不能检索图片中的文字。",
                                 "扫描件可按页识别，完成后可在这里检索 OCR 文字。")

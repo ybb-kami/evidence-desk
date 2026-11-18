@@ -13,6 +13,7 @@ import zlib
 import pymupdf
 
 import workbench
+import source_locator
 from bilingual.routes import scan_segments
 from metric_qa import answer_metric
 
@@ -23,9 +24,12 @@ QUESTION = (
 )
 
 
-def write_old_page(store, docid, page):
+def write_old_page(store, docid, page, revision=None):
     old = deepcopy(page)
-    old.pop("region_revision", None)
+    if revision is None:
+        old.pop("region_revision", None)
+    else:
+        old["region_revision"] = revision
     packed = zlib.compress(json.dumps(old, ensure_ascii=False).encode())
     with sqlite3.connect(store.db) as db:
         db.execute("UPDATE scan_pages SET result=? WHERE id=? AND page=?",
@@ -34,6 +38,40 @@ def write_old_page(store, docid, page):
 
 
 class CacheUpgradeTests(TestCase):
+    def test_region_refresh_keeps_original_crop_locator_after_restart(self):
+        with TemporaryDirectory() as folder, pymupdf.open() as pdf:
+            page = pdf.new_page(width=120, height=180)
+            store = workbench.ScanLibrary(Path(folder))
+            docid = store.add(pdf.tobytes(), "crop-anchors.pdf")["doc"]["id"]
+            legacy = {"physical_page": 1, "width_px": 400, "height_px": 600, "width_pt": 120,
+                      "height_pt": 180, "rotation": 0, "cropbox": list(page.cropbox),
+                      "lines": [{"text": "Page OCR paragraph", "line_id": "1.1.1"}],
+                      "regions": [{"cells": [
+                          {"text": "old value 8.31", "bbox_pt": [41, 55, 70, 66], "text_method": "cell_crop_tesseract"},
+                          {"text": "-", "bbox_pt": [41, 67, 70, 76], "text_method": "cell_crop_tesseract"},
+                          {"text": "another value 6.92", "bbox_pt": [41, 77, 70, 88], "text_method": "cell_crop_tesseract"},
+                      ]}]}
+            result = {"source": {"sha256": docid}, "pages": [legacy],
+                      "render": {"dpi": 240, "lang": "eng", "frame": "rotated_visible_page_top_left"}}
+            with patch.object(workbench.ScanLibrary, "REGION_REVISION", 1), patch.object(
+                    workbench, "recognize_pdf", return_value=deepcopy(result)):
+                self.assertEqual(store.recognize(docid, 1)["region_revision"], 1)
+
+            request = {"id": docid, "page": 1, "block": 4, "part": 1}
+            original = source_locator.locate(store, request)
+            self.assertEqual(original["passage"], {"precision": "cell", "boxes": [(41, 77, 70, 88)]})
+            updated = deepcopy(result)
+            updated["pages"][0]["regions"][0]["cells"] = [
+                {"text": "6.92", "bbox_pt": [43, 78, 71, 90], "text_method": "numeric_crop_agreement"}]
+            with patch.object(workbench, "recognize_pdf", return_value=updated) as parser:
+                first = store.recognize(docid, 1, region_revision=1)
+                reopened = workbench.ScanLibrary(Path(folder))
+                self.assertEqual(source_locator.locate(reopened, request), original)
+                self.assertEqual(reopened.recognize(docid, 1, region_revision=1), first)
+                self.assertEqual(parser.call_count, 1)
+            self.assertEqual(first["page"]["indexed_crop_cells"], [
+                {"text": cell["text"], "bbox_pt": cell["bbox_pt"]} for cell in legacy["regions"][0]["cells"]])
+
     def test_explicit_upgrade_preserves_original_text_and_rolls_back_failure(self):
         with TemporaryDirectory() as folder, pymupdf.open() as pdf:
             pdf.new_page()
@@ -108,11 +146,12 @@ class CacheUpgradeTests(TestCase):
                 if region["type"] == "table":
                     # The old detector only located this table, with no cell grid.
                     region.update(status="detected_only", cells=[])
-            old = write_old_page(store, docid, legacy)
+            old = write_old_page(store, docid, legacy, revision=1)
             store = workbench.ScanLibrary(root)
             record = store.records([docid])[0]
             self.assertIsNone(answer_metric(store, record, QUESTION)["answer"])
-            updated = store.recognize(docid, 8, region_revision=0)
+            updated = store.recognize(docid, 8, region_revision=1)
+            self.assertEqual(updated["region_revision"], store.REGION_REVISION)
             self.assertEqual(updated["page"]["lines"], old["lines"])
             self.assertEqual(updated["page"]["render"], old["render"])
             self.assertEqual(store.records([docid])[0], record)

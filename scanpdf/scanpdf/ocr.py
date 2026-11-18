@@ -7,14 +7,16 @@ import subprocess
 from PIL import Image
 
 
-def recognize(image: Image.Image, dpi: int, lang: str, psm: int) -> list[dict]:
+def recognize(image: Image.Image, dpi: int, lang: str, psm: int, *, whitelist=None, timeout=120) -> list[dict]:
     encoded = io.BytesIO()
     image.save(encoded, format="PNG", compress_level=1)
+    command = ["tesseract", "stdin", "stdout", "-l", lang, "--dpi", str(dpi), "--psm", str(psm)]
+    if whitelist:
+        command.extend(["-c", f"tessedit_char_whitelist={whitelist}"])
     try:
         run = subprocess.run(
-            ["tesseract", "stdin", "stdout", "-l", lang, "--dpi", str(dpi),
-             "--psm", str(psm), "tsv"],
-            input=encoded.getvalue(), capture_output=True, timeout=120,
+            [*command, "tsv"],
+            input=encoded.getvalue(), capture_output=True, timeout=timeout,
             env={**os.environ, "OMP_THREAD_LIMIT": os.environ.get("OMP_THREAD_LIMIT", "1")},
         )
     except FileNotFoundError as exc:

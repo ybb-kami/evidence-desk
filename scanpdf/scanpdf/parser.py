@@ -9,6 +9,7 @@ import pymupdf
 from PIL import Image, ImageStat
 
 from .formulas import detect_formulas
+from .numeric import refine_numeric_cells
 from .ocr import recognize
 from .tables import detect_tables
 
@@ -47,7 +48,7 @@ def _read_missing_cells(image, tables, dpi, lang):
     # only unresolved cells with visible ink, with borders trimmed away.
     for table in tables:
         for cell in table["cells"]:
-            if cell["text"]:
+            if cell["text"] or cell["status"] == "numeric_unresolved":
                 continue
             l, t, r, b = cell["bbox"]
             pad = max(2, round(dpi * 0.025))
@@ -59,7 +60,8 @@ def _read_missing_cells(image, tables, dpi, lang):
             recovered = recognize(roi, dpi, lang, 6)
             if recovered:
                 cell.update(text="\n".join(line["text"] for line in _lines(recovered)),
-                            status="ocr_text", text_method="cell_crop_tesseract")
+                            status="ocr_text", text_method="cell_crop_tesseract",
+                            ocr_confidence=round(min(word["confidence"] for word in recovered), 2))
 
 
 def _parse_page(page, number, dpi, lang, crops, digest):
@@ -75,6 +77,7 @@ def _parse_page(page, number, dpi, lang, crops, digest):
     lines = _lines(words)
     tables = detect_tables(image, words, dpi)
     regions = tables + detect_formulas(image, words, dpi, tables)
+    refine_numeric_cells(image, tables, dpi, lang)
     _read_missing_cells(image, tables, dpi, lang)
     regions.sort(key=lambda reg: (reg["bbox"][1], reg["bbox"][0]))
 
@@ -94,6 +97,8 @@ def _parse_page(page, number, dpi, lang, crops, digest):
         locate(region)
         for cell in region.get("cells", []):
             locate(cell)
+            if "numeric_ocr" in cell:
+                locate(cell["numeric_ocr"])
         if crops:
             filename = f"{digest[:16]}-{region['id']}.png"
             with (crops / filename).open("xb") as out:

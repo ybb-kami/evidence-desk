@@ -10,6 +10,11 @@ import re
 
 from PIL import Image, ImageOps
 
+if __package__:
+    from .formula_symbols import review_latex
+else:
+    from formula_symbols import review_latex
+
 
 _RELEASE = "https://github.com/RapidAI/RapidLaTeXOCR/releases/tag/v0.0.0"
 _WEIGHTS = {
@@ -92,6 +97,7 @@ def generate_candidates(result, crops, predict):
                 output, elapsed = predict(_encode_image(image))
                 variants[key] = {"latex": output.strip(), "inference_seconds": round(elapsed, 4)}
             source_latex = variants["source_scale"]["latex"]
+            magnified_latex = variants["upsampled_2x"]["latex"]
             rows.append({
                 "physical_page": page["physical_page"],
                 "region_id": region["id"],
@@ -107,9 +113,10 @@ def generate_candidates(result, crops, predict):
                 "confidence": {
                     "calibrated_probability": None,
                     "source": "exact_text_agreement_under_rescaling",
-                    "variants_agree": bool(source_latex and source_latex == variants["upsampled_2x"]["latex"]),
+                    "variants_agree": bool(source_latex and source_latex == magnified_latex),
                 },
                 "variants": variants,
+                "review": review_latex(source_latex, magnified_latex, page, expression, recognition_box),
             })
     return rows
 

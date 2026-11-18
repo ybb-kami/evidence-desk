@@ -1,0 +1,107 @@
+const assert = require('node:assert/strict');
+const csv = require('../csv-stats.js');
+const trends = require('./csv-trends.js');
+
+const table = csv.parse('X,Y,group,notes\r\n4,30,A,"starts\r\nwith two lines"\r\n1,10,A,q\r\n' +
+  '2,20,A,q\r\n3,,A,q\r\n5,25,A,q\r\n2,7,B,q\r\n1,5,B,q\r\n2,7,B,q\r\n' +
+  '3,12,B,q\r\n4,12,B,q\r\n5,24,C,q\r\n,3,C,q\r\n6,30,,q\r\n');
+const settings = {xColumn:0,yColumn:1,xKind:'numeric',groupColumn:2,connect:true,
+  xUnit:'h',yUnit:'mV',observationUnit:'试次',sourceName:'test.csv',sourceSha256:'a'.repeat(64)};
+const observed = trends.analyze(table, settings);
+assert.equal(observed.source.sha256, 'a'.repeat(64));
+assert.equal(observed.rows[1].sourceLine, 4);
+assert.equal(observed.rows[12].exclusion, 'missing_group');
+assert.equal(observed.rows[3].yStatus, 'missing');
+assert.equal(observed.rows[11].xStatus, 'missing');
+assert.deepEqual(observed.groups.map(g => g.group), ['A','B','C']);
+const [a,b,c] = observed.groups;
+assert.equal(a.peak.value, 30);
+assert.deepEqual(a.peak.observations.map(row => row.sourceLine), [2]);
+assert.equal(a.endpoints.deltaY, 15);
+assert.equal(a.endpoints.first.dataRow, 2);
+assert.equal(a.endpoints.last.dataRow, 5);
+assert.deepEqual(a.segments.map(s => [s.from.x,s.to.x]), [[1,2],[4,5]]);
+assert.deepEqual(a.changes, {increase:1,decrease:1,equal:0});
+assert.equal(a.orderedFromUnsortedInput, true);
+assert.match(observed.caption,/首末差（末值减首值）为 \+15 mV/);
+assert.deepEqual(b.duplicates[0].rows.map(row => row.dataRow), [6,8]);
+assert.deepEqual(b.peak.observations.map(row => row.dataRow), [9,10]);
+assert.deepEqual(b.segments.map(s => [s.from.x,s.to.x]), [[3,4]]);
+assert.equal(c.endpointStatus, 'unknown_x');
+assert.equal(c.endpoints, null);
+assert.deepEqual(c.segments, []);
+const plotted = trends.figure(observed, {widthMm:90}).svg;
+assert.match(plotted,/width="90mm"/);
+assert.match(plotted,/id="observation-3" data-row="3" data-source-line="5" data-x="2" data-y="20"/);
+assert.match(plotted,/data-from-row="2" data-to-row="3"/);
+assert.doesNotMatch(plotted,/id="observation-4"|data-from-row="3" data-to-row="1"|<image/);
+const tikz = trends.tikz(trends.figure(observed,{widthMm:90}));
+assert.match(tikz,/\\begin\{tikzpicture\}/);
+assert.match(tikz,/% Observation 3, CSV line 5, X="2", Y=20/);
+assert.match(tikz,/% Segment records 2 3/);
+assert.doesNotMatch(tikz,/% Observation 4,|% Segment records 3 1/);
+const mermaid = trends.mermaid(observed);
+assert.match(mermaid,/^flowchart LR/);
+assert.match(mermaid,/row3\["CSV 5 · X \(h\) = 2 · Y \(mV\) = 20"\]/);
+assert.match(mermaid,/row2 --- row3/);
+assert.doesNotMatch(mermaid,/row4\[|row3 --- row1/);
+
+const tiedEndpoint = trends.analyze(csv.parse('x,y\n2,3\n1,4\n1,8'), {...settings,groupColumn:null});
+assert.equal(tiedEndpoint.groups[0].endpointStatus, 'uncertain_endpoint');
+assert.equal(tiedEndpoint.groups[0].endpoints,null);
+const missingEndpoint = trends.analyze(csv.parse('x,y\n1,\n2,2\n3,3'), {...settings,groupColumn:null});
+assert.equal(missingEndpoint.groups[0].endpointStatus, 'uncertain_endpoint');
+assert.deepEqual(missingEndpoint.groups[0].segments.map(s => [s.from.x,s.to.x]), [[2,3]]);
+
+const category = trends.analyze(csv.parse('cond,result,station\nβ,1,row A\nα,2,row A\nβ,3,row A\nα,3,row B'),
+  {...settings,xKind:'category',focus:'row A'});
+assert.equal(category.connect, false);
+assert.equal(category.orientation, 'first_appearance');
+assert.deepEqual(category.groups[0].categories.map(x => x.category), ['β','α']);
+assert.deepEqual(category.groups[0].categories.map(x => x.peak.value), [3,2]);
+assert.equal(category.rows[3].exclusion,'outside_group');
+assert.doesNotMatch(trends.figure(category).svg,/data-from-row/);
+assert.doesNotMatch(category.caption,/首末差|上升/);
+
+const invalid = trends.analyze(csv.parse('x,y\nINF,oops\n10,NaN'), {...settings,groupColumn:null});
+assert.deepEqual(invalid.rows.map(row => row.plotted), [false,false]);
+assert.throws(() => trends.figure(invalid),/没有可绘/);
+const unsafe = trends.analyze(csv.parse('x,y\n"<script>&",12'), {...settings,groupColumn:null,xKind:'category'});
+assert.doesNotMatch(trends.figure(unsafe).svg,/<script>/);
+assert.match(trends.figure(unsafe).svg,/data-x="&lt;script&gt;&amp;"/);
+assert.match(trends.mermaid(unsafe),/#60;script#62;#38;/);
+assert.doesNotMatch(trends.mermaid(unsafe),/<script>/);
+const texUnsafe = trends.analyze(csv.parse('"a%_^~#&$",y\n1,2'),{...settings,groupColumn:null});
+assert.match(trends.tikz(trends.figure(texUnsafe)),/a\\%\\_\\textasciicircum\{\}\\textasciitilde\{\}\\#\\&\\\$/);
+const groups = csv.parse('x,y,group\n' + Array.from({length:9}, (_,i) => `1,2,s${i}`).join('\n'));
+assert.throws(() => trends.analyze(groups,settings),/9 个分组/);
+assert.equal(trends.analyze(groups,{...settings,focus:'s2'}).rows.filter(row => row.plotted).length,1);
+assert.throws(() => trends.analyze(groups,{...settings,xColumn:1}),/不同/);
+assert.throws(() => trends.analyze(groups,{...settings,groupColumn:1}),/分组列/);
+const regular = trends.analyze(csv.parse('时刻,响应,组\n8,7,甲\n2,2,甲\n6,6,甲\n4,3,甲\n2,10,乙'),
+  {...settings,focus:'甲'});
+const regularMermaid = trends.mermaidXY(regular);
+assert.equal(regularMermaid.reason,null);
+assert.match(regularMermaid.code,/^xychart$/m);
+assert.match(regularMermaid.code,/plotColorPalette: '#135e70'/);
+assert.match(regularMermaid.code,/x-axis "时刻 \(h\)" 2 --> 8/);
+assert.match(regularMermaid.code,/y-axis "响应 \(mV\)" 2 --> 7/);
+assert.match(regularMermaid.code,/line \[2, 3, 6, 7\]/);
+assert.match(regularMermaid.code,/Source lines|CSV source lines 3, 5, 4, 2/);
+assert.match(regularMermaid.code,/组 = 甲/);
+assert.equal(trends.mermaidXY(observed).code,'');
+assert.match(trends.mermaidXY(observed).reason,/一条系列/);
+assert.match(trends.mermaidXY(tiedEndpoint).reason,/重复/);
+assert.match(trends.mermaidXY(missingEndpoint).reason,/缺失/);
+assert.match(trends.mermaidXY(category).reason,/数值横轴/);
+const irregular = trends.analyze(csv.parse('x,y\n1,2\n2,3\n4,4'), {...settings,groupColumn:null});
+assert.match(trends.mermaidXY(irregular).reason,/等距/);
+const fractional = trends.analyze(csv.parse('x,y\n0,1\n0.1,2\n0.2,3\n0.3,4'), {...settings,groupColumn:null});
+assert.match(trends.mermaidXY(fractional).reason,/逐点复现/);
+const unsafePrecision = trends.analyze(csv.parse('x,y\n0,1\n1,1e-10'), {...settings,groupColumn:null});
+assert.match(trends.mermaidXY(unsafePrecision).reason,/普通十进制/);
+const tooMany = trends.analyze(csv.parse('x,y\n' + Array.from({length:201},(_,i)=>`${i},${i}`).join('\n')),
+  {...settings,groupColumn:null});
+assert.throws(()=>trends.mermaid(tooMany),/最多 200/);
+assert.match(trends.mermaidXY(tooMany).code,/^xychart$/m);
+console.log('CSV variable trends, provenance and vector mappings passed');

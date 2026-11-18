@@ -16,6 +16,8 @@ section,aside{margin-top:1rem;border:1px solid #b9c4bc;background:white;padding:
 #status{min-height:1.5rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f0;padding:.75rem;border-radius:4px}
 .actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:.8rem}summary{cursor:pointer}[hidden]{display:none!important}
 #location{color:#46574e;font-size:.9rem;overflow-wrap:anywhere}#setup p{margin:.4rem 0}
+#checks{padding-left:1.7rem}#checks li{margin:.65rem 0}#checks code{overflow-wrap:anywhere}
+#checks canvas{display:block;max-width:100%;height:auto;margin-top:.35rem;border:1px solid #d3ded6}
 @media(max-width:620px){.controls{grid-template-columns:1fr}header{gap:.7rem}}
 </style>
 <header><strong>证据台</strong><a href="/">文库</a><a id="scan" href="/scan">扫描页核对</a></header>
@@ -42,7 +44,15 @@ section,aside{margin-top:1rem;border:1px solid #b9c4bc;background:white;padding:
 <h2>未核验候选</h2>
 <p id="agreement"></p>
 <pre id="latex"></pre>
-<details id="variant"><summary>查看放大图识别结果</summary><pre id="alternate"></pre></details>
+<section id="glyphs" hidden>
+<h2>字形对照</h2>
+<ol id="checks"></ol>
+</section>
+<details id="variant"><summary>两种尺度的原始模型结果</summary>
+<h3>原尺度</h3><pre id="native"></pre>
+<h3>两倍放大</h3><pre id="alternate"></pre>
+<div id="differences"></div>
+</details>
 <details><summary>识别来源与证据</summary><pre id="metadata"></pre></details>
 </section>
 </main>
@@ -118,6 +128,33 @@ function showDocument(preferredPage, preferredRegion) {
   else if(selected.textless_pages?.length) pages.value=String(selected.textless_pages[0]);
   showPage(preferredRegion);
 }
+function glyphEvidence(candidate, checks) {
+  const original=el('crop'), list=el('checks');
+  const [originX,originY]=candidate.bbox_px;
+  list.replaceChildren();
+  for (const check of checks) {
+    const item=document.createElement('li'), label=document.createElement('code');
+    label.textContent=check.source+' → '+check.suggestion;
+    item.append(label, ' · 文字 OCR「'+check.ocr_text+'」');
+    const [x,y,right,bottom]=check.bbox_px;
+    if(original.naturalWidth && x>=originX && y>=originY) {
+      const canvas=document.createElement('canvas'), width=right-x, height=bottom-y;
+      canvas.width=width*2;
+      canvas.height=height*2;
+      canvas.setAttribute('role','img');
+      canvas.setAttribute('aria-label',check.suggestion+'在扫描原图中的局部');
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(original,x-originX,y-originY,width,height,0,0,canvas.width,canvas.height);
+      ctx.strokeStyle='#a22521';
+      for (const [left,top,end,lower] of check.strokes_px || []) {
+        ctx.strokeRect(2*(left-x)-2,2*(top-y)-2,2*(end-left)+4,2*(lower-top)+4);
+      }
+      item.append(canvas);
+    }
+    list.append(item);
+  }
+  el('glyphs').hidden=!checks.length;
+}
 el('recognize').onclick=async()=>{
   const active=generation;
   const button=el('recognize');
@@ -127,14 +164,28 @@ el('recognize').onclick=async()=>{
   try {
     const body=await request('/api/formula-review',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({id:docs.value,page:Number(pages.value),region:regions.value})});
+    await el('crop').decode().catch(()=>{});
     if(active!==generation) return;
     const candidate=body.candidate;
-    el('latex').textContent=candidate.variants.source_scale.latex || '原尺度未识别出内容。';
+    const review=candidate.review || {latex:null,checks:[],differences:[]};
+    const original=candidate.variants.source_scale.latex;
+    el('latex').textContent=review.latex || original || '原尺度未识别出内容。';
+    el('native').textContent=original || '原尺度未识别出内容。';
     el('alternate').textContent=candidate.variants.upsampled_2x.latex || '放大图未识别出内容。';
     el('variant').open=!candidate.confidence.variants_agree;
-    el('agreement').textContent=candidate.confidence.variants_agree ?
+    el('agreement').textContent=review.latex ? '候选使用下方的扫描字形证据，请逐项核对。' :
+      candidate.confidence.variants_agree ?
       '两种图像尺度返回相同的 LaTeX。请与原图逐字核对。' :
       '两种图像尺度返回不同的 LaTeX，或未识别出内容。请与原图逐字核对。';
+    glyphEvidence(candidate,review.checks);
+    const differences=el('differences');
+    differences.replaceChildren();
+    for (const diff of review.differences) {
+      const line=document.createElement('p'), excerpt=document.createElement('code');
+      excerpt.textContent=diff.prefix+'['+(diff.source || '空')+' / '+(diff.magnified || '空')+']'+diff.suffix;
+      line.append('两种尺度的分歧 ',excerpt);
+      differences.append(line);
+    }
     el('metadata').textContent=body.model.engine+' '+body.model.package_version+' · '+body.model.provider+
       '\n原 PDF SHA-256 '+body.source.sha256+'\n裁剪图 SHA-256 '+candidate.evidence_crop_sha256+
       '\n推理范围（像素） '+candidate.recognition_bbox_px.join(', ');

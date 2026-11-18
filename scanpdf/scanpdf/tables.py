@@ -9,6 +9,9 @@ from PIL import Image
 from scipy import ndimage
 
 
+NUMERIC_TOKEN = re.compile(r"[+−-]?[0-9]+(?:[.,][0-9]+)*(?:[eE][+−-]?[0-9]+|[kKmMbBtT%])?")
+
+
 @dataclass(frozen=True)
 class _Rule:
     left: int
@@ -162,6 +165,53 @@ def _text_columns(rows, left, right, height, dpi):
     return [left, *gutters, right]
 
 
+def _sparse_stub_columns(columns, rows, rules, height, dpi):
+    """Find a stub gutter whose labels occur at the starts of ruled groups."""
+    if len(columns) < 3 or len(rules) < 4 or len(rows) < 6:
+        return columns
+    left, stop = columns[:2]
+    header_end = rules[1].y
+    header = sorted((word for row in rows for word in row if left <= _word_center(word)[0] < stop
+                     and _word_center(word)[1] < header_end), key=lambda word: word["bbox"][0])
+    gaps = [(first, second) for first, second in zip(header, header[1:])
+            if second["bbox"][0] - first["bbox"][2] >= max(2 * height, dpi * .14)]
+    if len(gaps) != 1:
+        return columns
+    _, second = gaps[0]
+    header_right_start = second["bbox"][0]
+    split_support, body_count = 0, 0
+    left_words, right_words = [], [second]
+    line_centers = [np.median([_word_center(word)[1] for word in row]) for row in rows]
+    for top, bottom in zip(rules[1:], rules[2:]):
+        group = [row for center, row in zip(line_centers, rows) if top.y < center < bottom.y]
+        if not group:
+            continue
+        for position, row in enumerate(group):
+            within = [word for word in row if left <= _word_center(word)[0] < stop]
+            stub = [word for word in within if _word_center(word)[0] < header_right_start]
+            payload = [word for word in within if _word_center(word)[0] >= header_right_start]
+            body_count += 1
+            if len(payload) != 1 or not NUMERIC_TOKEN.fullmatch(payload[0]["text"]):
+                continue
+            right_words.extend(payload)
+            if stub:
+                if position or not any(re.search(r"[^\W\d_]", word["text"]) for word in stub):
+                    return columns
+                left_words.extend(stub)
+                split_support += 1
+    if split_support < 2 or len(right_words) - 1 < .8 * body_count or split_support >= body_count * .55:
+        return columns
+    left_words.extend(word for word in header if _word_center(word)[0] < header_right_start)
+    edge = max(word["bbox"][2] for word in left_words)
+    clear = min(word["bbox"][0] for word in right_words)
+    if clear - edge < max(3, height * .4):
+        return columns
+    gutter = (edge + clear) // 2
+    if any(word["bbox"][0] < gutter < word["bbox"][2] for row in rows for word in row):
+        return columns
+    return [left, gutter, *columns[1:]]
+
+
 def _make_cell(row, column, bounds, members, **spans):
     lines = {}
     for word in sorted(members, key=lambda word: (_word_center(word)[1], word["bbox"][0])):
@@ -171,11 +221,14 @@ def _make_cell(row, column, bounds, members, **spans):
         " ".join(word["text"] for word in sorted(line, key=lambda word: word["bbox"][0]))
         for line in lines.values()
     )
-    return {
+    result = {
         "row": row, "column": column, "bbox": bounds, "text": text,
         "status": "ocr_text" if text else "empty_or_unread",
         **spans,
     }
+    if members and all("confidence" in word for word in members):
+        result["ocr_confidence"] = round(min(word["confidence"] for word in members), 2)
+    return result
 
 
 def _cells(words, columns, rows):
@@ -431,7 +484,14 @@ def _grouped_rail_cells(words, rules, rails, dpi):
             and word["bbox"][0] >= box[0] - dpi * .02 and word["bbox"][2] <= box[2] + dpi * .02
             and (col not in fractional_columns or fraction.fullmatch(word["text"]))
         ]
-        cells.append(_make_cell(row, col, box, clean if len(clean) == len(members) == 1 else []))
+        if len(clean) == len(members) == 1:
+            cells.append(_make_cell(row, col, box, clean))
+        else:
+            cell = _make_cell(row, col, box, [])
+            if members:
+                raw = _make_cell(row, col, box, members)
+                cell["ocr_raw"] = {"text": raw["text"], "confidence": raw.get("ocr_confidence")}
+            cells.append(cell)
     return sorted(cells, key=lambda cell: (cell["row"], cell["column"]))
 
 
@@ -487,6 +547,7 @@ def _region(ink, rules, partial_rules, words, dpi):
 
     text_rows, height = _text_rows(local_words, dpi)
     columns = _text_columns(text_rows, left, right, height, dpi)
+    stub_columns = _sparse_stub_columns(columns, text_rows, rules, height, dpi)
     separated = _has_separated_rows(text_rows, height, dpi)
     if len(columns) < 3:
         broad = right - left >= ink.shape[1] * 0.20
@@ -495,12 +556,13 @@ def _region(ink, rules, partial_rules, words, dpi):
             if not (broad and not boxed and not vertical_evidence and len(rules) >= 3):
                 return None
     elif not vertical_evidence:
-        row_bands = _sparse_row_boundaries(text_rows, columns, rules, partial_rules, height, dpi)
+        row_bands = _sparse_row_boundaries(text_rows, stub_columns, rules, partial_rules, height, dpi)
         if row_bands:
             return {
                 "type": "table", "bbox": bounds, "status": "structure_recognized",
-                "method": "horizontal_rules_ocr_alignment",
-                "cells": _cells(local_words, columns, row_bands),
+                "method": ("horizontal_rules_sparse_stub_ocr_alignment" if stub_columns != columns
+                           else "horizontal_rules_ocr_alignment"),
+                "cells": _cells(local_words, stub_columns, row_bands),
             }
 
     return {

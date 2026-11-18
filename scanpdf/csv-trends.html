@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>按变量绘图与核对趋势 · 证据台</title>
+<style>
+  :root{color-scheme:light;font:16px/1.65 system-ui,sans-serif;color:#183447;background:#f4f2ee}
+  *{box-sizing:border-box}body{max-width:1040px;margin:auto;padding:22px clamp(16px,5vw,58px) 50px}
+  h1{font-size:clamp(30px,5vw,50px);line-height:1.12;margin:24px 0 10px;letter-spacing:-.035em}
+  h2{font-size:1.3rem;margin:0 0 9px}p{margin:0 0 10px}a{color:#135e70;text-underline-offset:.19em}
+  section{background:#fff;border:1px solid #d6dce0;border-radius:12px;padding:clamp(14px,4vw,27px);margin-top:16px}
+  label{display:grid;gap:4px;font-weight:620}input,button,select{font:inherit;color:inherit;border-radius:6px}
+  input,select{min-width:0;max-width:100%}input[type=text],select{width:100%;padding:8px 10px;border:1px solid #87939e;background:#fff}
+  button{padding:7px 13px;border:1px solid #176075;background:#e9f2f3;font-weight:640;cursor:pointer}
+  button.primary{background:#176075;color:#fff}button:disabled{opacity:.65;cursor:wait}
+  .controls{display:flex;align-items:end;flex-wrap:wrap;gap:9px;margin-top:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-block:12px}
+  .inline{display:flex;align-items:center;gap:7px;font-weight:500;margin-block:12px}
+  .subtle{color:#40566a;font-size:.94rem}.wrap{overflow-wrap:anywhere}.preview{overflow-x:auto;border:1px solid #e1e6e8}
+  figure{margin:12px 0}figure img{display:block;width:100%;min-width:340px;height:auto;margin:auto}
+  figcaption{white-space:pre-line;margin-top:10px}details{margin-top:14px}.scroll{overflow:auto;max-height:300px}
+  textarea{width:100%;min-height:110px;margin-top:6px;padding:8px;border:1px solid #87939e;border-radius:6px;font:13px/1.5 ui-monospace,monospace;color:inherit}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:5px 9px;border-bottom:1px solid #e1e6e8;overflow-wrap:anywhere}
+  th{position:sticky;top:0;background:#edf2f4} [hidden],[role=status]:empty{display:none!important}
+</style>
+<nav aria-label="工作台"><a href="/#csv-workbench">返回 CSV 图表</a></nav>
+<h1>按变量绘图与核对趋势</h1>
+<p class="subtle">在本机读取 UTF-8 CSV。选择横轴和数值目标后，可导出图、图注和逐行数据映射。</p>
+<main>
+  <section aria-labelledby="trend-data-heading">
+    <h2 id="trend-data-heading">数据与变量</h2>
+    <div class="controls">
+      <label for="trend-file">选择 CSV<input type="file" id="trend-file" accept=".csv,text/csv"></label>
+      <button id="trend-clear" type="button">清空 CSV</button>
+    </div>
+    <p id="trend-source" role="status" class="subtle wrap">尚未选择数据。</p>
+    <form id="trend-controls" hidden>
+      <div class="grid">
+        <label for="trend-x">横轴列<select id="trend-x" required></select></label>
+        <label for="trend-kind">横轴类型<select id="trend-kind" required>
+          <option value="">请选择</option><option value="numeric">数值自变量</option><option value="category">类别</option>
+        </select></label>
+        <label for="trend-y">目标数值列<select id="trend-y" required></select></label>
+        <label for="trend-x-unit">横轴单位（选填）<input type="text" id="trend-x-unit" maxlength="40"></label>
+        <label for="trend-y-unit">目标单位（选填）<input type="text" id="trend-y-unit" maxlength="40"></label>
+        <label for="trend-row-unit">观测行单位（选填）<input type="text" id="trend-row-unit" maxlength="40" placeholder="例如 试次"></label>
+        <label for="trend-group">分组列（选填）<select id="trend-group"></select></label>
+        <label for="trend-focus" id="trend-focus-label" hidden>绘制范围<select id="trend-focus"></select></label>
+        <label for="trend-width">导出图宽<select id="trend-width"><option value="183">183 mm</option><option value="90">90 mm</option></select></label>
+      </div>
+      <label class="inline" for="trend-connect"><input type="checkbox" id="trend-connect" disabled> 连接同组可比的相邻数值点</label>
+      <button type="submit" class="primary" id="trend-draw">绘图并生成图注</button>
+    </form>
+    <p id="trend-status" role="status" class="subtle wrap"></p>
+  </section>
+  <section id="trend-result" aria-labelledby="trend-result-heading" hidden>
+    <h2 id="trend-result-heading">图与原行映射</h2>
+    <figure>
+      <div id="trend-preview" class="preview" tabindex="0" aria-label="图形预览"></div>
+      <figcaption id="trend-caption" class="wrap"></figcaption>
+    </figure>
+    <div class="controls">
+      <button id="trend-svg" type="button">下载 SVG</button>
+      <button id="trend-png" type="button">下载 PNG（300 dpi）</button>
+      <button id="trend-caption-file" type="button">下载图注</button>
+      <button id="trend-mapping" type="button">下载数据映射</button>
+    </div>
+    <p id="trend-export-status" role="status" class="subtle"></p>
+    <details>
+      <summary>查看并导出 TikZ / Mermaid</summary>
+      <div class="grid">
+        <div>
+          <label for="trend-tikz-code">TikZ 矢量图源码</label>
+          <p class="subtle">保留数值坐标、分组、点形与连线。可用 XeLaTeX 编译。</p>
+          <textarea id="trend-tikz-code" aria-label="TikZ 矢量图源码" readonly spellcheck="false"></textarea>
+          <div class="controls"><button id="trend-tikz-copy" type="button">复制 TikZ</button><button id="trend-tikz" type="button">下载 TikZ</button></div>
+        </div>
+        <div>
+          <label for="trend-mermaid-code">Mermaid 观测关系图源码</label>
+          <p class="subtle">节点保留原行与观测值，连线保留分组和所选相邻关系。数值坐标及比例以 SVG 或 TikZ 为准。</p>
+          <textarea id="trend-mermaid-code" aria-label="Mermaid 观测关系图源码" readonly spellcheck="false"></textarea>
+          <div class="controls"><button id="trend-mermaid-copy" type="button">复制 Mermaid</button><button id="trend-mermaid" type="button">下载 Mermaid</button></div>
+          <p id="trend-mermaid-status" class="subtle" role="status"></p>
+        </div>
+      </div>
+      <div id="trend-mermaid-xy-panel">
+        <label for="trend-mermaid-xy-code">Mermaid 数值趋势图源码</label>
+        <p id="trend-mermaid-xy-reason" class="subtle" role="status"></p>
+        <div id="trend-mermaid-xy-source" hidden>
+          <p class="subtle">从同一系列的等距数值 X 和原始观测生成折线，保留横纵轴单位。</p>
+          <textarea id="trend-mermaid-xy-code" readonly spellcheck="false"></textarea>
+          <div class="controls"><button id="trend-mermaid-xy-copy" type="button">复制 Mermaid 趋势图</button><button id="trend-mermaid-xy" type="button">下载 Mermaid 趋势图</button></div>
+        </div>
+      </div>
+    </details>
+    <details><summary>查看原行映射（前 40 条）</summary><div class="scroll">
+      <table><thead><tr><th scope="col">数据行</th><th scope="col">CSV 起始行</th><th scope="col">横轴原值</th><th scope="col">目标原值</th><th scope="col">分组</th><th scope="col">绘图状态</th></tr></thead>
+      <tbody id="trend-rows"></tbody></table>
+    </div></details>
+  </section>
+</main>
+<script src="/csv-stats.js"></script>
+<script src="/csv-trends.js"></script>
+<script>
+  'use strict';
+  const byId = id => document.getElementById(id);
+  const input = name => byId('trend-' + name);
+  const csv = globalThis.EvidenceDeskCSV, trends = globalThis.EvidenceDeskCSVTrends;
+  let dataset, source, active, groups = [], readVersion = 0, viewVersion = 0;
+
+  function clearResult() {
+    viewVersion++;
+    active = null;
+    input('result').hidden = true;
+    input('preview').replaceChildren();
+    input('rows').replaceChildren();
+    input('status').textContent = '';
+    input('export-status').textContent = '';
+  }
+  function reset(message) {
+    clearResult();
+    dataset = source = null;
+    input('controls').hidden = true;
+    input('controls').reset();
+    input('source').textContent = message;
+  }
+  function choices(column, emptyLabel) {
+    input(column).replaceChildren(new Option(emptyLabel, ''), ...dataset.headers.map((header, i) => new Option(header, String(i))));
+  }
+  function updateGroups() {
+    const rawGroup = input('group').value;
+    groups = rawGroup === '' ? [] : trends.groupValues(dataset, Number(rawGroup));
+    input('focus-label').hidden = rawGroup === '';
+    input('focus').replaceChildren(new Option('全部分组', ''), ...groups.map((label, i) => new Option(label, String(i))));
+  }
+  input('file').addEventListener('change', async event => {
+    const file = event.target.files[0], run = ++readVersion;
+    reset(file ? '正在本机读取 CSV…' : '尚未选择数据。');
+    if (!file) return;
+    try {
+      if (file.size > csv.MAX_BYTES) throw Error('CSV 超过 512 KiB。');
+      const bytes = await file.arrayBuffer();
+      let text;
+      try { text = new TextDecoder('utf-8', {fatal:true}).decode(bytes); }
+      catch { throw Error('请把文件另存为 UTF-8 CSV。'); }
+      const parsed = csv.parse(text), digest = await csv.sha256(bytes);
+      if (run !== readVersion) return;
+      dataset = parsed;
+      source = {sourceName:file.name,sourceSha256:digest};
+      choices('x','请选择横轴'); choices('y','请选择目标'); choices('group','不分组');
+      updateGroups();
+      input('connect').disabled = true;
+      input('source').textContent = `${file.name} · ${dataset.rows.length} 条记录 · SHA-256 ${digest}`;
+      input('controls').hidden = false;
+    } catch (error) {
+      if (run === readVersion) reset(error.message);
+    } finally {
+      if (run === readVersion) input('file').value = '';
+    }
+  });
+  input('clear').addEventListener('click', () => {
+    readVersion++;
+    input('file').value = '';
+    reset('已清空 CSV。');
+  });
+  input('controls').addEventListener('input', event => {
+    clearResult();
+    if (event.target === input('group')) updateGroups();
+    if (event.target === input('kind')) {
+      input('connect').disabled = input('kind').value !== 'numeric';
+      if (input('connect').disabled) input('connect').checked = false;
+    }
+  });
+  function showRows(rows) {
+    const status = {missing_group:'缺分组',outside_group:'在所选范围外',invalid_coordinate:'坐标缺失或无效'};
+    input('rows').replaceChildren(...rows.slice(0,40).map(row => {
+      const tr = document.createElement('tr');
+      for (const value of [row.dataRow,row.sourceLine,row.xCell,row.yCell,row.groupCell,row.plotted ? '已绘制' : status[row.exclusion]]) {
+        const td = document.createElement('td');
+        td.textContent = value ?? '—';
+        tr.append(td);
+      }
+      return tr;
+    }));
+  }
+  function prepareSource(stats, rendered) {
+    input('tikz-code').value = rendered ? trends.tikz(rendered) : '';
+    input('mermaid-code').value = '';
+    input('mermaid-status').textContent = '';
+    if (rendered) {
+      try { input('mermaid-code').value = trends.mermaid(stats); }
+      catch (error) { input('mermaid-status').textContent = error.message; }
+    }
+    for (const type of ['tikz','mermaid']) {
+      input(type).disabled = input(type + '-copy').disabled = !input(type + '-code').value;
+    }
+    const xy = trends.mermaidXY(stats);
+    input('mermaid-xy-code').value = xy.code;
+    input('mermaid-xy-source').hidden = !xy.code;
+    input('mermaid-xy-reason').textContent = xy.reason || '';
+  }
+  input('controls').addEventListener('submit', event => {
+    event.preventDefault();
+    clearResult();
+    if (!dataset) return;
+    const selected = name => input(name).value === '' ? null : Number(input(name).value);
+    try {
+      const stats = trends.analyze(dataset, {...source, xColumn:selected('x'),yColumn:selected('y'),xKind:input('kind').value,
+        xUnit:input('x-unit').value,yUnit:input('y-unit').value,observationUnit:input('row-unit').value,
+        groupColumn:selected('group'),focus:groups[selected('focus')] ?? null,connect:input('connect').checked});
+      let rendered = null;
+      if (stats.rows.some(row => row.plotted)) {
+        rendered = trends.figure(stats,{widthMm:Number(input('width').value)});
+        const preview = document.createElement('img');
+        preview.alt = '按显式选择的横轴和目标绘制的观测值图。逐行口径见图注及数据映射。';
+        preview.style.maxWidth = `${rendered.width}px`;
+        preview.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(rendered.svg);
+        input('preview').replaceChildren(preview);
+      } else {
+        input('preview').textContent = '所选范围没有可绘观测。';
+      }
+      input('caption').textContent = stats.caption;
+      showRows(stats.rows);
+      prepareSource(stats,rendered);
+      active = {stats,rendered};
+      input('svg').disabled = input('png').disabled = !rendered;
+      input('result').hidden = false;
+    } catch (error) {
+      input('status').textContent = error.message;
+    }
+  });
+  function download(body, name, mime) {
+    const url = URL.createObjectURL(body instanceof Blob ? body : new Blob([body],{type:mime}));
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url),1000);
+  }
+  input('svg').addEventListener('click', () => {
+    if (active?.rendered) download(active.rendered.svg,'csv-variable-figure.svg','image/svg+xml;charset=utf-8');
+  });
+  input('caption-file').addEventListener('click', () => {
+    if (active) download(active.stats.caption + '\n原文件 SHA-256 ' + active.stats.source.sha256 + '\n',
+      'csv-variable-caption.txt','text/plain;charset=utf-8');
+  });
+  input('mapping').addEventListener('click', () => {
+    if (active) {
+      const {stats,rendered} = active;
+      const figure = rendered ? {widthMm:rendered.widthMm,heightMm:rendered.heightMm,previewDpi:300} : null;
+      download(JSON.stringify({...stats,figure},null,2),'csv-variable-mapping.json','application/json;charset=utf-8');
+    }
+  });
+  for (const [type,suffix] of [['tikz','tex'],['mermaid','mmd'],['mermaid-xy','mmd']]) {
+    input(type).addEventListener('click', () => {
+      if (active && input(type + '-code').value) download(input(type + '-code').value,`csv-variable-${type}.${suffix}`,'text/plain;charset=utf-8');
+    });
+    input(type + '-copy').addEventListener('click', async () => {
+      const code = input(type + '-code');
+      if (!active || !code.value) return;
+      try {
+        await navigator.clipboard.writeText(code.value);
+        const status = {tikz:'export-status',mermaid:'mermaid-status','mermaid-xy':'mermaid-xy-reason'};
+        input(status[type]).textContent = '已复制源码。';
+      } catch {
+        code.select();
+      }
+    });
+  }
+  input('png').addEventListener('click', async () => {
+    if (!active?.rendered) return;
+    const run = viewVersion;
+    input('png').disabled = true;
+    try {
+      const blob = await trends.png(active.rendered);
+      if (run === viewVersion) download(blob,'csv-variable-300dpi.png','image/png');
+    } catch (error) {
+      if (run === viewVersion) input('export-status').textContent = error.message;
+    } finally {
+      if (run === viewVersion) input('png').disabled = false;
+    }
+  });
+</script>
