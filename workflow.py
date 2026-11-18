@@ -37,6 +37,7 @@ def _valid_address(hit):
 def _locate(docs, query, get_pdf):
     by_doc = {doc["id"]: {} for doc in docs}
     concepts = {}
+    metrics = {}
 
     def append(doc_id, hit, groups):
         # Keep inconsistent text for the same address as a separate verification
@@ -63,7 +64,22 @@ def _locate(docs, query, get_pdf):
     for doc_id,key,label,hit in partner_candidates(docs,query,get_pdf):
         concepts.setdefault(key,label)
         append(doc_id,hit,[key])
-    return by_doc, concepts
+    if "bleu" in query.casefold():
+        from partner_metric import answer_metric
+        for doc in docs:
+            try:
+                data = get_pdf(doc["id"])
+            except (OSError, KeyError, ValueError):
+                continue
+            if not isinstance(data,bytes) or hashlib.sha256(data).hexdigest()!=doc["id"]:
+                continue
+            result = answer_metric(doc, query, data)
+            if result and result.get("comparison") and result.get("hits"):
+                metrics[doc["id"]]=result
+            for hit in (result or {}).get("hits", ()):
+                concepts["metric_table"] = "BLEU 分组表与正文出处（非自动语义证明）"
+                append(doc["id"],hit,["metric_table"])
+    return by_doc, concepts, metrics
 
 
 def _verification_failure(hit, reason):
@@ -133,7 +149,7 @@ def run_workflow(docs, query, get_pdf):
     if not 1 <= len(docs) <= MAX_WORKFLOW_PAPERS or len({d["id"] for d in docs}) != len(docs):
         raise ValueError("请选择 1 到 8 篇不同的活动文献。")
     query = query.strip()
-    by_doc, concepts = _locate(docs, query, get_pdf)
+    by_doc, concepts, metrics = _locate(docs, query, get_pdf)
     papers = []
     for doc in docs:
         ident = doc["id"]
@@ -142,6 +158,11 @@ def run_workflow(docs, query, get_pdf):
         found = "verified_evidence" if verified else "verification_failed" if candidates else "no_match"
         papers.append({"id":ident,"name":doc["name"],"status":found,"source_status":source_status,
                        "candidate_count":len(candidates),"evidence":verified,"failures":failures})
+        metric=metrics.get(ident)
+        if metric and not failures and verified and source_status=="hash_matched":
+            keys={(*_passage_key(e),e["text"]) for e in verified}
+            if all((*_passage_key(h),h["text"]) in keys for h in metric["hits"]):
+                papers[-1]["table_calculation"]={"text":metric["answer"],**metric["comparison"]}
     n = sum(len(p["evidence"]) for p in papers)
     count = sum(p["candidate_count"] for p in papers)
     failures = sum(len(p["failures"]) for p in papers)

@@ -86,6 +86,11 @@
       panel.append(title);
       if(paper.status==='no_match')panel.append(E('p','未定位候选摘录，未重读此原件；不表示文献没有该内容。','subtle'));
       if(paper.status==='verification_failed')panel.append(E('p','候选均未获原件逐字核验，未收录摘录。','subtle'));
+      if(paper.table_calculation){
+        const calc=paper.table_calculation;
+        panel.append(E('p','原表同列计算：'+calc.text));
+        panel.append(original(paper.id,calc.page,'查看第 '+calc.page+' 页原表 ↗'));
+      }
       if(paper.evidence.length){
         panel.append(E('p','原件哈希匹配；'+paper.evidence.length+' 条摘录已核验。','subtle'));
         const list=E('ul','','card-list');

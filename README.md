@@ -55,3 +55,6 @@ python3 -m venv .venv
 - 打包源码只包含已追踪文件。随包的 `history.bundle` 保存实际开发提交，可在解压目录外执行 `git clone /path/to/history.bundle evidence-desk-history`。历史记录中没有个人密钥、付费账户或真实用户文献。
 
 **v0.2 数据与网络边界。** 旧库可继续检索；旧文献可能缺少新图谱需要的标题信息。如需完整复现图谱，请在新 `--data` 目录导入原件，无需删除旧库。Crossref 仅在本次主动确认后发送填写的公开检索词；不发送已导入的 PDF。题录不代表已获全文或已验证研究结论。图谱仅识别本地标题、DOI 或 arXiv 标识能消歧的参考条目，未连线不等于未引用。
+
+### 分组表 BLEU 验收
+在支持上述扫描依赖的 Python 环境安装 `python -m pip install -r scanpdf/requirements.txt`。导入 Attention v1 和 v7，进入查证工作流并选择两篇，提问“Transformer 在 EN-DE 任务上的 BLEU 比此前最佳提高多少？”；各篇可点第8页表2。只支持部分具有规则分组表头的布局，不能将失败理解为论文没有该结果。
