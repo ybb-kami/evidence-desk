@@ -1,5 +1,7 @@
 """Independent loopback E2E: all consented web operations, ONE actual SQLite, no paid network."""
 import sys,unittest,tempfile,time,threading,socket,json,http.client,hashlib
+import os
+import pymupdf
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE/'candidate'/'gateway'))
@@ -17,8 +19,22 @@ class AllThree(unittest.TestCase):
  def run_scope(self,n):
     app=HERE.parents[1]/"app.py"
     if not app.exists():app=HERE.parent/"evidence-desk"/"app.py"
-    pdfs=[Path('/tmp/edesk-eval-'+x+'.pdf') for x in ['1706.03762v1','1810.04805']][:n]
-    self.assertTrue(all(p.is_file() for p in pdfs))
+    if 'EVIDENCE_TEST_PDF_DIR' in os.environ:
+        folder = Path(os.environ['EVIDENCE_TEST_PDF_DIR'])
+        pdfs = [folder / name for name in ('1706.03762v1.pdf', 'N19-1423.pdf')][:n]
+        for pdf in pdfs:
+            self.assertTrue(pdf.is_file(), f'missing supplied test PDF: {pdf.name}')
+    else:
+        # Unit discovery can run from a fresh checkout, without downloading contest papers.
+        folder = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        pdfs = []
+        for label in ('Atlas', 'Birch')[:n]:
+            pdf = folder / (label + '.pdf')
+            with pymupdf.open() as doc:
+                doc.new_page().insert_text((50, 80), f'The {label} encoder transforms source tokens into contextual representations.')
+                doc.new_page().insert_text((50, 80), 'References')
+                doc.save(pdf)
+            pdfs.append(pdf)
     with socket.socket() as s:s.bind(('127.0.0.1',0));port=s.getsockname()[1]
     origin='http://127.0.0.1:'+str(port)
     with tempfile.TemporaryDirectory() as d,launcher.demo_slots(app,Path(d)/'slots',2,origin) as slots:

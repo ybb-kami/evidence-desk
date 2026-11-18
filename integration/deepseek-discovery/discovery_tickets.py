@@ -27,28 +27,42 @@ class Tickets:
         from group_dispatch import ApprovedGroupCaller
         if not isinstance(caller,ApprovedGroupCaller):raise Denied("invalid dispatcher")
         obj=cls();obj.caller=caller;return obj
-    def group_for(self,seat):
+    def group_for(self,seat,op=None):
+        """Pick a group for a new preview. Existing tickets keep their group."""
+        if op is not None and op not in ('model','search','fetch'):
+            raise Denied('unsupported operation')
         with self.lock:
-            now=self.clock();self.groups={k:v for k,v in self.groups.items() if v[0]>now}
-            if seat not in self.groups:
-                if len(self.groups)>=16:raise Denied('group capacity')
-                self.groups[seat]=(now+600,secrets.token_hex(32))
-            return self.groups[seat][1]
+            return self._group_for_locked(seat,op)
+    def _group_for_locked(self,seat,op):
+        now=self.clock()
+        self.groups={k:v for k,v in self.groups.items() if v[0]>now}
+        current=self.groups.get(seat)
+        if current is not None:
+            already_reserved=(op is not None and self.caller is not None
+                              and self.caller.ledger.has_reservation(seat=seat,gid=current[1],op=op))
+            if not already_reserved:
+                return current[1]
+        elif len(self.groups)>=16:
+            raise Denied('group capacity')
+        gid=secrets.token_hex(32)
+        self.groups[seat]=(now+600,gid)
+        return gid
     def preview(self,seat,action,value):
-        now=self.clock();active=self.group_for(seat)
         with self.lock:
+            now=self.clock()
             self.pending={k:v for k,v in self.pending.items() if v[0]>now}
             self.offers={k:v for k,v in self.offers.items() if v[0]>now}
+            if len(self.pending)>=16 and seat not in self.pending:raise Denied('busy')
             if action=='search':
                 if not isinstance(value,str) or not 1<=len(value)<=128 or not value.strip() or not value.isprintable():raise Denied('invalid query')
-                self.offers.pop(seat,None);gid=active
+                gid=self._group_for_locked(seat,'search')
+                self.offers.pop(seat,None)
                 body={'query':value,'count':5,'need_content':False}
             elif action=='fetch':
                 opt=self.offers.get(seat,(0,()))[1]
                 if type(value) is not int or not 0<=value<len(opt):raise Denied('no authorized result')
                 gid=self.offers[seat][2];value=opt[value];body={'url':value}
             else:raise Denied('unsupported operation')
-            if len(self.pending)>=16 and seat not in self.pending:raise Denied('busy')
             key=secrets.token_hex(24);self.pending[seat]=(now+120,key,action,value,gid)
         return {'token':key,'action':action,'body':body,'max_micro_usd':750,'group':gid,'online':bool(self.caller or (self.transport and self.ledger))}
     def confirm(self,seat,key,consent):

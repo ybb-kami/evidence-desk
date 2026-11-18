@@ -1,0 +1,80 @@
+{
+  "base": "e6f7aa785610a5d98963ff903ab422deab615d65",
+  "tested_on": "2026-11-18",
+  "unit_and_loopback": {
+    "generated": {
+      "passed": 69,
+      "failures": 0
+    },
+    "provided_attention_and_bert": {
+      "passed": 69,
+      "failures": 0
+    }
+  },
+  "chromium_four_seats": {
+    "browser": "156.0.8078.79",
+    "visitors": 4,
+    "fifth_visitor_http": 503,
+    "absent_evidence": "insufficient_evidence",
+    "status": "draft_for_review",
+    "provider_mode": "offline_fixture",
+    "displayed_simulated_mode": true,
+    "physical_page": 2,
+    "block": 1,
+    "original_pdf_matched": true,
+    "other_seats_denied_pdf_and_preview_replay": 3,
+    "same_seat_replay_http": 409,
+    "new_model_reservation_nano_usd": 315187200,
+    "actual_paid_calls": 0,
+    "unix_fake_dispatches": 1,
+    "in_place_budget_upgrade": true,
+    "historical_unknown_reserved_nano_usd": 750000,
+    "cumulative_reserved_nano_usd": 315937200,
+    "cumulative_limit_nano_usd": 2500000000
+  },
+  "chromium_attention": {
+    "pdf_sha256": "0a9bff1be3575cf9fe26a4a3d3a9175bc791ecec90de8b9deba4cff75d2b9476",
+    "browser": "156.0.8078.79",
+    "cases": [
+      {
+        "case": "hardware",
+        "question": "What hardware was used for training?",
+        "preview_status": "ready",
+        "p100_source_verified": true,
+        "confirm_status": "draft_for_review",
+        "physical_page": 7,
+        "block": 3,
+        "original_pdf_matched": true
+      },
+      {
+        "case": "gpu",
+        "question": "How many GPUs did they use for training and what was the model?",
+        "preview_status": "ready",
+        "p100_source_verified": true,
+        "confirm_status": "draft_for_review",
+        "physical_page": 7,
+        "block": 3,
+        "original_pdf_matched": true
+      }
+    ],
+    "provider_mode": "offline_fixture",
+    "actual_paid_calls": 0,
+    "unix_fake_dispatches": 2,
+    "in_place_budget_upgrade": true,
+    "historical_unknown_reserved_nano_usd": 750000,
+    "cumulative_reserved_nano_usd": 631124400,
+    "cumulative_limit_nano_usd": 2500000000
+  },
+  "linux_network_namespace_test": {
+    "distinct_network_namespaces": true,
+    "client_interfaces": [
+      "lo"
+    ],
+    "transport": "pathname AF_UNIX",
+    "provider_mode": "offline_fixture",
+    "model_dispatches": 1,
+    "actual_paid_calls": 0
+  },
+  "provider_billing_observed": false,
+  "production_deployment_performed": false
+}

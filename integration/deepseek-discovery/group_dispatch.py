@@ -3,13 +3,17 @@ import hashlib,http.client,json,ssl
 from group_budget import ENDPOINT,GroupBudget,Denied
 class ApprovedGroupCaller:
     def __init__(self,ledger,transport):
-        if not isinstance(ledger,GroupBudget) or not callable(transport):raise Denied('no approved ledger or transport')
+        if not isinstance(ledger,GroupBudget) or not (callable(transport) or callable(getattr(transport, 'send_reserved', None))):raise Denied('no approved ledger or transport')
         self.ledger,self.transport=ledger,transport
     def call(self,seat,gid,op,rid,body):
         endpoint=ENDPOINT[op]
         wire=json.dumps(body,ensure_ascii=False,allow_nan=False,separators=(',',':')).encode()
-        reservation=self.ledger.reserve(seat=seat,gid=gid,op=op,rid=rid,endpoint=endpoint,wire=wire)
+        send_reserved = getattr(self.transport, 'send_reserved', None)
+        reservation = self.ledger.reserve(seat=seat, gid=gid, op=op, rid=rid, endpoint=endpoint,
+                                          wire=wire, private_dispatch=send_reserved is not None)
         if reservation['request_sha256']!=hashlib.sha256(wire).hexdigest():raise Denied('wire changed')
+        if send_reserved is not None:
+            return send_reserved(endpoint, wire, rid=rid)
         return self.transport(endpoint,wire)
 def tls_transport(key):
     if not isinstance(key,str) or not key or not key.isascii() or not key.isprintable() or any(x.isspace() for x in key):raise Denied('invalid secret')

@@ -1,0 +1,11 @@
+{
+  "observed_date": "2026-11-18",
+  "source": "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@2026-11-18/v1/currencies/usd.json",
+  "market_reference_cny_per_usd": "6.6662016",
+  "cap_policy": {
+    "cny_per_usd_upper": "8.00",
+    "fx_source_sha256": "0158abea59aaacd9513110657c59bd9f3ed3ecb7fa31eb2cf7273f37cae30c9d",
+    "fx_verified_epoch": 1795011540,
+    "fx_expiry_epoch": 1795017600
+  }
+}
