@@ -4,7 +4,8 @@ from graph import _blocks
 INSTITUTION=re.compile(r'\b(?:university|department|institute|laborator(?:y|ies)|college|research|google|microsoft|openai|academy|school)\b|大学|研究所|学院',re.I)
 END=re.compile(r'^(?:[0-9]+\.?\s+|introduction\b|keywords?\b|index terms\b|摘要关键词|关键词|引言|绪论|[∗*†‡]|copyright|proceedings|[0-9]+(?:st|th|nd) conference)',re.I)
 def first_page(doc):
-    rows=[(b,txt) for p,b,cs,off,txt in _blocks(doc) if p==1 and not cs[0].get('arxiv_stamp')]
+    first={"chunks":[c for c in doc.get("chunks",[]) if c.get("page")==1]}
+    rows=[(b,txt) for p,b,cs,off,txt in _blocks(first) if not cs[0].get("arxiv_stamp")]
     title=(doc.get('bibliographic_identity') or {}).get('title')
     loc=lambda block:{'page':1,'block':block}
     authors=[];unassigned=[];abstract=[]; active=False; abstract_start=False

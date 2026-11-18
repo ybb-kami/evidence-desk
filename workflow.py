@@ -7,6 +7,7 @@ import fitz
 from compare_evidence import compare_evidence
 from engine import MAX_BYTES, MAX_PAGES, _windows
 from evidence_questions import locate_question
+from partner_evidence import PROVENANCE, candidates as partner_candidates
 
 MAX_WORKFLOW_PAPERS = 8
 PLAN = (
@@ -33,7 +34,7 @@ def _valid_address(hit):
         and isinstance(hit.get("text"), str) and bool(hit["text"]))
 
 
-def _locate(docs, query):
+def _locate(docs, query, get_pdf):
     by_doc = {doc["id"]: {} for doc in docs}
     concepts = {}
 
@@ -59,6 +60,9 @@ def _locate(docs, query):
             for cell in row["cells"]:
                 for hit in cell["hits"]:
                     append(cell["id"],hit,[row["id"]])
+    for doc_id,key,label,hit in partner_candidates(docs,query,get_pdf):
+        concepts.setdefault(key,label)
+        append(doc_id,hit,[key])
     return by_doc, concepts
 
 
@@ -129,7 +133,7 @@ def run_workflow(docs, query, get_pdf):
     if not 1 <= len(docs) <= MAX_WORKFLOW_PAPERS or len({d["id"] for d in docs}) != len(docs):
         raise ValueError("请选择 1 到 8 篇不同的活动文献。")
     query = query.strip()
-    by_doc, concepts = _locate(docs, query)
+    by_doc, concepts = _locate(docs, query, get_pdf)
     papers = []
     for doc in docs:
         ident = doc["id"]
@@ -145,7 +149,10 @@ def run_workflow(docs, query, get_pdf):
     coverage="all" if matched==len(papers) else "partial" if matched else "none"
     message = (f"{matched}/{len(papers)} 篇找到并核对摘录；问题本身尚未判定。提要仅收录通过原件逐字核验的摘录。请核对每处原页以及问题与引文的关系。"
                if n else "证据不足：本次没有通过原件核验的摘录，不提供结论或证据提要。")
+    methods={key for p in papers for e in p["evidence"] for key in e["concept_ids"]}
+    partner = {key:value for key,value in PROVENANCE["features"].items() if key in methods}
     return {
+        "source_methods":[{**PROVENANCE,"features":partner}] if partner else [],
         "schema":"evidence-desk-workflow-v1","query":query,
         "status":"verified_evidence" if n else "insufficient_evidence",
         "coverage":coverage,"papers_with_evidence":matched,"papers_selected":len(papers),"claim_support":"not_assessed",

@@ -147,6 +147,12 @@ class Handler(BaseHTTPRequestHandler):
         if post and (self.headers.get('Origin') not in (None,'http://'+host) or self.headers.get('Sec-Fetch-Site')=='cross-site'):
             raise Bad(403,'拒绝跨站请求。')
         u = urlsplit(self.path); path=u.path
+        if path=='/translation' or path.startswith(('/api/bilingual/','/bilingual/')):
+            try:from partner_reader.routes import handle as handle_bilingual
+            except ModuleNotFoundError as exc:
+                if exc.name not in ('partner_reader','partner_reader.routes'):raise
+                raise Bad(503,'此安装未包含本地双语阅读组件。')
+            if handle_bilingual(self,post,path,bad=Bad):return
         store=self.server.library
         if path.startswith('/api/arxiv-import') and getattr(self.server,'arxiv_import',None) is None:
             raise Bad(503,'当前安装未提供可选 arXiv 全文组件。')
