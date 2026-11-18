@@ -7,7 +7,7 @@ import unittest
 
 import fitz
 
-from ocr_local import create_derivative
+from ocr_local import MAX_PAGES, create_derivative
 
 
 def english_available():
@@ -67,6 +67,21 @@ class LocalOCRTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "found no text"):
             create_derivative(self.source, self.output)
         self.assertFalse(self.output.exists())
+
+    def test_page_count_and_per_page_pixel_limits_leave_original_unchanged(self):
+        for pages, width, message in ((MAX_PAGES+1, 520, f"1 to {MAX_PAGES} pages"),
+                                      (1, 2000, "rendering limits")):
+            with self.subTest(pages=pages, width=width):
+                self.source.unlink(missing_ok=True)
+                with fitz.open() as pdf:
+                    for _ in range(pages):
+                        pdf.new_page(width=width, height=600)
+                    pdf.save(self.source)
+                original = self.source.read_bytes()
+                with self.assertRaisesRegex(ValueError, message):
+                    create_derivative(self.source, self.output)
+                self.assertFalse(self.output.exists())
+                self.assertEqual(self.source.read_bytes(), original)
 
 
 if __name__ == "__main__":

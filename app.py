@@ -1,10 +1,11 @@
 """Evidence Desk: local single-user PDF workbench; no telemetry or background network."""
 from __future__ import annotations
-import argparse, hashlib, json, re, sqlite3, threading
+import argparse, hashlib, json, re, signal, sqlite3, threading
 from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
+from local_ocr_jobs import LocalOCRJobs, OCRJobError
 from engine import parse_pdf, find_evidence, duplicates
 from graph import build_graph
 from revisions import describe_revision
@@ -97,7 +98,7 @@ class Bad(Exception):
 class Handler(BaseHTTPRequestHandler):
     server_version = 'EvidenceDesk'
     def log_message(self, fmt, *args): pass   # Do not log filenames, queries, or secrets.
-    def payload(self, status, data, mime='application/json; charset=utf-8'):
+    def payload(self, status, data, mime='application/json; charset=utf-8', attachment=None):
         if not isinstance(data,bytes):
             data=json.dumps(data,ensure_ascii=False).encode()
         self.send_response(status)
@@ -105,6 +106,7 @@ class Handler(BaseHTTPRequestHandler):
                     ('X-Content-Type-Options','nosniff'),('Referrer-Policy','no-referrer'),
                     ('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'self'; frame-ancestors 'self'; form-action 'none'; base-uri 'none'")]:
             self.send_header(k,v)
+        if attachment:self.send_header("Content-Disposition","attachment; filename*=UTF-8''"+quote(attachment,safe=""))
         self.end_headers()
         self.wfile.write(data)
     def body(self, limit):
@@ -142,16 +144,25 @@ class Handler(BaseHTTPRequestHandler):
                     '/index.html':('index.html','text/html; charset=utf-8'),
                     '/sample.pdf':('sample.pdf','application/pdf'),
                     '/csv-stats.js':('csv-stats.js','application/javascript; charset=utf-8')}
-            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js'):
+            for name in ('writing.js','reader.js','reader.css','tracking.js','review-panel.js','questions.js','page-objects.js','ocr-panel.js'):
                 assets['/'+name]=(name, 'text/css; charset=utf-8' if name.endswith('.css') else 'application/javascript; charset=utf-8')
             if path in assets:
                 filename,mime=assets[path]
                 if (HERE/filename).is_file(): return self.payload(200,(HERE/filename).read_bytes(),mime)
+            if m:=re.fullmatch(r'/api/page-objects/([0-9a-f]{64})/([1-9][0-9]{0,2})',path):
+                from page_objects import inspect_page
+                data=store.pdf(m[1])
+                if data is None:raise Bad(404,'找不到指定文献。')
+                return self.payload(200,inspect_page(data,int(m[2])))
             if path.startswith('/api/reader/') and ID.fullmatch(path[12:]):
                 from reader import build_reader
                 matches=store.records([path[12:]],archived=None)
                 if not matches: raise Bad(404,'找不到指定文献。')
                 return self.payload(200,build_reader(matches[0]))
+            if path=='/api/ocr':return self.payload(200,self.server.ocr_jobs.status())
+            if path.startswith('/api/ocr/result/'):
+                content,name=self.server.ocr_jobs.result(path[len('/api/ocr/result/'):])
+                return self.payload(200,content,'application/pdf',attachment=name)
             if path=='/api/local-review':
                 from local_review import collection_review
                 return self.payload(200,collection_review(store.records()))
@@ -182,6 +193,24 @@ class Handler(BaseHTTPRequestHandler):
             if len(pair)!=2: raise Bad(404,'所选文献不在本地文库中。')
             return self.payload(200,{'before':summary(pair[before]),'after':summary(pair[after]),
                                      **describe_revision(pair[before],pair[after])})
+        elif path=='/api/ocr':
+            docid,=self.document_ids(self.json_request(),'id')
+            docs=store.records([docid])
+            if not docs:raise Bad(404,'请先选择活动文献。')
+            doc=docs[0]
+            if doc['pages']>20 or len(doc['textless_pages'])!=doc['pages']:
+                raise Bad(400,'仅支持不超过 20 页且无文本层的活动扫描件。')
+            return self.payload(202,self.server.ocr_jobs.start(docid,doc['name'],store.pdf(docid)))
+        elif path=='/api/questions':
+            from evidence_questions import locate_question
+            req=self.json_request(); q=req.get('query');ids=req.get('ids')
+            if (set(req)!={'query','ids'} or not isinstance(q,str) or not 1<=len(q.strip())<=500 or
+                    not isinstance(ids,list) or not 1<=len(ids)<=8 or
+                    any(not isinstance(i,str) or not ID.fullmatch(i) for i in ids) or len(set(ids))!=len(ids)):
+                raise Bad(400,'请填写问题并明确选择 1 至 8 篇本地文献。')
+            docs=store.records(ids)
+            if len(docs)!=len(ids):raise Bad(404,'未找到所选活动文献。')
+            return self.payload(200,locate_question(docs,q.strip()))
         elif path=='/api/tracking':
             req=self.json_request()
             if req.get('consent') is not True: raise Bad(403,'请确认本次访问公开 arXiv 类别。')
@@ -213,16 +242,20 @@ class Handler(BaseHTTPRequestHandler):
                 ]})
             if path=='/api/verify':
                 if req.get('consent') is not True: raise Bad(403,'请先确认可将问题和公开原文摘录发送给 DeepSeek。')
+                if not ids or len(set(ids))!=len(ids) or set(req)!={'query','ids','consent'}:
+                    raise Bad(400,'外部核选必须明确选择文献并重新确认，不支持默认全库。')
+                scoped=store.records(ids)
+                if len(scoped)!=len(ids):raise Bad(404,'所选文献已归档或不存在。')
                 if not self.server.enable_model or not provider.configured():
                     return self.payload(200,{'status':'not_configured','quotes':[],'answer':'未启用 DeepSeek。离线检索仍可使用。'})
-            hits=find_evidence(store.records(ids),query)
+            hits=find_evidence(scoped if path=='/api/verify' else store.records(ids),query)
             if path=='/api/search': return self.payload(200,{'hits':hits})
             if not hits: return self.payload(200,{'status':'insufficient_evidence','quotes':[],'answer':'没有足够原文证据；没有发起模型请求。'})
             return self.payload(200,provider.summarize(query,hits))
         raise Bad(404,'没有找到资源。')
     def run_request(self,post):
         try: self.serve(post)
-        except Bad as e: self.payload(e.code,{'error':e.msg})
+        except (Bad,OCRJobError) as e: self.payload(e.code,{'error':e.msg})
         except ValueError as e: self.payload(400,{'error':str(e)})
         except (ConnectionError,TimeoutError): return
         except RuntimeError: self.payload(502,{'error':'操作未完成。模型或解析组件不可用，请检查本机设置。'})
@@ -237,10 +270,15 @@ def main():
     p.add_argument('--enable-deepseek',action='store_true',help='允许用户逐次确认向 DeepSeek 发送问题和证据摘录')
     args=p.parse_args()
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
+    server.ocr_jobs=LocalOCRJobs()
+    def on_term(*_):raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM,on_term)
     server.library=Library(args.data);server.enable_model=args.enable_deepseek
     print(f'证据台已启动：http://127.0.0.1:{server.server_port} （仅本机；Ctrl+C 停止）',flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
-    finally: server.server_close()
+    finally:
+        server.ocr_jobs.close()
+        server.server_close()
 
 if __name__=='__main__': main()

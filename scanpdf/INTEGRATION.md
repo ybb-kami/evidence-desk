@@ -1,0 +1,1 @@
+入库来源：用户私有仓 ybb-kami/evidence-desk 的 feature/scanpdf-parser，原始提交 e7df350f8a30ef291a0e0c76a587673c67eebae6，以 a6b6d27 为基线的三次提交。原始十七个文件逐一核对 Git blob ID 后移入本树。README、样本报告和测试对镜像来源重新标注；未伪造原始提交 SHA。本地 Git 新提交仅记录本次整合。此目录不含镜像 PDF 或其 OCR 文本输出。

@@ -21,7 +21,7 @@
 <a class="skip" href="#main">跳转到检索区</a>
 <header><div class="shell mast"><div class="brand"><span class="glyph" aria-hidden="true">◫</span><span>证据台</span><small>EVIDENCE DESK</small></div><span class="tag">本地工作区</span></div></header>
 <div class="shell">
-<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#paper-compare">分篇检索</a><a href="#citation-graph">本地引文图</a><a href="#local-review">本地综述</a><a href="#public-discovery">公开文献发现</a><a href="#version-management">版本与归档</a><a href="#csv-workbench">CSV 图表</a><a href="#writing-workbench">论文框架</a><a href="#reader">文献阅读</a><a href="#tracking">arXiv 追踪</a></nav></section>
+<section class="hero" aria-labelledby="hero-title"><div class="eyebrow">PDF 研究工作台</div><h1 id="hero-title">从检索回到原文</h1><p>导入 PDF，在多篇文献中检索关键词，按页核对原文，并排比较证据。</p><nav class="jump-links subtle" aria-label="工作台分区"><a href="#main">查找证据</a><a href="#evidence-questions">自然语言找证据</a><a href="#paper-compare">分篇检索</a><a href="#citation-graph">本地引文图</a><a href="#local-review">本地综述</a><a href="#public-discovery">公开文献发现</a><a href="#version-management">版本与归档</a><a href="#csv-workbench">CSV 图表</a><a href="#writing-workbench">论文框架</a><a href="#reader">文献阅读</a><a href="#tracking">arXiv 追踪</a></nav></section>
 <div class="workbench">
 <aside class="panel" aria-labelledby="library-title"><div class="library-head"><div><div class="eyebrow">01 / 文献库</div><h2 id="library-title">本地文献</h2></div><span class="counter" id="library-count">—</span></div>
 <input id="files" type="file" accept=".pdf,application/pdf" multiple hidden><button class="primary full" type="button" id="choose">＋ 导入 PDF</button>
@@ -48,6 +48,7 @@
 <p class="subtle" id="verify-status" role="status"></p>
 <ul class="card-list" id="verify-quotes" aria-label="核选原文"></ul>
 </details>
+<section class="panel compare" id="evidence-questions" aria-label="自然语言找证据"></section>
 <section class="panel compare" id="paper-compare" tabindex="-1" aria-labelledby="paper-compare-title">
 <div class="eyebrow">04 / 跨文献检索</div><h2 id="paper-compare-title">两篇论文，同一关键词</h2>
 <form id="paper-compare-form">
@@ -118,6 +119,8 @@
 <p class="subtle">Mermaid 是本工作台实际模块的数据流示意源码，不是按主题自动生成的研究架构。文件保存在本机，不上传原文。</p>
 </section>
 <section id="reader" aria-label="文献阅读"></section>
+<section class="panel compare" id="local-ocr-panel"></section>
+<section class="panel compare" id="page-objects"></section>
 <section id="tracking" aria-label="arXiv 追踪"></section>
 <footer class="subtle"><span>证据台 · 本地文献检索</span><span>摘录用于定位，引用前请核对 PDF 原页。</span></footer>
 </div>
@@ -199,6 +202,7 @@ async function refreshDocs() {
   renderDocs();
   refreshPaperSelects();
   await refreshArchive();
+  if (typeof Event === 'function') $('evidence-questions').dispatchEvent(new Event('library-changed'));
 }
 function state(head, detail, busy = false) {
   $('status').hidden = false;
@@ -346,9 +350,9 @@ $('query').addEventListener('input', () => {
 });
 function renderVerifyEligibility() {
   $('verify-availability').textContent = !deepseekEnabled ? 'DeepSeek 未启用。本地检索不受影响。' :
-    hits.length ? 'DeepSeek 已启用。只有主动同意并点击核选才会发送。' : '先完成一次有命中的本地检索。';
-  $('verify-consent').disabled = !hits.length || verifying;
-  $('verify-button').disabled = !deepseekEnabled || !hits.length || !$('verify-consent').checked || verifying;
+    hits.length && !searchedIds.length ? '外发核选不支持默认全库。请勾选具体文献，再次检索。' : hits.length ? '本次仅发送以下已选文献的命中摘录：' + docs.filter(d=>searchedIds.includes(d.id)).map(d=>d.name).join('、') : '先完成一次有命中的本地检索。';
+  $('verify-consent').disabled = !hits.length || !searchedIds.length || verifying;
+  $('verify-button').disabled = !deepseekEnabled || !hits.length || !searchedIds.length || !$('verify-consent').checked || verifying;
 }
 function resetVerification() {
   verifyVersion++;
@@ -363,7 +367,7 @@ function resetVerification() {
 $('verify-consent').onchange = renderVerifyEligibility;
 $('verify-form').onsubmit = async event => {
   event.preventDefault();
-  if (!deepseekEnabled || !hits.length || !$('verify-consent').checked || verifying) return;
+  if (!deepseekEnabled || !hits.length || !searchedIds.length || !$('verify-consent').checked || verifying) return;
   const run = ++verifyVersion;
   verifyController = new AbortController();
   verifying = true;
@@ -979,6 +983,9 @@ refreshDocs().catch(error => {
 });
 </script>
 <script src="/reader.js"></script>
+<script src="/questions.js"></script>
+<script src="/ocr-panel.js" defer></script>
+<script src="/page-objects.js"></script>
 <script src="/tracking.js"></script>
 <script src="/review-panel.js"></script>
 </body>

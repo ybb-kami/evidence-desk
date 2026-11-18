@@ -9,21 +9,23 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 
-DPI = 100
-MAX_PAGES = 10
+DPI = 150
+MAX_PAGES = 20
 MAX_BYTES = 15 * 1024 * 1024
 MAX_OUTPUT = 32 * 1024 * 1024
 MAX_PIXELS = 2_500_000
-MAX_SECONDS = 60
+MAX_SECONDS = 120
 PAGE_SECONDS = 12
+MAX_CPU_SECONDS = 60
 
 
 def _ocr_worker(input_path: Path, staged: Path) -> None:
     import resource
     import fitz
 
-    resource.setrlimit(resource.RLIMIT_CPU, (45, 45))
+    resource.setrlimit(resource.RLIMIT_CPU, (MAX_CPU_SECONDS, MAX_CPU_SECONDS))
     resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_OUTPUT, MAX_OUTPUT))
     if sys.platform.startswith("linux"):
         resource.setrlimit(resource.RLIMIT_AS, (1024**3, 1024**3))
@@ -43,7 +45,7 @@ def _ocr_worker(input_path: Path, staged: Path) -> None:
         env["TESSDATA_PREFIX"] = os.environ["TESSDATA_PREFIX"]
     with fitz.open(stream=data, filetype="pdf") as original, fitz.open() as out:
         if original.needs_pass or not 1 <= len(original) <= MAX_PAGES:
-            raise ValueError("Encrypted PDFs are unsupported; provide 1 to 10 pages.")
+            raise ValueError(f"Encrypted PDFs are unsupported; provide 1 to {MAX_PAGES} pages.")
         for index, page in enumerate(original):
             if page.get_text().strip():
                 raise ValueError(f"Page {index + 1} already has text; this helper handles image-only scans.")
@@ -82,13 +84,15 @@ def _ocr_worker(input_path: Path, staged: Path) -> None:
 
 
 
-def create_derivative(source: Path, output: Path) -> None:
+def create_derivative(source: Path, output: Path, *, cancel_event=None) -> None:
     if os.name != "posix":
         raise ValueError("This OCR helper supports Linux and macOS only.")
     if not output.name.endswith(".ocr.pdf"):
         raise ValueError("Name the new output file with the suffix .ocr.pdf.")
     if os.path.lexists(output):
         raise ValueError("Output already exists; no file was changed.")
+    if cancel_event is not None and cancel_event.is_set():
+        raise ValueError("OCR was stopped; no derivative was written.")
     with tempfile.TemporaryDirectory(prefix=".local-ocr-", dir=output.parent) as folder:
         staged = Path(folder) / "verified.pdf"
         cmd = [sys.executable, str(Path(__file__).resolve()), "--worker", str(source), str(staged)]
@@ -97,7 +101,19 @@ def create_derivative(source: Path, output: Path) -> None:
         try:
             with proc:
                 try:
-                    _, stderr = proc.communicate(timeout=MAX_SECONDS)
+                    deadline = time.monotonic() + MAX_SECONDS
+                    while True:
+                        if cancel_event is not None and cancel_event.is_set():
+                            raise ValueError("OCR was stopped; no derivative was written.")
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise subprocess.TimeoutExpired(cmd, MAX_SECONDS)
+                        try:
+                            _, stderr = proc.communicate(timeout=remaining if cancel_event is None else min(remaining, 0.25))
+                            break
+                        except subprocess.TimeoutExpired:
+                            if cancel_event is None:
+                                raise
                 except BaseException:
                     try:
                         os.killpg(proc.pid, signal.SIGKILL)
@@ -106,10 +122,12 @@ def create_derivative(source: Path, output: Path) -> None:
                     proc.wait()
                     raise
         except subprocess.TimeoutExpired:
-            raise ValueError("OCR exceeded the 60-second limit; no derivative was written.") from None
+            raise ValueError(f"OCR exceeded the {MAX_SECONDS}-second limit; no derivative was written.") from None
         if proc.returncode or not staged.is_file():
             raise ValueError(stderr.decode("utf-8", "replace").strip()[:400] or
                              "OCR failed; no derivative was written.")
+        if cancel_event is not None and cancel_event.is_set():
+            raise ValueError("OCR was stopped; no derivative was written.")
         try:
             os.link(staged, output)
         except FileExistsError:

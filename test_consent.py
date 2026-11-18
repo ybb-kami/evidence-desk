@@ -17,8 +17,12 @@ class ConsentTests(unittest.TestCase):
             self.read_json('/api/verify',{'query':'verify page numbering','ids':[]})
         self.assertEqual(no.exception.code,403)
         no.exception.close()
-        self.import_pdf('sample.pdf')
-        result=self.read_json('/api/verify',{'query':'verify page numbering','ids':[],'consent':True})
+        doc=self.import_pdf('sample.pdf')['doc']['id']
+        for payload in ({'query':'private','consent':True},{'query':'private','consent':True,'ids':[]},{'query':'q','consent':True,'ids':[doc,doc]}):
+            with self.assertRaises(HTTPError) as exc:self.read_json('/api/verify',payload)
+            self.assertEqual(exc.exception.code,400)
+            exc.exception.close()
+        result=self.read_json('/api/verify',{'query':'verify page numbering','ids':[doc],'consent':True})
         self.assertEqual(result['status'],'not_configured')
         self.assertEqual(result['quotes'],[])
 

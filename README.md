@@ -1,5 +1,6 @@
 # 证据台 v0.2 · Evidence Desk
 
+> [v0.5 端到端验收](STATUS_V05.md) 包括 OCR、中文问答、扫描解析器与部署边界。
 > 最新验收与功能请先读 [v0.4 状态](STATUS.md)；下文包括旧版本的入门与历史边界。
 把“这句话到底写在哪一页？”变成一次可核对的操作。面向单人本机的 PDF 文献检索工作台：导入材料、搜索关键词、并排比较两条原文、点页码回看 PDF。默认不出网，无需账号或模型密钥。新增按篇证据对照、本地引用关系与可选 Crossref 公开题录发现。[三分钟演示脚本及可复核样例](DEMO.md)。它是竞赛原型，不是已完成全部赛题功能的科研 Agent。
 
@@ -28,7 +29,7 @@ python3 -m venv .venv
 
 **可选 DeepSeek**：只在你通过自己的私密环境变量配置 `DEEPSEEK_API_KEY` 后，以 `app.py --enable-deepseek` 启动，且每次在界面同意发送查询和证据摘录，才会请求官方 DeepSeek 服务（可能计费）。未确认时不会调用；没有匹配时也不会发送。线上核选只返回本地能逐字对照的引用，不生成未经核查的事实。详见 [服务与隐私](DEEPSEEK.md)。本交付没有使用真实 key 联调；合约测试不代表线上服务可用。不要把 key 粘到聊天、源码或仓库里。
 
-**可选英文 OCR**：Linux / macOS 安装本地 Tesseract 英语语言包后，执行 `python ocr_local.py input.pdf input.ocr.pdf`，再手动导入衍生副本。最多 10 页纯扫描件；页序保留、不会覆盖原件，识别结果必须对照原图。见 [OCR 说明](OCR.md)。
+**可选英文 OCR**：Linux / macOS 安装本地 Tesseract 英语语言包后，执行 `python ocr_local.py input.pdf input.ocr.pdf`，再手动导入衍生副本。最多 20 页纯扫描件；页序保留、不会覆盖原件，识别结果必须对照原图。见 [OCR 说明](OCR.md)。
 
 ## 已实现与边界
 
